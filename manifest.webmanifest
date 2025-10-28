@@ -1,9 +1,0 @@
-{
-  "name": "Webkiosk",
-  "short_name": "Webkiosk",
-  "start_url": "./webkiosk_SAFE.html",
-  "display": "standalone",
-  "background_color": "#f6f7f9",
-  "theme_color": "#0f172a",
-  "icons": []
-}
