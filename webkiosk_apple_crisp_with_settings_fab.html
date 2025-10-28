@@ -127,12 +127,23 @@
   </dialog>
 
   <script>
-    // Service Worker (forudsætter service-worker.js i samme mappe)
+    /* ===== Version-stempel (automatisk) ===== */
+    (function(){
+      const STATIC_VERSION = "2025-10-28b"; // kan opdateres manuelt ved behov
+      const auto = new Date();
+      const pad = (n)=>String(n).padStart(2,"0");
+      const autoVer = `${auto.getFullYear()}-${pad(auto.getMonth()+1)}-${pad(auto.getDate())}T${pad(auto.getHours())}${pad(auto.getMinutes())}`;
+      window.__WEBKIOSK_VERSION__ = STATIC_VERSION || autoVer;
+      document.title = `Webkiosk v${window.__WEBKIOSK_VERSION__}`;
+    })();
+
+    /* ===== Service Worker (cache-buster via ?vv=VERSION) ===== */
     if('serviceWorker' in navigator){
-      navigator.serviceWorker.register('./service-worker.js').catch(()=>{});
+      const vv = encodeURIComponent(window.__WEBKIOSK_VERSION__);
+      navigator.serviceWorker.register(`./service-worker.js?vv=${vv}`).catch(()=>{});
     }
 
-    // Firebase init (din konfiguration)
+    /* ===== Firebase init ===== */
     const firebaseConfig = {
       apiKey: "AIzaSyA_gh8y-V6kkl95hRzb0ldBxpKWFY5bAck",
       authDomain: "webkiosk-e5d32.firebaseapp.com",
@@ -145,7 +156,7 @@
     const auth = firebase.auth();
     const db   = firebase.firestore();
 
-    // State
+    /* ===== State ===== */
     const DEFAULTS = {
       theme: { color: "#0f172a", background:"#f6f7f9" },
       householdId: null,
@@ -158,7 +169,7 @@
     };
     let settings = loadLocal() || DEFAULTS;
 
-    // DOM
+    /* ===== DOM ===== */
     const grid = document.getElementById('grid');
     const dlg = document.getElementById('dlg');
     const btnSettings = document.getElementById('btnSettings');
@@ -174,7 +185,7 @@
     const exportBtn = document.getElementById('exportBtn');
     const btnForms = document.getElementById('btnForms');
 
-    // Utils
+    /* ===== Utils ===== */
     function saveLocal(s){ localStorage.setItem('webkiosk.settings', JSON.stringify(s)); }
     function loadLocal(){ try{ return JSON.parse(localStorage.getItem('webkiosk.settings')||''); }catch{return null;} }
     const isAndroid = /Android/i.test(navigator.userAgent);
@@ -186,9 +197,221 @@
     }
     function safeHost(u){ try{ return new URL(u).host; }catch{ return ''; } }
 
-    // Render
+    /* ===== Render ===== */
     function renderGrid(){
       document.documentElement.style.setProperty('--accent', settings.theme.color);
       document.documentElement.style.setProperty('--bg', settings.theme.background);
       grid.innerHTML = settings.buttons.map((b, i)=>`
-        <button class="card" data-idx="${i}" aria-label="${b.titl
+        <button class="card" data-idx="${i}" aria-label="${b.title}">
+          <div style="font-size:28px">${b.icon || '🔘'}</div>
+          <div class="title">${b.title}</div>
+          <div class="subtitle">${b.type==='app'
+            ? (isAndroid ? 'Åbner Android app' : (b.scheme ? 'Åbner app via scheme' : 'App kun Android'))
+            : (safeHost(b.url)) }</div>
+        </button>
+      `).join('');
+      grid.querySelectorAll('.card').forEach(el=>{
+        el.addEventListener('click', ()=>{
+          const idx = Number(el.getAttribute('data-idx'));
+          openTarget(settings.buttons[idx]);
+        });
+      });
+    }
+
+    function renderSettings(){
+      themeColor.value = settings.theme.color;
+      bgColor.value = settings.theme.background;
+      wakeStrategyEl.value = settings.wakeStrategy;
+      ensureHouseholdId();
+      householdIdEl.value = settings.householdId;
+
+      btnForms.innerHTML = settings.buttons.map((b, i)=>`
+        <fieldset style="border:1px solid var(--border);padding:12px;border-radius:12px;margin-bottom:10px">
+          <legend>Knap ${i+1}</legend>
+          <div class="row">
+            <div>
+              <label>Titel</label>
+              <input id="t-${i}" value="${b.title}">
+            </div>
+            <div>
+              <label>Ikon (emoji)</label>
+              <input id="ic-${i}" value="${b.icon || ''}" placeholder="fx 🔊">
+            </div>
+          </div>
+          <div class="row" style="margin-top:8px">
+            <div>
+              <label>Type</label>
+              <select id="ty-${i}">
+                <option value="url" ${b.type==='url'?'selected':''}>URL</option>
+                <option value="app" ${b.type==='app'?'selected':''}>Android App</option>
+              </select>
+            </div>
+            <div>
+              <label>URL (ved Type=URL)</label>
+              <input id="u-${i}" value="${b.url||''}" placeholder="https://...">
+            </div>
+          </div>
+          <div class="row" style="margin-top:8px">
+            <div>
+              <label>Android package (ved Type=App)</label>
+              <input id="pg-${i}" value="${b.pkg||''}" placeholder="fx com.sonos.acr2">
+            </div>
+            <div>
+              <label>Custom scheme (iOS/Android – valgfri)</label>
+              <input id="sc-${i}" value="${b.scheme||''}" placeholder="fx sonos://">
+            </div>
+          </div>
+        </fieldset>
+      `).join('');
+    }
+
+    /* ===== Åbn mål ===== */
+    function openTarget(btn){
+      if(btn.type === 'url' && btn.url){
+        location.href = btn.url; // bevar din nuværende adfærd
+        return;
+      }
+      if(btn.type === 'app'){
+        if(isiOS && btn.scheme){
+          location.href = btn.scheme;
+          return;
+        }
+        if(isAndroid && btn.pkg){
+          const fallback = encodeURIComponent(location.origin);
+          const intentUrl = `intent://open/#Intent;package=${btn.pkg};S.browser_fallback_url=${fallback};end;`;
+          location.href = intentUrl;
+          setTimeout(()=>{ location.href = `market://details?id=${btn.pkg}`; }, 1400);
+          return;
+        }
+        alert('Kan ikke åbne app – mangler Android package eller understøttet scheme.');
+      }
+    }
+
+    /* ===== Wake Lock ===== */
+    let wakeLock = null;
+    let noSleep = null;
+    async function requestWakeLock(){
+      if(settings.wakeStrategy === 'off') return releaseWakeLock();
+      try{
+        if('wakeLock' in navigator){
+          wakeLock = await navigator.wakeLock.request('screen');
+        }else{
+          if(!noSleep) noSleep = new window.NoSleep();
+          noSleep.enable(); // kræver første interaktion
+        }
+      }catch(_){}
+    }
+    function releaseWakeLock(){
+      try{ if(wakeLock){ wakeLock.release(); wakeLock=null; } }catch(_){}
+      try{ if(noSleep){ noSleep.disable(); noSleep=null; } }catch(_){}
+    }
+    document.addEventListener('visibilitychange', ()=>{
+      if(document.visibilityState === 'visible') requestWakeLock();
+    }, {passive:true});
+
+    /* ===== Firebase Auth + Firestore sync ===== */
+    let unsub = null;
+    let writeTimer = null;
+    function DOC(){ return db.collection('webkiosk').doc(settings.householdId); }
+
+    async function initAuth(){
+      try{
+        await auth.signInAnonymously();
+        syncStatus.textContent = 'Online';
+      }catch(e){
+        syncStatus.textContent = 'Auth fejl';
+        console.warn(e);
+      }
+    }
+    async function startRealtime(){
+      if(unsub) unsub();
+      if(!settings.householdId) return;
+      unsub = DOC().onSnapshot(snap=>{
+        if(!snap.exists) return;
+        const remote = snap.data();
+        if(remote._ts && (!settings._ts || remote._ts > settings._ts)){
+          settings = remote;
+          saveLocal(settings);
+          applyAll();
+        }
+      }, (err)=>{ console.warn('Snapshot error', err); });
+    }
+    function queueWrite(){
+      clearTimeout(writeTimer);
+      writeTimer = setTimeout(async ()=>{
+        try{
+          settings._ts = Date.now();
+          await DOC().set(settings, {merge:true});
+          syncStatus.textContent = 'Synkroniseret';
+        }catch(e){
+          syncStatus.textContent = 'Sync fejl';
+          console.warn(e);
+        }
+      }, 300);
+    }
+
+    /* ===== Events ===== */
+    btnSettings.addEventListener('click', ()=>{ renderSettings(); dlg.showModal(); });
+    closeDlg.addEventListener('click', ()=> dlg.close());
+    btnHome.addEventListener('click', ()=> location.href = './index.html');
+
+    saveDlg.addEventListener('click', ()=>{
+      settings.theme.color = themeColor.value || settings.theme.color;
+      settings.theme.background = bgColor.value || settings.theme.background;
+      settings.wakeStrategy = wakeStrategyEl.value;
+
+      const prevId = settings.householdId;
+      settings.householdId = (householdIdEl.value||'').trim().toUpperCase() || settings.householdId;
+      if(settings.householdId !== prevId){ startRealtime(); }
+
+      settings.buttons = settings.buttons.map((b, i)=>({
+        title: document.getElementById(`t-${i}`)?.value || b.title,
+        icon: document.getElementById(`ic-${i}`)?.value || b.icon,
+        type: document.getElementById(`ty-${i}`)?.value || b.type,
+        url:  document.getElementById(`u-${i}`)?.value || b.url || '',
+        pkg:  document.getElementById(`pg-${i}`)?.value || b.pkg || '',
+        scheme: document.getElementById(`sc-${i}`)?.value || b.scheme || ''
+      }));
+
+      saveLocal(settings);
+      queueWrite();
+      applyAll();
+      dlg.close();
+    });
+
+    resetAll.addEventListener('click', ()=>{
+      if(!confirm('Nulstil alt til fabriksindstillinger?')) return;
+      settings = JSON.parse(JSON.stringify(DEFAULTS));
+      ensureHouseholdId();
+      saveLocal(settings);
+      queueWrite();
+      applyAll();
+    });
+
+    exportBtn.addEventListener('click', ()=>{
+      const blob = new Blob([JSON.stringify(settings,null,2)], {type:'application/json'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `webkiosk-settings-${settings.householdId}.json`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    });
+
+    window.addEventListener('pageshow', ()=>{ requestWakeLock(); }, {passive:true});
+    window.addEventListener('click', ()=>{
+      if(!('wakeLock' in navigator)){ try{ if(!noSleep) noSleep = new window.NoSleep(); noSleep.enable(); }catch(_){} }
+    }, {passive:true});
+
+    /* ===== Boot ===== */
+    ensureHouseholdId();
+    saveLocal(settings);
+    applyAll();
+    initAuth().then(startRealtime).catch(()=>{});
+
+    function applyAll(){
+      renderGrid();
+      requestWakeLock();
+    }
+  </script>
+</body>
+</html>
