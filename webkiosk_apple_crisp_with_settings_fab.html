@@ -7,60 +7,40 @@
 <meta name="theme-color" content="#0f172a" />
 
 <style>
-  :root{
-    --bg:#f6f7f9; --panel:#ffffff; --fg:#0f172a; --muted:#6b7280; --border:#e6e8ec;
-    --accent:#0f172a; --radius:20px; --shadow:0 10px 30px rgba(2,6,23,.06);
-    --logoH:64px; --logoBoxW:42%; --logoMaxW:280px;
-  }
-  *{box-sizing:border-box}
-  html,body{height:100%}
-  body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--fg);display:flex;min-height:100vh;position:relative}
+  :root{--bg:#f6f7f9;--panel:#fff;--fg:#0f172a;--muted:#6b7280;--border:#e6e8ec;--accent:#0f172a;--radius:20px;--shadow:0 10px 30px rgba(2,6,23,.06);--logoH:64px;--logoBoxW:42%;--logoMaxW:280px}
+  *{box-sizing:border-box} html,body{height:100%}
+  body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--fg);display:flex;min-height:100vh}
   .wrap{width:min(1200px,100%);padding:clamp(12px,2vw,24px);margin:auto;position:relative;z-index:1}
   .grid{display:grid;gap:clamp(12px,2vw,18px);grid-template-columns:repeat(12,1fr)}
-  .panel{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
-  .widget{padding:clamp(16px,2.2vw,24px)}
-  .widget h2{margin:0 0 6px;font-size:clamp(15px,1.6vw,18px);color:var(--muted);font-weight:600}
-  .clock-time{font-size:clamp(40px,6vw,56px);line-height:1;font-weight:750}
-  .clock-date{margin-top:6px;font-size:clamp(14px,1.8vw,18px);color:var(--muted)}
-  .weather-main{display:flex;align-items:center;gap:14px}
-  .weather-temp{font-size:clamp(40px,6vw,56px);font-weight:750}
-  .weather-line{font-size:clamp(14px,1.8vw,18px);color:var(--muted)}
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow)}
+  .widget{padding:clamp(16px,2.2vw,24px)} .widget h2{margin:0 0 6px;font-size:clamp(15px,1.6vw,18px);color:var(--muted);font-weight:600}
+  .clock-time{font-size:clamp(40px,6vw,56px);line-height:1;font-weight:750} .clock-date{margin-top:6px;font-size:clamp(14px,1.8vw,18px);color:var(--muted)}
+  .weather-main{display:flex;align-items:center;gap:14px} .weather-temp{font-size:clamp(40px,6vw,56px);font-weight:750} .weather-line{font-size:clamp(14px,1.8vw,18px);color:var(--muted)}
   .widget .icon{width:clamp(34px,4.5vw,48px);height:clamp(34px,4.5vw,48px);color:var(--accent)}
-
   .tiles{grid-column:1/-1;display:grid;gap:clamp(12px,2vw,18px);grid-template-columns:repeat(3,1fr)}
-  .tile{min-height:140px;padding:clamp(16px,2.4vw,24px);display:grid;grid-template-columns:1fr minmax(160px,min(var(--logoMaxW),var(--logoBoxW)));align-items:center;gap:clamp(12px,2vw,20px);cursor:pointer;user-select:none;transition:transform .12s ease,box-shadow .12s ease,border-color .12s ease}
+  .tile{min-height:140px;padding:clamp(16px,2.4vw,24px);display:grid;grid-template-columns:1fr minmax(160px,min(var(--logoMaxW),var(--logoBoxW)));align-items:center;gap:clamp(12px,2vw,20px);cursor:pointer;user-select:none;transition:transform .12s,box-shadow .12s}
   .tile:hover{transform:translateY(-1px);box-shadow:0 14px 30px rgba(2,6,23,.10)}
-  .meta .label{font-size:clamp(18px,2.2vw,22px);font-weight:750}
-  .meta .sub{color:var(--muted);font-size:clamp(12px,1.8vw,15px);margin-top:6px}
+  .meta .label{font-size:clamp(18px,2.2vw,22px);font-weight:750} .meta .sub{color:var(--muted);font-size:clamp(12px,1.8vw,15px);margin-top:6px}
   .logo-box{height:var(--logoH);display:flex;align-items:center;justify-content:flex-end}
   .logo-box img{max-height:100%;max-width:100%;object-fit:contain;display:block}
-
-  .widget.weather{grid-column:span 6}
-  .widget.clock{grid-column:span 6}
+  .widget.weather{grid-column:span 6} .widget.clock{grid-column:span 6}
   @media (max-width:900px){.widget.weather,.widget.clock{grid-column:span 12}.tiles{grid-template-columns:1fr}}
-
-  /* Overlays default OFF */
   .calendar-view,.wk-panel,.modal{display:none;pointer-events:none}
   .calendar-view.visible,.wk-panel.visible,.modal.visible{display:block;pointer-events:auto}
-
-  .calendar-view{position:fixed;inset:0;padding:clamp(12px,2vw,20px);background:rgba(246,247,249,.92);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:60}
+  .calendar-view{position:fixed;inset:0;padding:clamp(12px,2vw,20px);background:rgba(246,247,249,.92);backdrop-filter:blur(8px);z-index:60}
   .calendar-inner{height:100%;display:flex;flex-direction:column;gap:12px}
   .topbar{display:flex;align-items:center;gap:12px}
   .back-btn{display:inline-flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;background:#fff;border:1px solid var(--border);color:#0f172a;cursor:pointer;font-weight:650;box-shadow:var(--shadow)}
   .calframe.panel{flex:1;min-height:0;overflow:hidden;display:flex}
   iframe{width:100%;height:100%;border:0;display:block}
-
   .fab{position:fixed;right:20px;bottom:20px;z-index:90}
   .fab button{width:56px;height:56px;border-radius:50%;border:1px solid var(--border);background:#fff;color:#0f172a;display:inline-flex;align-items:center;justify-content:center;box-shadow:var(--shadow);cursor:pointer}
-
   .wk-panel{position:fixed;inset:0;background:#00000010;backdrop-filter:saturate(1.1) blur(4px);z-index:80}
   .wk-shell{position:absolute;inset:0;background:#fff;box-shadow:0 12px 60px rgba(2,6,23,.25)}
   .wk-topbar{position:absolute;left:0;right:0;top:0;height:52px;display:flex;align-items:center;gap:10px;padding:0 12px;border-bottom:1px solid var(--border);background:linear-gradient(#fff,#fafafa);z-index:2}
   .wk-topbar .btn{border:1px solid var(--border);border-radius:10px;background:#fff;padding:8px 10px;cursor:pointer}
   .wk-topbar .title{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .wk-iframe{position:absolute;top:52px;left:0;right:0;bottom:0;width:100%;height:calc(100% - 52px);border:0}
-
-  /* Modal / Settings */
   .modal{position:fixed;inset:0;background:rgba(15,23,42,.35);z-index:100;display:none;align-items:center;justify-content:center;padding:20px}
   .modal.visible{display:flex}
   .dialog{width:min(980px,96vw);max-height:92vh;overflow:hidden;background:#fff;border:1px solid var(--border);border-radius:18px;box-shadow:0 22px 60px rgba(2,6,23,.18);display:flex;flex-direction:column}
@@ -70,8 +50,7 @@
   .tab{padding:8px 12px;border:1px solid var(--border);border-radius:10px;background:#fbfbfb;cursor:pointer;font-weight:600;color:#334155}
   .tab.active{background:#0f172a;color:#fff;border-color:#0f172a}
   .dlg-body{padding:16px 20px 6px;overflow:auto}
-  .section{display:none}
-  .section.active{display:block}
+  .section{display:none}.section.active{display:block}
   .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
   .form-grid .full{grid-column:1/-1}
   .field{display:flex;flex-direction:column;gap:8px}
@@ -79,7 +58,6 @@
   .hint{font-size:12px;color:#6b7280}
   .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
   input[type="text"],input[type="url"],select,input[type="color"],input[type="search"],input[type="checkbox"]{padding:10px 12px;border-radius:12px;border:1px solid var(--border);font-size:14px}
-  input[type="text"],input[type="url"],select,input[type="color"],input[type="search"]{width:100%}
   input[type="file"]{font-size:13px}
   .logoPreview{width:160px;height:64px;display:flex;align-items:center;justify-content:center;border:1px dashed var(--border);border-radius:12px;background:#fafafa}
   .logoPreview img{max-width:100%;max-height:100%;object-fit:contain;display:block}
@@ -88,14 +66,9 @@
   .actions{display:flex;gap:10px}
   .btn{padding:10px 14px;border-radius:12px;border:1px solid var(--border);background:#fff;cursor:pointer;font-weight:650}
   .btn.primary{background:var(--fg);color:#fff;border-color:var(--fg)}
-
-  /* Sync badge */
   .sync-badge{position:fixed;left:12px;bottom:12px;z-index:95;background:#fff;border:1px solid #e6e8ec;border-radius:14px;padding:8px 12px;font:13px/1.2 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial;box-shadow:0 8px 24px rgba(2,6,23,.08);display:flex;gap:8px;align-items:center;color:#0f172a}
   .sync-badge .dot{width:10px;height:10px;border-radius:50%;display:inline-block}
-  .sync-online .dot{background:#10b981}
-  .sync-syncing .dot{background:#f59e0b}
-  .sync-offline .dot{background:#9ca3af}
-  .sync-error .dot{background:#ef4444}
+  .sync-online .dot{background:#10b981}.sync-syncing .dot{background:#f59e0b}.sync-offline .dot{background:#9ca3af}.sync-error .dot{background:#ef4444}
   .sync-badge .note{margin-left:6px;color:#6b7280;font-size:12px}
 </style>
 </head>
@@ -105,38 +78,26 @@
       <section class="panel widget weather" aria-label="Vejr">
         <h2>Vejr</h2>
         <div class="weather-main">
-          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M3 16.5a4.5 4.5 0 0 1 4.5-4.5h.5A6.5 6.5 0  1 1 20 14.5a3.5 3.5 0 0 1-3.5 3.5H8.5A5.5 5.5 0 0 1 3 16.5z"/>
-          </svg>
-          <div>
-            <div class="weather-temp" id="weatherTemp">--°</div>
-            <div class="weather-line" id="weatherCond">-</div>
-            <div class="weather-line" id="weatherCity">-</div>
-          </div>
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 16.5a4.5 4.5 0 0 1 4.5-4.5h.5A6.5 6.5 0 1 1 20 14.5a3.5 3.5 0 0 1-3.5 3.5H8.5A5.5 5.5 0 0 1 3 16.5z"/></svg>
+          <div><div class="weather-temp" id="weatherTemp">--°</div><div class="weather-line" id="weatherCond">-</div><div class="weather-line" id="weatherCity">-</div></div>
         </div>
       </section>
-
       <section class="panel widget clock" aria-label="Ur">
-        <h2>Ur</h2>
-        <div class="clock-time" id="clockTime">--:--</div>
-        <div class="clock-date" id="clockDate">--</div>
+        <h2>Ur</h2><div class="clock-time" id="clockTime">--:--</div><div class="clock-date" id="clockDate">--</div>
       </section>
 
       <div class="tiles">
-        <button class="panel tile" id="tileCalendar" type="button"
-          onclick="window.__handlers && window.__handlers.openCalendar()">
-          <div class="meta"><div class="label">Kalender</div><div class="sub">Familieoversigt</div></div>
-          <div class="logo-box"><img id="logoCalendar" alt="Kalender" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='64' viewBox='0 0 160 64'%3E%3Crect width='160' height='64' fill='%23f0f2f5'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='14' fill='%236b7280' font-family='Inter,Arial'%3EKalender%3C/text%3E%3C/svg%3E"></div>
+        <button class="panel tile" id="tileCalendar" type="button" onclick="window.__handlers && window.__handlers.openCalendar()">
+          <div class="meta"><div class="label" id="labelCalendar">Kalender</div><div class="sub" id="subCalendar">Familieoversigt</div></div>
+          <div class="logo-box"><img id="logoCalendar" alt="Kalender"></div>
         </button>
-        <button class="panel tile" id="tileHomey" type="button"
-          onclick="window.__handlers && window.__handlers.openHomey()">
-          <div class="meta"><div class="label">Homey</div><div class="sub">Dashboard</div></div>
-          <div class="logo-box"><img id="logoHomey" alt="Homey" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='64' viewBox='0 0 160 64'%3E%3Crect width='160' height='64' fill='%23f0f2f5'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='14' fill='%236b7280' font-family='Inter,Arial'%3EHomey%3C/text%3E%3C/svg%3E"></div>
+        <button class="panel tile" id="tileHomey" type="button" onclick="window.__handlers && window.__handlers.openHomey()">
+          <div class="meta"><div class="label" id="labelHomey">Homey</div><div class="sub" id="subHomey">Dashboard</div></div>
+          <div class="logo-box"><img id="logoHomey" alt="Homey"></div>
         </button>
-        <button class="panel tile" id="tileSonos" type="button"
-          onclick="window.__handlers && window.__handlers.openSonos()">
-          <div class="meta"><div class="label">Sonos</div><div class="sub">App eller web</div></div>
-          <div class="logo-box"><img id="logoSonos" alt="Sonos" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='64' viewBox='0 0 160 64'%3E%3Crect width='160' height='64' fill='%23f0f2f5'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='14' fill='%236b7280' font-family='Inter,Arial'%3ESonos%3C/text%3E%3C/svg%3E"></div>
+        <button class="panel tile" id="tileSonos" type="button" onclick="window.__handlers && window.__handlers.openSonos()">
+          <div class="meta"><div class="label" id="labelSonos">Sonos</div><div class="sub" id="subSonos">App eller web</div></div>
+          <div class="logo-box"><img id="logoSonos" alt="Sonos"></div>
         </button>
       </div>
     </div>
@@ -145,25 +106,19 @@
   <!-- Kalender overlay -->
   <section class="calendar-view" id="calendarView" aria-hidden="true">
     <div class="calendar-inner">
-      <div class="topbar">
-        <button class="back-btn" id="closeCalendar" type="button"
-          onclick="document.getElementById('calendarView').classList.remove('visible');document.getElementById('calendarView').setAttribute('aria-hidden','true');document.getElementById('calendarFrame').src='about:blank';">⬅ Tilbage</button>
-      </div>
+      <div class="topbar"><button class="back-btn" id="closeCalendar" type="button" onclick="document.getElementById('calendarView').classList.remove('visible');document.getElementById('calendarView').setAttribute('aria-hidden','true');document.getElementById('calendarFrame').src='about:blank';">⬅ Tilbage</button></div>
       <div class="calframe panel"><iframe id="calendarFrame" title="Kalender"></iframe></div>
     </div>
   </section>
 
-  <!-- FAB -->
+  <!-- Tandhjul -->
   <div class="fab" aria-live="polite">
-    <button id="openSettings" title="Indstillinger" aria-label="Indstillinger" type="button"
-      onclick="document.getElementById('settingsModal').classList.add('visible');document.getElementById('settingsModal').setAttribute('aria-hidden','false');">
-      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0  0 0-1.82-.33 1.65 1.65 0  0 0-1 1.51V21a2 2 0  1 1-4 0v-.09a1.65 1.65 0  0 0-1-1.51 1.65 1.65 0  0  0-1.82.33l-.06.06a2 2 0  1 1-2.83-2.83l.06-.06a1.65 1.65 0  0 0 .33-1.82 1.65 1.65 0  0  0-1.51-1H3a2 2 0  1 1 0-4h.09a1.65 1.65 0  0 0 1.51-1 1.65 1.65 0  0  0-.33-1.82l-.06-.06a2 2 0  1 1 2.83-2.83l.06.06a1.65 1.65 0  0 0 1.82.33H9a1.65 1.65 0  0 0 1-1.51V3a2 2 0  1 1 4 0v.09a1.65 1.65 0  0 0 1 1.51 1.65 1.65 0  0 0 1.82-.33l.06.06a2 2 0  1 1 2.83 2.83l-.06.06a1.65 1.65 0  0 0-.33 1.82V9c0 .66.26 1.3.73 1.77.47.47 1.11.73 1.77.73h.09a2 2 0  1 1 0 4h-.09a1.65 1.65 0  0 0-1.51 1Z"/>
-      </svg>
+    <button id="openSettings" title="Indstillinger" aria-label="Indstillinger" type="button" onclick="document.getElementById('settingsModal').classList.add('visible');document.getElementById('settingsModal').setAttribute('aria-hidden','false');">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0  0 0-1 1.51V21a2 2 0  1 1-4 0v-.09a1.65 1.65 0  0 0-1-1.51 1.65 1.65 0  0  0-1.82.33l-.06.06a2 2 0  1 1-2.83-2.83l.06-.06a1.65 1.65 0  0 0 .33-1.82 1.65 1.65 0  0  0-1.51-1H3a2 2 0  1 1 0-4h.09a1.65 1.65 0  0 0 1.51-1 1.65 1.65 0  0  0-.33-1.82l-.06-.06a2  2 0  1 1 2.83-2.83l.06.06a1.65 1.65 0  0 0 1.82.33H9a1.65 1.65 0  0 0 1-1.51V3a2 2 0  1  1 4 0v.09a1.65 1.65 0  0 0 1 1.51 1.65 1.65 0  0  0 1.82-.33l.06.06a2 2 0  1 1 2.83 2.83l-.06.06a1.65 1.65 0  0 0-.33 1.82V9c0 .66.26 1.3.73 1.77.47.47 1.11.73 1.77.73h.09a2 2 0  1 1 0 4h-.09a1.65 1.65 0  0 0-1.51 1Z"/></svg>
     </button>
   </div>
 
-  <!-- Settings modal -->
+  <!-- Settings modal (tabs uændret) -->
   <div class="modal" id="settingsModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="settingsTitle" onclick="this.classList.remove('visible');this.setAttribute('aria-hidden','true');">
     <div class="dialog" onclick="event.stopPropagation()">
       <div class="dlg-head">
@@ -175,14 +130,12 @@
           <button class="tab" data-tab="tab-screen" type="button">Skærm</button>
         </div>
       </div>
-
       <div class="dlg-body">
         <!-- Udseende -->
         <section id="tab-appearance" class="section active">
           <div class="form-grid">
             <div class="field"><label for="themeColor">Primærfarve</label><input type="color" id="themeColor"/></div>
             <div class="field"><label for="bgColor">Baggrundsfarve</label><input type="color" id="bgColor"/></div>
-
             <div class="field"><label>Kalender-logo</label><div class="row"><div class="logoPreview"><img id="prevCalendar" alt=""></div><input type="file" id="logoInputCalendar" accept="image/*"/></div></div>
             <div class="field"><label>Homey-logo</label><div class="row"><div class="logoPreview"><img id="prevHomey" alt=""></div><input type="file" id="logoInputHomey" accept="image/*"/></div></div>
             <div class="field"><label>Sonos-logo</label><div class="row"><div class="logoPreview"><img id="prevSonos" alt=""></div><input type="file" id="logoInputSonos" accept="image/*"/></div></div>
@@ -192,33 +145,47 @@
         <!-- Indgange -->
         <section id="tab-entries" class="section">
           <div class="form-grid">
+            <div class="field"><label for="labelCalendarIn">Kalender – navn</label><input type="text" id="labelCalendarIn" placeholder="Kalender"/></div>
+            <div class="field"><label for="subCalendarIn">Kalender – undertekst</label><input type="text" id="subCalendarIn" placeholder="Familieoversigt"/></div>
+            <div class="field"><label for="labelHomeyIn">Homey – navn</label><input type="text" id="labelHomeyIn" placeholder="Homey"/></div>
+            <div class="field"><label for="subHomeyIn">Homey – undertekst</label><input type="text" id="subHomeyIn" placeholder="Dashboard"/></div>
+            <div class="field"><label for="labelSonosIn">Sonos – navn</label><input type="text" id="labelSonosIn" placeholder="Sonos"/></div>
+            <div class="field"><label for="subSonosIn">Sonos – undertekst</label><input type="text" id="subSonosIn" placeholder="App eller web"/></div>
+
             <div class="field full">
               <label>Kalenderkilde</label>
               <div class="row">
                 <label class="row"><input type="radio" name="calendarMode" value="url"> URL</label>
                 <label class="row"><input type="radio" name="calendarMode" value="upload"> Upload HTML</label>
               </div>
-              <input type="url" id="calendarUrl" placeholder="https://…" />
+              <input type="url" id="calendarUrl" placeholder="https://…"/>
               <div class="row" id="calendarUploadRow" style="display:none;">
                 <input type="file" id="calendarFile" accept="text/html,.html" />
-                <span class="hint">Gemmes lokalt i browseren.</span>
+                <span class="hint">Upload gemmes i Firebase Storage og synk’er på tværs.</span>
               </div>
             </div>
 
             <div class="field"><label for="homeyUrl">Homey dashboard URL</label><input type="url" id="homeyUrl" placeholder="https://my.homey.app/…"/></div>
-
             <div class="field"><label for="sonosUrl">Sonos link (app/web/custom scheme)</label><input type="text" id="sonosUrl" placeholder="sonos:// eller https://"/></div>
             <div class="field"><label for="sonosPkg">Android package (app)</label><input type="text" id="sonosPkg" placeholder="com.sonos.acr2"/></div>
             <div class="field"><label for="sonosScheme">Custom scheme (iOS/Android)</label><input type="text" id="sonosScheme" placeholder="sonos://"/></div>
           </div>
         </section>
 
-        <!-- Synkronisering -->
+        <!-- Synk -->
         <section id="tab-sync" class="section">
           <div class="form-grid">
             <div class="field"><label for="householdId">Husstands-ID</label><input id="householdId" placeholder="auto-genereres"/></div>
             <div class="field"><label>Status</label><div class="left-note"><span id="lastSync">—</span></div></div>
-            <div class="field full"><span class="hint">Brug samme Husstands-ID på alle enheder for at dele indstillinger (farver, logoer, links m.m.).</span></div>
+            <div class="field full">
+              <label>Eksport / Import</label>
+              <div class="row">
+                <button class="btn" type="button" id="exportBtn">Eksportér (JSON)</button>
+                <input type="file" id="importFile" accept="application/json"/>
+                <button class="btn" type="button" id="importBtn">Importér fra Udklip</button>
+              </div>
+              <textarea id="importArea" placeholder="Indsæt JSON her…" rows="4" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:12px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px"></textarea>
+            </div>
           </div>
         </section>
 
@@ -241,12 +208,11 @@
     </div>
   </div>
 
-  <!-- Webpanel overlay -->
+  <!-- Webpanel -->
   <div id="wkPanel" class="wk-panel" aria-hidden="true">
     <div class="wk-shell">
       <div class="wk-topbar">
-        <button id="wkBack" class="btn" type="button"
-          onclick="document.getElementById('wkPanel').classList.remove('visible');document.getElementById('wkPanel').setAttribute('aria-hidden','true');document.getElementById('wkFrame').src='about:blank';">← Tilbage</button>
+        <button id="wkBack" class="btn" type="button" onclick="document.getElementById('wkPanel').classList.remove('visible');document.getElementById('wkPanel').setAttribute('aria-hidden','true');document.getElementById('wkFrame').src='about:blank';">← Tilbage</button>
         <div id="wkTitle" class="title">Indlæser…</div>
       </div>
       <iframe id="wkFrame" class="wk-iframe" sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox" referrerpolicy="no-referrer"></iframe>
@@ -254,193 +220,302 @@
   </div>
 
   <!-- Sync badge -->
-  <div id="syncBadge" class="sync-badge sync-offline" aria-live="polite" title="Synk status">
-    <span class="dot"></span><span id="syncBadgeText">Offline</span>
-    <span id="syncBadgeNote" class="note"></span>
-  </div>
+  <div id="syncBadge" class="sync-badge sync-offline" aria-live="polite" title="Synk status"><span class="dot"></span><span id="syncBadgeText">Offline</span><span id="syncBadgeNote" class="note"></span></div>
 
-  <!-- SDKs -->
+  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/nosleep/0.12.0/NoSleep.min.js"></script>
 
   <script>
-  /* utils */
+  /* ===== Utils ===== */
   function $(id){ return document.getElementById(id); }
   function on(el,ev,fn){ if(el && el.addEventListener) el.addEventListener(ev,fn,false); }
-  function toB64(file){ return new Promise(function(res,rej){ var fr=new FileReader(); fr.onload=function(){ res(fr.result); }; fr.onerror=rej; fr.readAsDataURL(file); }); }
   function nowStr(){ return new Date().toLocaleTimeString('da-DK',{hour:'2-digit',minute:'2-digit'}); }
   function debounced(ms,fn){ let t; return function(){ clearTimeout(t); t=setTimeout(()=>fn.apply(this,arguments),ms); }; }
+  function dl(filename, text){ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([text],{type:'application/json'})); a.download=filename; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},0); }
+  function dataURLtoBlob(dataurl){ const arr=dataurl.split(','), m=arr[0].match(/:(.*?);/)[1], bstr=atob(arr[1]); let n=bstr.length; const u8=new Uint8Array(n); while(n--)u8[n]=bstr.charCodeAt(n); return new Blob([u8],{type:m}); }
 
-  /* clock */
-  function updateClock(){ var t=$('clockTime'), d=$('clockDate'); var now=new Date(); t.textContent=now.toLocaleTimeString('da-DK',{hour:'2-digit',minute:'2-digit'}); var dd=now.toLocaleDateString('da-DK',{weekday:'long',day:'2-digit',month:'long'}); d.textContent=dd.charAt(0).toUpperCase()+dd.slice(1); }
+  // Billede komprimeres før upload (smallere + hurtigere)
+  function compressImageToDataURL(file, maxW=600, maxH=240, mime='image/jpeg', quality=0.82){
+    return new Promise((resolve,reject)=>{
+      const img=new Image(); const fr=new FileReader();
+      fr.onload=()=>{ img.onload=()=>{ let w=img.naturalWidth, h=img.naturalHeight;
+          const ratio=Math.min(maxW/w, maxH/h, 1); const cw=Math.round(w*ratio), ch=Math.round(h*ratio);
+          const cv=document.createElement('canvas'); cv.width=cw; cv.height=ch;
+          const cx=cv.getContext('2d'); cx.drawImage(img,0,0,cw,ch);
+          resolve(cv.toDataURL(mime, quality));
+        }; img.onerror=reject; img.src=fr.result; };
+      fr.onerror=reject; fr.readAsDataURL(file);
+    });
+  }
+
+  function isEmpty(v){ return v==null || (typeof v==='string' && v.trim()===''); }
+  function deepMergePreferNonEmpty(local, remote){
+    if(typeof local!=='object' || local===null) return remote;
+    const out = Array.isArray(local)? local.slice(): {...local};
+    for(const k of Object.keys(remote||{})){
+      const rv = remote[k], lv = out[k];
+      if(typeof rv==='object' && rv && !Array.isArray(rv)) out[k]=deepMergePreferNonEmpty(lv||{}, rv);
+      else{ if(isEmpty(rv) && !isEmpty(lv)) continue; out[k]=rv; }
+    }
+    return out;
+  }
+
+  /* ===== Clock & Weather ===== */
+  function updateClock(){ const t=$('clockTime'), d=$('clockDate'); const now=new Date(); t.textContent=now.toLocaleTimeString('da-DK',{hour:'2-digit',minute:'2-digit'}); const dd=now.toLocaleDateString('da-DK',{weekday:'long',day:'2-digit',month:'long'}); d.textContent=dd.charAt(0).toUpperCase()+dd.slice(1); }
   setInterval(updateClock,1000); updateClock();
 
-  /* weather */
   (function(){
-    var elTemp=$('weatherTemp'), elCity=$('weatherCity'); if(!elTemp||!elCity) return;
-    function getPosition(timeoutMs){ timeoutMs=timeoutMs||7000; return new Promise(function(resolve){ var done=false; function fb(){ if(done)return; done=true; resolve({coords:{latitude:55.6761,longitude:12.5683},fallback:true}); } if(!navigator.geolocation){ fb(); return; } var to=setTimeout(fb,timeoutMs); navigator.geolocation.getCurrentPosition(function(p){ if(done)return; done=true; clearTimeout(to); resolve(p); }, function(){ fb(); }, {enableHighAccuracy:false,maximumAge:900000,timeout:timeoutMs-500});});}
-    async function loadWeather(){ try{ var pos=await getPosition(); var lat=+pos.coords.latitude.toFixed(4); var lon=+pos.coords.longitude.toFixed(4); var r=await fetch("https://api.open-meteo.com/v1/forecast?latitude="+lat+"&longitude="+lon+"&current=temperature_2m&timezone=auto",{cache:"no-store"}); var j=await r.json(); var t=Math.round(((j&&j.current)?j.current.temperature_2m:NaN)); if(isFinite(t)) elTemp.textContent=t+"°"; if(pos.fallback) elCity.textContent="København"; }catch(e){} }
-    loadWeather(); setInterval(loadWeather,20*60*1000);
+    const elTemp=$('weatherTemp'), elCity=$('weatherCity'); if(!elTemp||!elCity) return;
+    function getPos(timeoutMs=7000){ return new Promise(resolve=>{
+      let done=false; const fb=()=>{ if(done)return; done=true; resolve({coords:{latitude:55.6761,longitude:12.5683},fallback:true}); };
+      if(!navigator.geolocation){ fb(); return; }
+      const to=setTimeout(fb,timeoutMs);
+      navigator.geolocation.getCurrentPosition(p=>{ if(done)return; done=true; clearTimeout(to); resolve(p); }, fb, {enableHighAccuracy:false,maximumAge:900000,timeout:timeoutMs-500});
+    });}
+    async function loadWx(){ try{
+      const pos=await getPos(); const lat=+pos.coords.latitude.toFixed(4), lon=+pos.coords.longitude.toFixed(4);
+      const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m&timezone=auto`,{cache:"no-store"});
+      const j=await r.json(); const t=Math.round((j&&j.current)?j.current.temperature_2m:NaN);
+      if(isFinite(t)) elTemp.textContent=t+'°'; if(pos.fallback) elCity.textContent='København';
+    }catch(e){} }
+    loadWx(); setInterval(loadWx,20*60*1000);
   })();
 
-  /* local config */
-  var LS_KEY='webkioskConfigV2';
-  var defaults={calendar:{mode:'url',url:'',fileName:'',fileData:''},homeyUrl:'',sonosUrl:'',sonosPkg:'',sonosScheme:'',logos:{calendar:'',homey:'',sonos:''},theme:{color:'#0f172a',background:'#f6f7f9'},keepAwake:true,householdId:'',_ts:0};
-  function load(){ try{ var o=JSON.parse(localStorage.getItem(LS_KEY)||'{}'); var r={}; for(var k in defaults){ r[k]=defaults[k]; if(typeof defaults[k]==='object' && defaults[k] && !Array.isArray(defaults[k])){ r[k]=Object.assign({},defaults[k],o[k]||{});} else if(o[k]!==undefined){ r[k]=o[k]; } } return r; }catch(e){ return JSON.parse(JSON.stringify(defaults)); } }
+  /* ===== Config ===== */
+  const LS_KEY='webkioskConfigV2';
+  const defaults={
+    calendar:{mode:'url',url:'',fileName:'',fileData:''},
+    // Storage-baserede ressourcer
+    assets:{logos:{calendar:null,homey:null,sonos:null},calendar:{fileUrl:'',path:''}},
+    homeyUrl:'',sonosUrl:'',sonosPkg:'',sonosScheme:'',
+    logos:{calendar:'',homey:'',sonos:''}, // kun til lokal preview
+    labels:{homey:'Homey',homeySub:'Dashboard',sonos:'Sonos',sonosSub:'App eller web'},
+    theme:{color:'#0f172a',background:'#f6f7f9'},
+    keepAwake:true,householdId:'',_ts:0
+  };
+  function load(){ try{
+    const o=JSON.parse(localStorage.getItem(LS_KEY)||'{}');
+    const deep=(m,d)=>{const r=Array.isArray(d)?[]:{}; for(const k in d){ if(d[k]&&typeof d[k]==='object'&&!Array.isArray(d[k])) r[k]=deep((m||{})[k]||{},d[k]); else r[k]=(m||{})[k]!==undefined?(m||{})[k]:d[k]; } return r;};
+    return deep(o,defaults);
+  }catch(e){ return JSON.parse(JSON.stringify(defaults)); } }
   function save(c){ try{ localStorage.setItem(LS_KEY, JSON.stringify(c)); }catch(e){} }
-  var config=load(); if(!config.householdId){ config.householdId=Math.random().toString(36).slice(2,10).toUpperCase(); save(config); }
+  let config=load(); if(!config.householdId){ config.householdId=Math.random().toString(36).slice(2,10).toUpperCase(); save(config); }
 
-  function applyTheme(){ document.documentElement.style.setProperty('--accent',config.theme&&config.theme.color?config.theme.color:'#0f172a'); document.documentElement.style.setProperty('--bg',config.theme&&config.theme.background?config.theme.background:'#f6f7f9'); }
-  function applyLogos(){ var m=config.logos||{}; if($('logoCalendar') && m.calendar) $('logoCalendar').src=m.calendar; if($('logoHomey') && m.homey) $('logoHomey').src=m.homey; if($('logoSonos') && m.sonos) $('logoSonos').src=m.sonos; if($('prevCalendar') && m.calendar) $('prevCalendar').src=m.calendar; if($('prevHomey') && m.homey) $('prevHomey').src=m.homey; if($('prevSonos') && m.sonos) $('prevSonos').src=m.sonos; }
-  function applyForm(){
-    if($('themeColor')) $('themeColor').value=(config.theme&&config.theme.color)||'#0f172a';
-    if($('bgColor')) $('bgColor').value=(config.theme&&config.theme.background)||'#f6f7f9';
-    if($('keepAwake')) $('keepAwake').checked = !!config.keepAwake;
-
-    if($('calendarUrl')) $('calendarUrl').value=(config.calendar&&config.calendar.url)||'';
-    if($('homeyUrl')) $('homeyUrl').value=config.homeyUrl||'';
-    if($('sonosUrl')) $('sonosUrl').value=config.sonosUrl||'';
-    if($('sonosPkg')) $('sonosPkg').value=config.sonosPkg||'';
-    if($('sonosScheme')) $('sonosScheme').value=config.sonosScheme||'';
-    if($('householdId')) $('householdId').value=(config.householdId||'').toUpperCase();
-
-    var mode=((config.calendar&&config.calendar.mode)||'url');
-    var radios=[].slice.call(document.querySelectorAll('input[name="calendarMode"]'));
-    radios.forEach(function(r){ r.checked=(r.value===mode); });
-    var uploadRow=$('calendarUploadRow'); if(uploadRow) uploadRow.style.display=(mode==='upload')?'':'none';
+  function applyTheme(){ document.documentElement.style.setProperty('--accent',config.theme?.color||'#0f172a'); document.documentElement.style.setProperty('--bg',config.theme?.background||'#f6f7f9'); }
+  function logoSrcPref(remote, localFallback, placeholderText){
+    if(remote && remote.url) return remote.url;
+    if(localFallback) return localFallback;
+    return `data:image/svg+xml,${encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='160' height='64'><rect width='160' height='64' fill='#f0f2f5'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-size='14' fill='#6b7280' font-family='Inter,Arial'>"+placeholderText+"</text></svg>")}`;
   }
-  function applyAllFromConfig(){ applyTheme(); applyForm(); applyLogos(); }
+  function applyLogos(){
+    $('logoCalendar').src = logoSrcPref(config.assets.logos.calendar, config.logos.calendar, 'Kalender');
+    $('logoHomey').src    = logoSrcPref(config.assets.logos.homey,    config.logos.homey,    'Homey');
+    $('logoSonos').src    = logoSrcPref(config.assets.logos.sonos,    config.logos.sonos,    'Sonos');
+    if($('prevCalendar')) $('prevCalendar').src=config.logos.calendar|| (config.assets.logos.calendar?config.assets.logos.calendar.url:'');
+    if($('prevHomey')) $('prevHomey').src=config.logos.homey|| (config.assets.logos.homey?config.assets.logos.homey.url:'');
+    if($('prevSonos')) $('prevSonos').src=config.logos.sonos|| (config.assets.logos.sonos?config.assets.logos.sonos.url:'');
+  }
+  function applyLabels(){
+    $('labelCalendar').textContent = 'Kalender';
+    $('subCalendar').textContent   = 'Familieoversigt';
+    $('labelHomey').textContent    = config.labels?.homey   || 'Homey';
+    $('subHomey').textContent      = config.labels?.homeySub|| 'Dashboard';
+    $('labelSonos').textContent    = config.labels?.sonos   || 'Sonos';
+    $('subSonos').textContent      = config.labels?.sonosSub|| 'App eller web';
+  }
+  function applyForm(){
+    $('themeColor').value = config.theme?.color || '#0f172a';
+    $('bgColor').value    = config.theme?.background || '#f6f7f9';
+    $('keepAwake').checked= !!config.keepAwake;
+
+    $('calendarUrl').value = config.calendar?.url || '';
+    $('homeyUrl').value    = config.homeyUrl || '';
+    $('sonosUrl').value    = config.sonosUrl || '';
+    $('sonosPkg').value    = config.sonosPkg || '';
+    $('sonosScheme').value = config.sonosScheme || '';
+    $('householdId').value = (config.householdId||'').toUpperCase();
+
+    const mode = (config.calendar?.mode) || 'url';
+    [].slice.call(document.querySelectorAll('input[name="calendarMode"]')).forEach(r=>r.checked=(r.value===mode));
+    $('calendarUploadRow').style.display=(mode==='upload')?'':'none';
+  }
+  function applyAllFromConfig(){ applyTheme(); applyLabels(); applyForm(); applyLogos(); }
   applyAllFromConfig();
 
-  /* tabs */
-  (function(){
-    var tabs=[].slice.call(document.querySelectorAll('.tab'));
-    var secs=[].slice.call(document.querySelectorAll('.section'));
-    tabs.forEach(function(tb){
-      on(tb,'click',function(){
-        tabs.forEach(t=>t.classList.remove('active'));
-        secs.forEach(s=>s.classList.remove('active'));
-        tb.classList.add('active');
-        var id=tb.getAttribute('data-tab'); var sec=$(id); if(sec) sec.classList.add('active');
-      });
-    });
+  /* ===== Tabs & Modal ===== */
+  (function(){ const tabs=[...document.querySelectorAll('.tab')], secs=[...document.querySelectorAll('.section')];
+    tabs.forEach(tb=>on(tb,'click',()=>{ tabs.forEach(t=>t.classList.remove('active')); secs.forEach(s=>s.classList.remove('active')); tb.classList.add('active'); $(tb.dataset.tab).classList.add('active'); }));
   })();
-
-  /* modal events */
-  var modal=$('settingsModal');
-  function closeModal(){ modal.classList.remove('visible'); modal.setAttribute('aria-hidden','true'); }
+  const modal=$('settingsModal'); function closeModal(){ modal.classList.remove('visible'); modal.setAttribute('aria-hidden','true'); }
   on($('closeSettings'),'click',closeModal);
 
-  /* inputs → config (live) + debounce write */
+  /* ===== Firebase ===== */
+  const firebaseConfig={apiKey:"AIzaSyA_gh8y-V6kkl95hRzb0ldBxpKWFY5bAck",authDomain:"webkiosk-e5d32.firebaseapp.com",projectId:"webkiosk-e5d32",storageBucket:"webkiosk-e5d32.firebasestorage.app",messagingSenderId:"920175197353",appId:"1:920175197353:web:c3520e9a3ab8146ec4fdb8"};
+  const fbApp=firebase.initializeApp(firebaseConfig), fbAuth=firebase.auth(), fbDb=firebase.firestore(), fbStorage=firebase.storage();
+
+  function badge(state,note){ const b=$('syncBadge'), t=$('syncBadgeText'), n=$('syncBadgeNote'); ['sync-online','sync-syncing','sync-offline','sync-error'].forEach(c=>b.classList.remove(c)); b.classList.add('sync-'+state); t.textContent={online:'Online',syncing:'Synkroniserer…',offline:'Offline',error:'Fejl'}[state]||'Offline'; n.textContent=note?('· '+note):''; $('syncNote').textContent=t.textContent+(note?(' '+note):''); $('lastSync').textContent = note ? note : '—'; }
+  window.addEventListener('online',  ()=>badge('online', nowStr()));
+  window.addEventListener('offline', ()=>badge('offline',''));
+
+  fbAuth.signInAnonymously().then(()=>badge(navigator.onLine?'online':'offline', nowStr())).catch(e=>{ console.error('[auth]',e); badge('error','auth'); });
+
+  function storagePath(subpath){ return `webkiosk/${(config.householdId||'DEFAULT').toUpperCase()}/${subpath}`; }
+
+  async function uploadBlobToStorage(blob, path, contentType){
+    try{
+      const ref = fbStorage.ref().child(path);
+      const meta={contentType};
+      await ref.put(blob, meta);
+      const url = await ref.getDownloadURL();
+      return {url, path};
+    }catch(e){ console.error('[storage upload]',e); badge('error', e.code||'storage'); throw e; }
+  }
+
+  /* ===== Live-bind + Storage uploads ===== */
   const writeSoon = debounced(300, queueWriteFirestore);
-  function liveBind(){
-    on($('themeColor'),'input',function(){ config.theme.color=this.value||config.theme.color; save(config); applyTheme(); writeSoon(); });
-    on($('bgColor'),'input',function(){ config.theme.background=this.value||config.theme.background; save(config); applyTheme(); writeSoon(); });
+
+  async function handleLogoInput(kind, file){
+    // komprimer, upload, vis
+    const dataUrl = await compressImageToDataURL(file);
+    const blob = dataURLtoBlob(dataUrl);
+    const ts = Date.now();
+    const up = await uploadBlobToStorage(blob, storagePath(`logos/${kind}_${ts}.jpg`), 'image/jpeg');
+    config.logos[kind] = dataUrl;                 // lokal preview
+    config.assets.logos[kind] = up;               // remote
+    config._ts = Date.now(); save(config); applyLogos(); queueWriteFirestore();
+  }
+
+  async function handleCalendarUpload(file){
+    const text = await file.text();
+    const blob = new Blob([text], {type:'text/html'});
+    const ts = Date.now();
+    const up = await uploadBlobToStorage(blob, storagePath(`calendar/calendar_${ts}.html`), 'text/html');
+    config.calendar.fileName = file.name;
+    config.calendar.fileData = '';                // ikke nødvendigt længere
+    config.assets.calendar = { fileUrl: up.url, path: up.path };
+    config.calendar.mode = 'upload';
+    config._ts = Date.now(); save(config); queueWriteFirestore();
+    alert('Kalender uploadet og synkroniseret.');
+  }
+
+  function bindLive(){
+    on($('themeColor'),'input',function(){ config.theme.color=this.value; save(config); applyTheme(); writeSoon(); });
+    on($('bgColor'),'input',function(){ config.theme.background=this.value; save(config); applyTheme(); writeSoon(); });
     on($('keepAwake'),'change',function(){ config.keepAwake=!!this.checked; save(config); writeSoon(); });
 
-    ;[].slice.call(document.querySelectorAll('input[name="calendarMode"]')).forEach(function(r){
+    ;[].slice.call(document.querySelectorAll('input[name="calendarMode"]')).forEach(r=>{
       on(r,'change',function(){ config.calendar.mode=r.value; save(config); applyForm(); writeSoon(); });
     });
     on($('calendarUrl'),'input',function(){ config.calendar.url=this.value.trim(); save(config); writeSoon(); });
+
     on($('homeyUrl'),'input',function(){ config.homeyUrl=this.value.trim(); save(config); writeSoon(); });
     on($('sonosUrl'),'input',function(){ config.sonosUrl=this.value.trim(); save(config); writeSoon(); });
     on($('sonosPkg'),'input',function(){ config.sonosPkg=this.value.trim(); save(config); writeSoon(); });
     on($('sonosScheme'),'input',function(){ config.sonosScheme=this.value.trim(); save(config); writeSoon(); });
-    on($('householdId'),'input',function(){ var v=this.value.trim().toUpperCase(); if(v){ config.householdId=v; save(config); startRealtime(); writeSoon(); } });
+    on($('householdId'),'input',function(){ const v=this.value.trim().toUpperCase(); if(v){ config.householdId=v; save(config); startRealtime(); writeSoon(); } });
 
-    on($('logoInputCalendar'),'change',async function(){ if(!this.files||!this.files[0])return; config.logos.calendar=await toB64(this.files[0]); save(config); applyLogos(); writeSoon(); });
-    on($('logoInputHomey'),'change',async function(){ if(!this.files||!this.files[0])return; config.logos.homey=await toB64(this.files[0]); save(config); applyLogos(); writeSoon(); });
-    on($('logoInputSonos'),'change',async function(){ if(!this.files||!this.files[0])return; config.logos.sonos=await toB64(this.files[0]); save(config); applyLogos(); writeSoon(); });
-    on($('calendarFile'),'change',async function(){ if(!this.files||!this.files[0])return; config.calendar.fileName=this.files[0].name; config.calendar.fileData=await toB64(this.files[0]); save(config); writeSoon(); });
+    on($('logoInputCalendar'),'change',async function(){ if(this.files&&this.files[0]) await handleLogoInput('calendar', this.files[0]); });
+    on($('logoInputHomey'),'change',async function(){ if(this.files&&this.files[0]) await handleLogoInput('homey', this.files[0]); });
+    on($('logoInputSonos'),'change',async function(){ if(this.files&&this.files[0]) await handleLogoInput('sonos', this.files[0]); });
+
+    on($('calendarFile'),'change',async function(){ if(this.files&&this.files[0]) await handleCalendarUpload(this.files[0]); });
+
+    // Export / Import
+    on($('exportBtn'),'click',function(){ dl('webkiosk-settings-'+(config.householdId||'DEFAULT')+'.json', JSON.stringify(config,null,2)); });
+    on($('importBtn'),'click',function(){ const txt=$('importArea').value.trim(); if(!txt){ alert('Indsæt JSON i tekstfeltet.'); return; } try{
+        const obj=JSON.parse(txt); if(!obj.householdId) obj.householdId=config.householdId||obj.householdId;
+        config=deepMergePreferNonEmpty(config,obj); save(config); applyAllFromConfig(); startRealtime(); queueWriteFirestore(); alert('Import OK og synk igangsat.');
+      }catch(e){ alert('Ugyldig JSON: '+e.message); } });
+    on($('importFile'),'change',async function(){ const f=this.files&&this.files[0]; if(!f) return; const txt=await f.text(); try{
+        const obj=JSON.parse(txt); if(!obj.householdId) obj.householdId=config.householdId||obj.householdId;
+        config=deepMergePreferNonEmpty(config,obj); save(config); applyAllFromConfig(); startRealtime(); queueWriteFirestore(); alert('Import fra fil OK og synk igangsat.');
+      }catch(e){ alert('Ugyldig JSON i fil: '+e.message); } });
   }
-  liveBind();
+  bindLive();
 
-  /* Save knap (manuel) */
-  on($('saveSettings'),'click',function(){
-    // værdier er allerede i config pga liveBind; bump timestamp + skriv
-    config._ts=Date.now(); save(config); queueWriteFirestore(); closeModal();
-  });
+  on($('saveSettings'),'click',function(){ config._ts=Date.now(); save(config); queueWriteFirestore(); closeModal(); });
   on($('resetConfig'),'click',function(){ if(confirm('Nulstil alle indstillinger?')){ localStorage.removeItem(LS_KEY); config=load(); if(!config.householdId){config.householdId=Math.random().toString(36).slice(2,10).toUpperCase()} save(config); applyAllFromConfig(); startRealtime(); queueWriteFirestore(); }});
 
-  /* Tiles/overlays */
+  /* ===== Tiles / Overlays ===== */
   function openCalendar(){
-    var src='';
-    if(config.calendar && config.calendar.mode==='upload' && config.calendar.fileData){
-      try{ var arr=(config.calendar.fileData||'').split(','); var bytes=atob(arr[1]||''); var buf=new Uint8Array(bytes.length); for(var i=0;i<bytes.length;i++) buf[i]=bytes.charCodeAt(i); src=URL.createObjectURL(new Blob([buf],{type:'text/html'})); }catch(e){ src=config.calendar.fileData; }
-    } else { src=(config.calendar&&config.calendar.url)||''; }
+    let src='';
+    // Prioritet: Storage-URL → direkte URL → lokal data
+    if(config.assets?.calendar?.fileUrl) src=config.assets.calendar.fileUrl;
+    else if(config.calendar?.url) src=config.calendar.url;
+    else if(config.calendar?.fileData) src=config.calendar.fileData;
     if(!src){ alert('Ingen kalenderkilde valgt.'); return; }
-    $('calendarFrame').src=src; var v=$('calendarView'); v.classList.add('visible'); v.setAttribute('aria-hidden','false');
+    $('calendarFrame').src=src; const v=$('calendarView'); v.classList.add('visible'); v.setAttribute('aria-hidden','false');
   }
-  on($('tileCalendar'),'click',openCalendar);
-  window.__handlers = window.__handlers||{}; window.__handlers.openCalendar=openCalendar;
+  on($('tileCalendar'),'click',openCalendar); window.__handlers=window.__handlers||{}; window.__handlers.openCalendar=openCalendar;
 
-  function showPanel(url,title){ $('wkTitle').textContent=title||url; $('wkFrame').src=url; var p=$('wkPanel'); p.classList.add('visible'); p.setAttribute('aria-hidden','false'); }
-  function hidePanel(){ var p=$('wkPanel'); p.classList.remove('visible'); p.setAttribute('aria-hidden','true'); $('wkFrame').src='about:blank'; }
+  function showPanel(url,title){ $('wkTitle').textContent=title||url; $('wkFrame').src=url; const p=$('wkPanel'); p.classList.add('visible'); p.setAttribute('aria-hidden','false'); }
+  function hidePanel(){ const p=$('wkPanel'); p.classList.remove('visible'); p.setAttribute('aria-hidden','true'); $('wkFrame').src='about:blank'; }
   on($('wkBack'),'click',hidePanel);
 
-  function openHomey(){ var url=(config.homeyUrl||'').trim(); if(!url){ alert('Ingen Homey URL sat.'); return; } if(/^https?:\/\//i.test(url)) showPanel(url,'Homey'); else location.href=url; }
+  function openHomey(){ const url=(config.homeyUrl||'').trim(); if(!url){ alert('Ingen Homey URL sat.'); return; } if(/^https?:\/\//i.test(url)) showPanel(url,'Homey'); else location.href=url; }
   on($('tileHomey'),'click',openHomey); window.__handlers.openHomey=openHomey;
 
-  var isAndroid=/Android/i.test(navigator.userAgent), isiOS=/iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const isAndroid=/Android/i.test(navigator.userAgent), isiOS=/iPhone|iPad|iPod/i.test(navigator.userAgent);
   function openSonosNative(){
-    var pkg=(config.sonosPkg||'').trim() || 'com.sonos.acr2';
-    var scheme=(config.sonosScheme||config.sonosUrl||'').trim();
+    const pkg=(config.sonosPkg||'').trim() || 'com.sonos.acr2';
+    const scheme=(config.sonosScheme||config.sonosUrl||'').trim();
     if(isiOS && /^sonos:\/\//i.test(scheme)){ location.href=scheme; return true; }
-    if(isAndroid && pkg){
-      var fb=encodeURIComponent(location.href);
-      location.href='intent://open/#Intent;package='+pkg+';S.browser_fallback_url='+fb+';end;';
-      setTimeout(function(){ location.href='market://details?id='+pkg; },1200);
-      return true;
-    }
+    if(isAndroid && pkg){ const fb=encodeURIComponent(location.href); location.href='intent://open/#Intent;package='+pkg+';S.browser_fallback_url='+fb+';end;'; setTimeout(()=>{ location.href='market://details?id='+pkg; },1200); return true; }
     return false;
   }
-  function openSonos(){ if(openSonosNative()) return; var link=(config.sonosUrl||'').trim() || 'https://play.sonos.com'; if(/^https?:\/\//i.test(link)) showPanel(link,'Sonos'); else window.open(link,'_self'); }
+  function openSonos(){ if(openSonosNative()) return; const link=(config.sonosUrl||'').trim() || 'https://play.sonos.com'; if(/^https?:\/\//i.test(link)) showPanel(link,'Sonos'); else window.open(link,'_self'); }
   on($('tileSonos'),'click',openSonos); window.__handlers.openSonos=openSonos;
 
-  /* NoSleep (kun hvis valgt) */
-  var noSleep=null;
-  on(window,'click',function(){ try{ if(config.keepAwake && !noSleep && window.NoSleep){ noSleep=new NoSleep(); noSleep.enable(); } }catch(e){} });
+  /* ===== NoSleep ===== */
+  let noSleep=null; on(window,'click',function(){ try{ if(config.keepAwake && !noSleep && window.NoSleep){ noSleep=new NoSleep(); noSleep.enable(); } }catch(e){} });
 
-  /* Firebase anon + Firestore sync */
-  var firebaseConfig={apiKey:"AIzaSyA_gh8y-V6kkl95hRzb0ldBxpKWFY5bAck",authDomain:"webkiosk-e5d32.firebaseapp.com",projectId:"webkiosk-e5d32",storageBucket:"webkiosk-e5d32.firebasestorage.app",messagingSenderId:"920175197353",appId:"1:920175197353:web:c3520e9a3ab8146ec4fdb8"};
-  var fbApp=firebase.initializeApp(firebaseConfig), fbAuth=firebase.auth(), fbDb=firebase.firestore();
-
-  function badge(state,note){ var b=$('syncBadge'), t=$('syncBadgeText'), n=$('syncBadgeNote'); ['sync-online','sync-syncing','sync-offline','sync-error'].forEach(c=>b.classList.remove(c)); b.classList.add('sync-'+state); t.textContent={online:'Online',syncing:'Synkroniserer…',offline:'Offline',error:'Fejl'}[state]||'Offline'; n.textContent=note?('· '+note):''; $('syncNote').textContent=t.textContent+(note?(' '+note):''); $('lastSync').textContent = note ? note : '—'; }
-  window.addEventListener('online',  ()=>badge('online', nowStr()));
-  window.addEventListener('offline', ()=>badge('offline',''));
-
-  fbAuth.signInAnonymously().then(function(){ badge(navigator.onLine?'online':'offline', nowStr()); }).catch(function(){ badge('error','auth'); });
-
-  var unsub=null, writeTimer=null;
+  /* ===== Firestore sync (prune store) ===== */
+  let unsub=null, writeTimer=null;
   function docRef(){ return fbDb.collection('webkiosk').doc((config.householdId||'DEFAULT').toUpperCase()); }
-  function queueWriteFirestore(){
-    if(writeTimer) clearTimeout(writeTimer);
-    writeTimer=setTimeout(async function(){
-      try{
-        config._ts=Date.now(); save(config);
-        await docRef().set(config,{merge:true});
-        badge('online', nowStr());
-      }catch(e){ badge('error','write'); }
-    },250);
+
+  function prepareForWrite(c){
+    const toSave = JSON.parse(JSON.stringify(c));
+    // Fjern store felter (kun URLs/paths sync’es)
+    if(toSave.logos) toSave.logos = {};                 // base64 kun lokalt
+    if(toSave.calendar) toSave.calendar.fileData = '';  // ikke sync
+    toSave._ts = Date.now();
+    return toSave;
   }
+
+  async function writeFirestore(){
+    try{
+      const toSave = prepareForWrite(config);
+      save(Object.assign(config,{_ts:toSave._ts}));
+      await docRef().set(toSave,{merge:true});
+      badge('online', nowStr());
+    }catch(e){
+      console.error('[write]',e); badge('error', e.code||e.message||'write');
+    }
+  }
+  function queueWriteFirestore(){ if(writeTimer) clearTimeout(writeTimer); badge('syncing','…'); writeTimer=setTimeout(writeFirestore, 300); }
+
   function startRealtime(){
     try{
       if(unsub) unsub();
       unsub=docRef().onSnapshot(function(snap){
         if(!snap||!snap.exists) return;
-        var remote=snap.data()||{}; var local=load();
+        const remote=snap.data()||{}; const local=load();
         if(remote._ts && (!local._ts || remote._ts>local._ts)){
-          config=Object.assign({},local,remote); save(config); applyAllFromConfig();
+          // smart merge: bevar lokale non-empty hvis remote er tomt
+          config = deepMergePreferNonEmpty(local, remote);
+          save(config); applyAllFromConfig();
         }
-      }, function(){ badge('error','snapshot'); });
-    }catch(e){ badge('error','listen'); }
+      }, function(e){ console.error('[listen]',e); badge('error', e.code||'snapshot'); });
+    }catch(e){ console.error('[listen-outer]',e); badge('error','listen'); }
   }
   startRealtime();
 
-  /* sikkerhed ved load – overlays OFF */
-  document.addEventListener('DOMContentLoaded', function(){ ['calendarView','wkPanel','settingsModal'].forEach(function(id){ var el=$(id); if(el){ el.classList.remove('visible'); el.setAttribute('aria-hidden','true'); el.style.display='none'; el.offsetHeight; el.style.display=''; } }); });
+  // sikkerhed ved load – overlays OFF
+  document.addEventListener('DOMContentLoaded', function(){ ['calendarView','wkPanel','settingsModal'].forEach(function(id){ const el=$(id); if(el){ el.classList.remove('visible'); el.setAttribute('aria-hidden','true'); el.style.display='none'; el.offsetHeight; el.style.display=''; } }); });
   </script>
 </body>
 </html>
