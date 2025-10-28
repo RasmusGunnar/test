@@ -3,30 +3,72 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Webkiosk – SAFE start</title>
+  <title>Webkiosk – start</title>
+
+  <!-- SKIFT KUN DENNE VÆRDI, hvis din forside hedder noget andet -->
+  <script>
+    // <<<  ÆNDR KUN DENNE  >>>
+    var DEFAULT_TARGET = "webkiosk_apple_crisp_with_settings_fab_SYNC_v3.html";
+    // ^^^  fx "webkiosk_apple_crisp_with_settings_fab.html" hvis det er din korrekte forside
+  </script>
+
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
   <meta http-equiv="Pragma" content="no-cache"/>
   <meta http-equiv="Expires" content="0"/>
+
   <script>
-    (function(){
-      if('serviceWorker' in navigator){
+  (function(){
+    // 1) Vælg mål (tillad override med ?target=fil.html)
+    var qp = new URLSearchParams(location.search);
+    var target = (qp.get("target") || DEFAULT_TARGET).trim();
+
+    // 2) Fjern ALLE service workers + caches under dette scope
+    if ('serviceWorker' in navigator) {
+      try {
         navigator.serviceWorker.getRegistrations().then(function(regs){
           regs.forEach(function(r){ r.unregister(); });
         });
-      }
-      if(window.caches){
+      } catch(e){}
+    }
+    if (window.caches) {
+      try {
         caches.keys().then(function(keys){ keys.forEach(function(k){ caches.delete(k); }); });
-      }
-      setTimeout(function(){
-        var target = './webkiosk_apple_crisp_with_settings_fab.html?v=' + Date.now();
-        location.replace(target);
-      }, 150);
-    })();
+      } catch(e){}
+    }
+
+    // 3) Hård redirect til din forside med cache-buster
+    setTimeout(function(){
+      var url = "./" + target + (target.includes("?") ? "&" : "?") + "v=" + Date.now();
+      location.replace(url);
+    }, 120);
+  })();
   </script>
-  <style>body{font-family:system-ui,Segoe UI,Roboto,Inter,Arial,sans-serif;padding:24px}</style>
+
+  <!-- Fallback hvis JS er slået fra -->
+  <noscript>
+    <meta http-equiv="refresh" content="0;url=./webkiosk_apple_crisp_with_settings_fab_SYNC_v3.html"/>
+  </noscript>
+
+  <style>
+    body{font-family:system-ui,Segoe UI,Inter,Roboto,Arial,sans-serif;padding:24px}
+    code{background:#f3f4f6;padding:2px 6px;border-radius:6px}
+  </style>
 </head>
 <body>
-  Starter uden service worker… åbner Webkiosk om et øjeblik.
-  <div><a href="./webkiosk_apple_crisp_with_settings_fab.html?v=manual" rel="nofollow">Åbn manuelt</a></div>
+  Starter Webkiosk… Hvis intet sker, <a id="manual" href="#">klik her</a>.
+  <script>
+    // Manuel link med korrekt mål
+    (function(){
+      var qp = new URLSearchParams(location.search);
+      var target = (qp.get("target") || (typeof DEFAULT_TARGET!=="undefined"?DEFAULT_TARGET:"webkiosk_apple_crisp_with_settings_fab.html")).trim();
+      document.getElementById("manual").href = "./" + target + "?v=" + Date.now();
+      document.getElementById("manual").setAttribute("rel","nofollow");
+    })();
+  </script>
+
+  <p style="margin-top:14px;color:#6b7280">
+    Test et andet mål uden at ændre filen: <code>?target=DIT_FILNAVN.html</code>
+  </p>
 </body>
 </html>
+
