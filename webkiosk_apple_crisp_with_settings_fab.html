@@ -1,6 +1,118 @@
 <!-- /webkiosk_apple_crisp_with_settings_fab.html -->
 <!DOCTYPE html>
 <html lang="da">
+<!-- === CLICK DEBUG OVERLAY (placer lige før </head>) === -->
+<script>
+(function(){
+  var enable = /[?&]debug=1\b/.test(location.search);
+  if(!enable) return;
+
+  var style = document.createElement('style');
+  style.textContent = `
+  #__wkDbg{position:fixed;right:10px;bottom:10px;z-index:999999;font:13px/1.35 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial;background:#111;color:#eee;border:1px solid #444;border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.35);min-width:280px;max-width:46vw;max-height:60vh;overflow:auto}
+  #__wkDbg .hd{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid #333}
+  #__wkDbg .hd b{font-weight:700}
+  #__wkDbg .bd{padding:8px 10px}
+  #__wkDbg .row{display:flex;gap:6px;align-items:center;margin:4px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #__wkDbg .btn{padding:6px 10px;border-radius:8px;border:1px solid #444;background:#1f2937;color:#e5e7eb;cursor:pointer}
+  #__wkDbg .btn:hover{background:#374151}
+  #__wkDbg .tag{font-family:monospace;background:#222;padding:2px 6px;border-radius:6px;border:1px solid #333}
+  #__wkDbg .warn{color:#fbbf24}
+  .__wkOutline{outline:2px dashed #ef4444!important;outline-offset:-2px!important}
+  `;
+  document.head.appendChild(style);
+
+  var box = document.createElement('div');
+  box.id='__wkDbg';
+  box.innerHTML = `
+    <div class="hd">
+      <b>Click-Debug</b>
+      <button id="__wkUnblock" class="btn" title="Sæt pointer-events:none på top overlay">Unblock top overlay</button>
+      <button id="__wkHide" class="btn" title="Skjul debug">×</button>
+    </div>
+    <div class="bd">
+      <div class="row"><span class="tag">Tip</span><span>Hold musen over – klik ét sted. Listen viser stakken fra toppen og ned.</span></div>
+      <div id="__wkList"></div>
+    </div>`;
+  document.body.appendChild(box);
+
+  var list = document.getElementById('__wkList');
+  var lastOutline = [];
+  function clearOutline(){ lastOutline.forEach(function(el){ try{ el.classList.remove('__wkOutline'); }catch(_){} }); lastOutline.length=0; }
+
+  function describe(el){
+    if(!el) return '(null)';
+    var id = el.id ? '#'+el.id : '';
+    var cls = el.className && typeof el.className==='string' ? '.'+el.className.trim().replace(/\s+/g,'.') : '';
+    return (el.tagName || 'node') + id + cls;
+  }
+
+  function onClickCapture(e){
+    try{
+      clearOutline();
+      var stack = (document.elementsFromPoint(e.clientX, e.clientY) || []);
+      list.innerHTML = '';
+      stack.forEach(function(el, i){
+        var row = document.createElement('div');
+        row.className='row';
+        var dim = (el.getBoundingClientRect ? el.getBoundingClientRect() : {width:0,height:0});
+        var pe = (getComputedStyle(el).pointerEvents || '');
+        var pos = (getComputedStyle(el).position || '');
+        var zi = (getComputedStyle(el).zIndex || '');
+        row.innerHTML = '<span class="tag">'+i+'</span> '+
+                        '<span>'+describe(el)+'</span> '+
+                        '<span class="tag">pe:'+pe+'</span> '+
+                        '<span class="tag">pos:'+pos+'</span> '+
+                        '<span class="tag">z:'+zi+'</span> '+
+                        '<span class="tag">'+Math.round(dim.width)+'×'+Math.round(dim.height)+'</span>';
+        list.appendChild(row);
+        if(i<3){ try{ el.classList.add('__wkOutline'); lastOutline.push(el);}catch(_){} }
+      });
+
+      // Stop normal klik hvis top ikke er en af vores interaktive
+      var top = stack[0];
+      var allowIds = new Set(['openSettings','tileCalendar','tileHomey','tileSonos','closeCalendar','wkBack']);
+      if(top && top.id && allowIds.has(top.id)) return; // lad det gå igennem
+      // Ellers blokér – kun i debug mode:
+      e.stopImmediatePropagation(); e.stopPropagation(); e.preventDefault();
+    }catch(_){}
+  }
+  document.addEventListener('click', onClickCapture, true);
+
+  // Unblock-knap: fjern pointer-events fra top overlay
+  document.getElementById('__wkUnblock').addEventListener('click', function(){
+    try{
+      var stack = document.elementsFromPoint(window.innerWidth/2, window.innerHeight/2) || [];
+      // find første fuldskærms/fixed/absolute lag som typisk er overlay
+      var victim = stack.find(function(el){
+        if(!el || !el.getBoundingClientRect) return false;
+        var r = el.getBoundingClientRect();
+        var st = getComputedStyle(el);
+        if(st.pointerEvents==='none') return false;
+        var isFull = r.width >= window.innerWidth*0.98 && r.height >= window.innerHeight*0.98;
+        var isOverlayPos = st.position==='fixed' || st.position==='absolute';
+        var isKnown = el.id==='settingsModal' || el.id==='wkPanel' || el.id==='calendarView';
+        return (isFull && isOverlayPos) || isKnown;
+      });
+      if(victim){
+        victim.setAttribute('data-wk-unblocked','1');
+        victim.style.pointerEvents='none';
+        victim.style.display = (victim.getAttribute('aria-hidden')==='true') ? 'none' : victim.style.display;
+        alert('Unblocked: '+describe(victim));
+      } else {
+        alert('Fandt ikke et overlay at fjerne. Klik først et sted hvor det blokerer, og prøv igen.');
+      }
+    }catch(err){ alert('Fejl: '+err); }
+  });
+
+  document.getElementById('__wkHide').addEventListener('click', function(){
+    box.style.display='none';
+    document.removeEventListener('click', onClickCapture, true);
+    clearOutline();
+  });
+})();
+</script>
+<!-- === /CLICK DEBUG OVERLAY === -->
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
