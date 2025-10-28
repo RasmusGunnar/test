@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Webkiosk v2025-10-28p</title>
+<title>Webkiosk v2025-10-28q</title>
 <meta name="theme-color" content="#0f172a" />
 <link rel="manifest" href="./manifest.webmanifest" />
 <style>
@@ -31,7 +31,6 @@
   .meta .sub{color:var(--muted);font-size:clamp(12px,1.8vw,15px);margin-top:6px}
   .logo-box{height:var(--logoH);display:flex;align-items:center;justify-content:flex-end}
   .logo-box img{max-height:100%;max-width:100%;object-fit:contain;display:block}
-
   .widget.weather{grid-column:span 6}
   .widget.clock{grid-column:span 6}
   @media (max-width:900px){.widget.weather,.widget.clock{grid-column:span 12}.tiles{grid-template-columns:1fr}}
@@ -44,7 +43,7 @@
   iframe{width:100%;height:100%;border:0;display:block}
 
   .fab{position:fixed;right:20px;bottom:20px;z-index:70}
-  .fab button{width:56px;height:56px;border-radius:50%;border:1px solid var(--border);background:#fff;color:var(--fg);display:inline-flex;align-items:center;justify-content:center;box-shadow:var(--shadow);cursor:pointer}
+  .fab button{width:56px;height:56px;border-radius:50%;border:1px solid var(--border);background:#fff;color:#0f172a;display:inline-flex;align-items:center;justify-content:center;box-shadow:var(--shadow);cursor:pointer}
   .fab button:hover{transform:translateY(-1px);box-shadow:0 14px 30px rgba(2,6,23,.10)}
 
   .modal{position:fixed;inset:0;background:rgba(15,23,42,.28);display:none;align-items:center;justify-content:center;padding:20px;z-index:80}
@@ -62,6 +61,7 @@
   .actions{display:flex;gap:10px;justify-content:flex-end;margin-top:8px}
   .btn{padding:10px 14px;border-radius:12px;border:1px solid var(--border);background:#fff;cursor:pointer;font-weight:650}
   .btn.primary{background:var(--fg);color:#fff;border-color:var(--fg)}
+  .btn.ghost{background:#fff}
   .logoPreview{width:140px;height:64px;display:flex;align-items:center;justify-content:center;border:1px dashed var(--border);border-radius:12px;background:#fafafa}
   .logoPreview img{max-width:100%;max-height:100%;object-fit:contain;display:block}
 
@@ -124,6 +124,7 @@
     </div>
   </div>
 
+  <!-- Kalender overlay -->
   <section class="calendar-view" id="calendarView" aria-hidden="true">
     <div class="calendar-inner">
       <div class="topbar">
@@ -133,15 +134,17 @@
     </div>
   </section>
 
+  <!-- Tandhjul -->
   <div class="fab" aria-live="polite">
     <button id="openSettings" title="Indstillinger" aria-label="Indstillinger">
       <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <circle cx="12" cy="12" r="3"/>
-        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c0 .66.26 1.3.73 1.77.47.47 1.11.73 1.77.73h.09a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c0 .66.26 1.3.73 1.77.47.47 1.11.73 1.77.73h.09a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/>
       </svg>
     </button>
   </div>
 
+  <!-- Indstillinger -->
   <div class="modal" id="settingsModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
     <div class="dialog">
       <h3 id="settingsTitle">Indstillinger</h3>
@@ -175,12 +178,13 @@
 
         <div class="field">
           <label>Status</label>
-          <div class="row">
+          <div class="row" style="gap:12px;align-items:center">
             <div id="syncStatus" class="status-badge state-offline">
               <span class="status-dot" aria-hidden="true"></span>
               <span id="syncText">Offline</span>
               <span id="syncNote" class="status-note">-</span>
             </div>
+            <button id="btnTestSync" class="btn ghost" type="button" title="Skriv ping til Firestore">Test synk nu</button>
           </div>
         </div>
 
@@ -196,6 +200,7 @@
     </div>
   </div>
 
+  <!-- Webpanel overlay -->
   <div id="wkPanel" class="wk-panel" aria-hidden="true">
     <div class="wk-shell">
       <div class="wk-topbar">
@@ -216,13 +221,15 @@
     </div>
   </div>
 
+  <!-- SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/nosleep/0.12.0/NoSleep.min.js"></script>
 
+  <!-- App logic -->
   <script>
-  const VERSION="2025-10-28p";
+  const VERSION="2025-10-28q";
   if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('./service-worker.js?vv='+encodeURIComponent(VERSION)); }catch(e){} }
 
   function $(id){ return document.getElementById(id); }
@@ -270,7 +277,7 @@
   var themeColor=$('themeColor'), bgColor=$('bgColor'), wakeStrategy=$('wakeStrategy'), householdId=$('householdId');
 
   /* Synk UI */
-  var syncBadge=$('syncStatus'), syncText=$('syncText'), syncNote=$('syncNote');
+  var syncBadge=$('syncStatus'), syncText=$('syncText'), syncNote=$('syncNote'), btnTestSync=$('btnTestSync');
 
   function openModal(){ if(modal) modal.setAttribute('aria-hidden','false'); applyForm(); applyLogos(); }
   function closeModal(){ if(modal) modal.setAttribute('aria-hidden','true'); }
@@ -294,10 +301,9 @@
   modeRadios.forEach(function(r){ on(r,'change',function(){ config.calendar.mode=r.value; if(calendarUploadRow) calendarUploadRow.style.display=(r.value==='upload')?'':''; }); });
 
   function toB64(file){ return new Promise(function(res,rej){ try{ var fr=new FileReader(); fr.onload=function(){ res(fr.result); }; fr.onerror=function(e){ rej(e); }; fr.readAsDataURL(file); }catch(e){ rej(e); } }); }
-  var logoInputCalendar=$('logoInputCalendar'), logoInputHomey=$('logoInputHomey'), logoInputSonos=$('logoInputSonos');
-  on(logoInputCalendar,'change',async function(){ try{ var f=logoInputCalendar.files&&logoInputCalendar.files[0]; if(!f) return; var b64=await toB64(f); config.logos=config.logos||{}; config.logos.calendar=b64; config._ts=Date.now(); save(config); applyLogos(); queueWriteFirestore(); }catch(e){} });
-  on(logoInputHomey,'change',async function(){ try{ var f=logoInputHomey.files&&logoInputHomey.files[0]; if(!f) return; var b64=await toB64(f); config.logos=config.logos||{}; config.logos.homey=b64; config._ts=Date.now(); save(config); applyLogos(); queueWriteFirestore(); }catch(e){} });
-  on(logoInputSonos,'change',async function(){ try{ var f=logoInputSonos.files&&logoInputSonos.files[0]; if(!f) return; var b64=await toB64(f); config.logos=config.logos||{}; config.logos.sonos=b64; config._ts=Date.now(); save(config); applyLogos(); queueWriteFirestore(); }catch(e){} });
+  on($('logoInputCalendar'),'change',async function(){ try{ var f=this.files&&this.files[0]; if(!f) return; var b64=await toB64(f); config.logos=config.logos||{}; config.logos.calendar=b64; config._ts=Date.now(); save(config); applyLogos(); queueWriteFirestore(); }catch(e){} });
+  on($('logoInputHomey'),'change',async function(){ try{ var f=this.files&&this.files[0]; if(!f) return; var b64=await toB64(f); config.logos=config.logos||{}; config.logos.homey=b64; config._ts=Date.now(); save(config); applyLogos(); queueWriteFirestore(); }catch(e){} });
+  on($('logoInputSonos'),'change',async function(){ try{ var f=this.files&&this.files[0]; if(!f) return; var b64=await toB64(f); config.logos=config.logos||{}; config.logos.sonos=b64; config._ts=Date.now(); save(config); applyLogos(); queueWriteFirestore(); }catch(e){} });
 
   on(calendarFile,'change',async function(){ try{ var f=calendarFile.files&&calendarFile.files[0]; if(!f) return; config.calendar.fileName=f.name; config.calendar.fileData=await toB64(f); config._ts=Date.now(); save(config); queueWriteFirestore(); }catch(e){} });
 
@@ -361,7 +367,7 @@
     if(/^https?:\/\//i.test(url)) showPanel(url,'Homey'); else location.href=url;
   });
 
-  /* Sonos: Native først, web fallback i overlay (ingen “åbn i ny fane”) */
+  /* Sonos: Native først, web fallback i overlay */
   var tileSonos=$('tileSonos');
   var isAndroid=/Android/i.test(navigator.userAgent), isiOS=/iPhone|iPad|iPod/i.test(navigator.userAgent);
   function openSonosNative(){
@@ -402,7 +408,7 @@
   on(window,'pageshow',function(){ requestWakeLock(); });
   on(window,'click',function(){ if(!('wakeLock' in navigator) && window.NoSleep){ try{ if(!noSleep) noSleep=new window.NoSleep(); noSleep.enable(); }catch(e){} } });
 
-  /* Synk-status */
+  /* Synk-status helpers */
   function setStatus(state, note){
     try{
       var cls=['state-offline','state-syncing','state-online','state-error'];
@@ -441,6 +447,17 @@
     }catch(e){ setStatus('error'); }
   }
 
+  async function writePing(){
+    // Minimal ping uden at røre dine valg (merge)
+    try{
+      setStatus('syncing');
+      await docRef().set({_ping: Date.now()}, {merge:true});
+      setStatus('online', nowTime());
+    }catch(e){
+      setStatus('error');
+    }
+  }
+
   async function startRealtime(){
     try{
       if(unsub) unsub();
@@ -460,7 +477,10 @@
   }
   startRealtime();
 
-  /* Pointer-events guard */
+  // “Test synk nu”
+  on(btnTestSync,'click',function(){ writePing(); });
+
+  /* Guard for pointer-events */
   (function(){
     var css=document.createElement('style');
     css.textContent="#settingsModal[aria-hidden='true']{display:none!important;pointer-events:none!important}.calendar-view[aria-hidden='true'],.calendar-view[style*='display: none']{pointer-events:none!important}#wkPanel:not(.visible){display:none!important;pointer-events:none!important}.tile,.fab button,#openSettings{pointer-events:auto!important;cursor:pointer!important}";
@@ -468,7 +488,7 @@
   })();
   </script>
 
-  <!-- Vejr (uden moderne syntaks) -->
+  <!-- Vejr -->
   <script>
   (function(){
     var elTemp=$('weatherTemp'), elCond=$('weatherCond'), elCity=$('weatherCity'), elIcon=document.querySelector('.widget.weather .icon');
