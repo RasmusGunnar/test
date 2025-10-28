@@ -3,10 +3,17 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Webkiosk v2025-10-28q</title>
+<title>Webkiosk v2025-10-28r</title>
 <meta name="theme-color" content="#0f172a" />
 <link rel="manifest" href="./manifest.webmanifest" />
 <style>
+  /* --- CLICK GUARD: skjul alle overlays medmindre de er synligt markeret --- */
+  #settingsModal[aria-hidden="true"],
+  #wkPanel[aria-hidden="true"],
+  #calendarView[aria-hidden="true"]{display:none!important;pointer-events:none!important}
+  #wkPanel:not(.visible){display:none!important;pointer-events:none!important}
+  .tile,.fab button,#openSettings{pointer-events:auto!important;cursor:pointer!important}
+
   :root{ --bg:#f6f7f9; --panel:#ffffff; --fg:#0f172a; --muted:#6b7280; --border:#e6e8ec; --accent:#0f172a; --radius:20px; --shadow:0 10px 30px rgba(2,6,23,.06); --logoH:64px; --logoBoxW:42%; --logoMaxW:280px; }
   @media (max-width:1100px){ :root{ --logoBoxW:45%; --logoH:60px } }
   @media (max-width:900px){  :root{ --logoBoxW:50%; --logoH:56px } }
@@ -124,8 +131,8 @@
     </div>
   </div>
 
-  <!-- Kalender overlay -->
-  <section class="calendar-view" id="calendarView" aria-hidden="true">
+  <!-- Kalender overlay: start skjult via inline style -->
+  <section class="calendar-view" id="calendarView" aria-hidden="true" style="display:none">
     <div class="calendar-inner">
       <div class="topbar">
         <button class="back-btn" id="closeCalendar" type="button" aria-label="Luk">⬅ Luk</button>
@@ -136,7 +143,7 @@
 
   <!-- Tandhjul -->
   <div class="fab" aria-live="polite">
-    <button id="openSettings" title="Indstillinger" aria-label="Indstillinger">
+    <button id="openSettings" title="Indstillinger" aria-label="Indstillinger" type="button">
       <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <circle cx="12" cy="12" r="3"/>
         <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c0 .66.26 1.3.73 1.77.47.47 1.11.73 1.77.73h.09a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/>
@@ -200,14 +207,14 @@
     </div>
   </div>
 
-  <!-- Webpanel overlay -->
-  <div id="wkPanel" class="wk-panel" aria-hidden="true">
+  <!-- Webpanel overlay: start skjult via inline style -->
+  <div id="wkPanel" class="wk-panel" aria-hidden="true" style="display:none">
     <div class="wk-shell">
       <div class="wk-topbar">
-        <button id="wkBack" class="btn">← Tilbage</button>
+        <button id="wkBack" class="btn" type="button">← Tilbage</button>
         <div id="wkTitle" class="title">Indlæser…</div>
         <div id="wkTopbarRight" style="margin-left:auto;display:flex;gap:8px">
-          <button id="wkOpenNew" class="btn" title="Åbn i ny fane">↗ Åbn i ny fane</button>
+          <button id="wkOpenNew" class="btn" type="button" title="Åbn i ny fane">↗ Åbn i ny fane</button>
         </div>
       </div>
       <iframe id="wkFrame" class="wk-iframe" sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox" referrerpolicy="no-referrer"></iframe>
@@ -215,7 +222,7 @@
         <div class="card">
           <h3>Kan ikke vise siden her</h3>
           <p>Siden tillader ikke indlejring. Du kan åbne den i ny fane.</p>
-          <p><button id="wkOpenNew2" class="btn">↗ Åbn i ny fane</button></p>
+          <p><button id="wkOpenNew2" class="btn" type="button">↗ Åbn i ny fane</button></p>
         </div>
       </div>
     </div>
@@ -229,22 +236,32 @@
 
   <!-- App logic -->
   <script>
-  const VERSION="2025-10-28q";
+  const VERSION="2025-10-28r";
   if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('./service-worker.js?vv='+encodeURIComponent(VERSION)); }catch(e){} }
+
+  /* Failsafe: fjern ALT der kan blokere klik, hvis noget er gået galt ved load */
+  (function(){
+    try{
+      var kill=function(id){ var el=document.getElementById(id); if(el){ el.setAttribute('aria-hidden','true'); el.style.display='none'; el.style.pointerEvents='none'; } };
+      kill('settingsModal'); kill('calendarView'); kill('wkPanel');
+      // Slå fra igen når siden er klar
+      window.addEventListener('load',function(){
+        // gør intet her – normale open/close metoder viser dem igen når nødvendigt
+      }, {once:true});
+    }catch(e){}
+  })();
 
   function $(id){ return document.getElementById(id); }
   function on(el,ev,fn){ if(el && el.addEventListener) el.addEventListener(ev,fn,false); }
 
   /* Ur */
-  function updateClock(){
-    try{
-      var t=$('clockTime'), d=$('clockDate'); if(!t||!d) return;
-      var now=new Date();
-      t.textContent=now.toLocaleTimeString('da-DK',{hour:'2-digit',minute:'2-digit'});
-      var dd=now.toLocaleDateString('da-DK',{weekday:'long',day:'2-digit',month:'long'});
-      d.textContent=dd.charAt(0).toUpperCase()+dd.slice(1);
-    }catch(e){}
-  }
+  function updateClock(){ try{
+    var t=$('clockTime'), d=$('clockDate'); if(!t||!d) return;
+    var now=new Date();
+    t.textContent=now.toLocaleTimeString('da-DK',{hour:'2-digit',minute:'2-digit'});
+    var dd=now.toLocaleDateString('da-DK',{weekday:'long',day:'2-digit',month:'long'});
+    d.textContent=dd.charAt(0).toUpperCase()+dd.slice(1);
+  }catch(e){} }
   setInterval(updateClock,1000); updateClock();
 
   /* Local state */
@@ -254,19 +271,17 @@
   function save(c){ try{ localStorage.setItem(LS_KEY, JSON.stringify(c)); }catch(e){} }
   var config=load(); if(!config.householdId){ config.householdId=Math.random().toString(36).slice(2,10).toUpperCase(); save(config); }
   function applyTheme(){ document.documentElement.style.setProperty('--accent',config.theme&&config.theme.color?config.theme.color:'#0f172a'); document.documentElement.style.setProperty('--bg',config.theme&&config.theme.background?config.theme.background:'#f6f7f9'); }
-  function applyLogos(){
-    try{
-      var m=config.logos||{};
-      var lc=$('logoCalendar'), lh=$('logoHomey'), ls=$('logoSonos');
-      if(lc && m.calendar) lc.src=m.calendar;
-      if(lh && m.homey)    lh.src=m.homey;
-      if(ls && m.sonos)    ls.src=m.sonos;
-      var pc=$('prevCalendar'), ph=$('prevHomey'), ps=$('prevSonos');
-      if(pc && m.calendar) pc.src=m.calendar;
-      if(ph && m.homey)    ph.src=m.homey;
-      if(ps && m.sonos)    ps.src=m.sonos;
-    }catch(e){}
-  }
+  function applyLogos(){ try{
+    var m=config.logos||{};
+    var lc=$('logoCalendar'), lh=$('logoHomey'), ls=$('logoSonos');
+    if(lc && m.calendar) lc.src=m.calendar;
+    if(lh && m.homey)    lh.src=m.homey;
+    if(ls && m.sonos)    ls.src=m.sonos;
+    var pc=$('prevCalendar'), ph=$('prevHomey'), ps=$('prevSonos');
+    if(pc && m.calendar) pc.src=m.calendar;
+    if(ph && m.homey)    ph.src=m.homey;
+    if(ps && m.sonos)    ps.src=m.sonos;
+  }catch(e){} }
   function applyAllFromConfig(){ applyTheme(); applyForm(); applyLogos(); }
   applyAllFromConfig();
 
@@ -279,10 +294,9 @@
   /* Synk UI */
   var syncBadge=$('syncStatus'), syncText=$('syncText'), syncNote=$('syncNote'), btnTestSync=$('btnTestSync');
 
-  function openModal(){ if(modal) modal.setAttribute('aria-hidden','false'); applyForm(); applyLogos(); }
-  function closeModal(){ if(modal) modal.setAttribute('aria-hidden','true'); }
-  on(openSettings,'click',openModal);
-  on(closeSettings,'click',closeModal);
+  function openModal(){ if(modal){ modal.setAttribute('aria-hidden','false'); modal.style.display='flex'; } applyForm(); applyLogos(); }
+  function closeModal(){ if(modal){ modal.setAttribute('aria-hidden','true'); modal.style.display='none'; } }
+  on(openSettings,'click',openModal); on(closeSettings,'click',closeModal);
   on(modal,'click',function(e){ if(e && e.target===modal) closeModal(); });
 
   function applyForm(){
@@ -332,17 +346,13 @@
           for(var i=0;i<bytes.length;i++) buf[i]=bytes.charCodeAt(i);
           src=URL.createObjectURL(new Blob([buf],{type:'text/html'}));
         }catch(e){ src=config.calendar.fileData; }
-      }else{
-        src=(config.calendar&&config.calendar.url)||'';
-      }
+      }else{ src=(config.calendar&&config.calendar.url)||''; }
       if(!src){ alert('Ingen kalenderkilde valgt.'); return; }
       if(calendarFrame) calendarFrame.src=src;
       if(calendarView){ calendarView.style.display='block'; calendarView.setAttribute('aria-hidden','false'); }
-    }catch(e){}
-  }
+    }catch(e){} }
   function closeCalendarFn(){ if(calendarView){ calendarView.style.display='none'; calendarView.setAttribute('aria-hidden','true'); } if(calendarFrame) try{ calendarFrame.src='about:blank'; }catch(e){} }
-  on(tileCalendar,'click',openCalendar);
-  on(closeCalendar,'click',closeCalendarFn);
+  on(tileCalendar,'click',openCalendar); on(closeCalendar,'click',closeCalendarFn);
 
   /* Webpanel overlay */
   var wkPanel=$('wkPanel'), wkFrame=$('wkFrame'), wkTitle=$('wkTitle'), wkBack=$('wkBack'), wkOpenNew=$('wkOpenNew'), wkOpenNew2=$('wkOpenNew2'), wkTopbarRight=$('wkTopbarRight'), wkFallback=$('wkFallback');
@@ -353,11 +363,11 @@
     if(wkOpenNew2) wkOpenNew2.onclick=function(){ window.open(currentUrl,'_blank','noopener,noreferrer'); };
     if(wkFallback) wkFallback.style.display='none';
     if(wkFrame) wkFrame.src=url;
-    if(wkPanel){ wkPanel.classList.add('visible'); wkPanel.setAttribute('aria-hidden','false'); }
+    if(wkPanel){ wkPanel.classList.add('visible'); wkPanel.setAttribute('aria-hidden','false'); wkPanel.style.display='block'; }
     if(wkTopbarRight){ wkTopbarRight.style.display = (opts.hideOpenNew?'none':'flex'); }
     setTimeout(function(){ try{ if(!wkFrame || !wkFrame.contentWindow || wkFrame.contentWindow.location.href==='about:blank'){ if(wkFallback) wkFallback.style.display='flex'; } }catch(e){} },1200);
   }
-  function hidePanel(){ if(wkPanel){ wkPanel.classList.remove('visible'); wkPanel.setAttribute('aria-hidden','true'); } try{ if(wkFrame) wkFrame.src='about:blank'; }catch(e){} if(wkTopbarRight) wkTopbarRight.style.display='flex'; }
+  function hidePanel(){ if(wkPanel){ wkPanel.classList.remove('visible'); wkPanel.setAttribute('aria-hidden','true'); wkPanel.style.display='none'; } try{ if(wkFrame) wkFrame.src='about:blank'; }catch(e){} if(wkTopbarRight) wkTopbarRight.style.display='flex'; }
   on(wkBack,'click',hidePanel);
 
   /* Homey */
@@ -386,9 +396,9 @@
     if(openSonosNative()) return;
     var link=(config.sonosUrl||'').trim() || 'https://play.sonos.com';
     showPanel(link,'Sonos',{hideOpenNew:true});
-    var btn = document.querySelector('#wkFallback .card button');
-    var h3  = document.querySelector('#wkFallback .card h3');
-    var p   = document.querySelector('#wkFallback .card p');
+    var btn=document.querySelector('#wkFallback .card button');
+    var h3=document.querySelector('#wkFallback .card h3');
+    var p=document.querySelector('#wkFallback .card p');
     if(h3) h3.textContent='Kan ikke vise Sonos her';
     if(p)  p.textContent='Sonos Web App blokerer ofte for indlejring. Åbn Sonos-appen i stedet.';
     if(btn){ btn.textContent='Åbn i Sonos-app'; btn.onclick=function(){ openSonosNative() || window.open('https://play.sonos.com','_blank','noopener,noreferrer'); }; }
@@ -408,7 +418,7 @@
   on(window,'pageshow',function(){ requestWakeLock(); });
   on(window,'click',function(){ if(!('wakeLock' in navigator) && window.NoSleep){ try{ if(!noSleep) noSleep=new window.NoSleep(); noSleep.enable(); }catch(e){} } });
 
-  /* Synk-status helpers */
+  /* Synk-status */
   function setStatus(state, note){
     try{
       var cls=['state-offline','state-syncing','state-online','state-error'];
@@ -448,17 +458,11 @@
   }
 
   async function writePing(){
-    // Minimal ping uden at røre dine valg (merge)
-    try{
-      setStatus('syncing');
-      await docRef().set({_ping: Date.now()}, {merge:true});
-      setStatus('online', nowTime());
-    }catch(e){
-      setStatus('error');
-    }
+    try{ setStatus('syncing'); await docRef().set({_ping: Date.now()}, {merge:true}); setStatus('online', nowTime()); }
+    catch(e){ setStatus('error'); }
   }
-
-  async function startRealtime(){
+  startRealtime();
+  function startRealtime(){
     try{
       if(unsub) unsub();
       unsub = docRef().onSnapshot(function(snap){
@@ -475,23 +479,16 @@
       }, function(){ setStatus('error'); });
     }catch(e){ setStatus('error'); }
   }
-  startRealtime();
-
-  // “Test synk nu”
-  on(btnTestSync,'click',function(){ writePing(); });
-
-  /* Guard for pointer-events */
-  (function(){
-    var css=document.createElement('style');
-    css.textContent="#settingsModal[aria-hidden='true']{display:none!important;pointer-events:none!important}.calendar-view[aria-hidden='true'],.calendar-view[style*='display: none']{pointer-events:none!important}#wkPanel:not(.visible){display:none!important;pointer-events:none!important}.tile,.fab button,#openSettings{pointer-events:auto!important;cursor:pointer!important}";
-    document.head.appendChild(css);
-  })();
+  on($('btnTestSync'),'click',function(){ writePing(); });
   </script>
 
   <!-- Vejr -->
   <script>
   (function(){
-    var elTemp=$('weatherTemp'), elCond=$('weatherCond'), elCity=$('weatherCity'), elIcon=document.querySelector('.widget.weather .icon');
+    var elTemp=document.getElementById('weatherTemp'),
+        elCond=document.getElementById('weatherCond'),
+        elCity=document.getElementById('weatherCity'),
+        elIcon=document.querySelector('.widget.weather .icon');
     if(!elTemp||!elCond||!elCity||!elIcon) return;
     function g(d){ return "<path d='"+d+"' />"; }
     function iconSVG(c){ c=String(c);
@@ -513,49 +510,23 @@
       if("95,96,99".indexOf(c)>-1)return thunder;
       return sunCloud;
     }
-    function setIcon(code){
-      elIcon.setAttribute("viewBox","0 0 24 24");
-      elIcon.setAttribute("fill","none");
-      elIcon.setAttribute("stroke","currentColor");
-      elIcon.setAttribute("stroke-width","2.2");
-      elIcon.setAttribute("stroke-linecap","round");
-      elIcon.setAttribute("stroke-linejoin","round");
-      elIcon.innerHTML=iconSVG(code);
-    }
-    function getPosition(timeoutMs){
-      timeoutMs = timeoutMs||7000;
-      return new Promise(function(resolve){
-        var done=false;
-        function fb(){ if(done) return; done=true; resolve({coords:{latitude:55.6761,longitude:12.5683},fallback:true}); }
-        if(!navigator.geolocation){ fb(); return; }
-        var to=setTimeout(fb,timeoutMs);
-        navigator.geolocation.getCurrentPosition(function(pos){ if(done) return; done=true; clearTimeout(to); resolve(pos); }, function(){ fb(); }, { enableHighAccuracy:false, maximumAge:15*60*1000, timeout:timeoutMs-500 });
-      });
-    }
+    function setIcon(code){ elIcon.setAttribute("viewBox","0 0 24 24"); elIcon.setAttribute("fill","none"); elIcon.setAttribute("stroke","currentColor"); elIcon.setAttribute("stroke-width","2.2"); elIcon.setAttribute("stroke-linecap","round"); elIcon.setAttribute("stroke-linejoin","round"); elIcon.innerHTML=iconSVG(code); }
+    function getPosition(timeoutMs){ timeoutMs=timeoutMs||7000; return new Promise(function(resolve){
+      var done=false; function fb(){ if(done)return; done=true; resolve({coords:{latitude:55.6761,longitude:12.5683},fallback:true}); }
+      if(!navigator.geolocation){ fb(); return; }
+      var to=setTimeout(fb,timeoutMs);
+      navigator.geolocation.getCurrentPosition(function(p){ if(done)return; done=true; clearTimeout(to); resolve(p); }, function(){ fb(); }, {enableHighAccuracy:false,maximumAge:900000,timeout:timeoutMs-500});
+    });}
     var WMO_DA={0:"Klart",1:"Mest klart",2:"Delvist skyet",3:"Overskyet",45:"Tåge",48:"Rimtåge",51:"Finregn let",53:"Finregn",55:"Finregn kraftig",56:"Isfinregn let",57:"Isfinregn",61:"Regn let",63:"Regn",65:"Regn kraftig",66:"Isregn let",67:"Isregn",71:"Sne let",73:"Sne",75:"Sne kraftig",77:"Sneslud",80:"Byger let",81:"Byger",82:"Byger kraftig",85:"Snebyger let",86:"Snebyger kraftig",95:"Torden",96:"Torden m. hagl",99:"Kraftig torden m. hagl"};
     function codeToDa(c){ return WMO_DA[c]||"Ukendt"; }
-    async function loadWeather(){
-      try{
-        var pos=await getPosition(); var lat=+pos.coords.latitude.toFixed(4); var lon=+pos.coords.longitude.toFixed(4);
-        var r=await fetch("https://api.open-meteo.com/v1/forecast?latitude="+lat+"&longitude="+lon+"&current=temperature_2m,weather_code&timezone=auto",{cache:"no-store"});
-        var j=await r.json();
-        var t=Math.round(((j&&j.current)?j.current.temperature_2m:NaN));
-        var c=(j&&j.current)?j.current.weather_code:undefined;
-        if(isFinite(t)) elTemp.textContent=t+"°";
-        if(typeof c==="number"){ elCond.textContent=codeToDa(c); setIcon(c); }
-        try{
-          var rg=await fetch("https://geocoding-api.open-meteo.com/v1/reverse?latitude="+lat+"&longitude="+lon+"&language=da&format=json",{cache:"no-store"});
-          var gj=await rg.json(); var hit=(gj&&gj.results&&gj.results[0])||null;
-          var city=(hit&&hit.name)|| (hit&&hit.admin2) || (hit&&hit.admin1) || (pos.fallback?"København":"");
-          if(city) elCity.textContent=city;
-        }catch(e){ if(pos.fallback) elCity.textContent="København"; }
-      }catch(e){
-        if(!elTemp.textContent.trim()) elTemp.textContent="18°";
-        if(!elCond.textContent.trim()) elCond.textContent="Klart";
-        if(!elCity.textContent.trim()) elCity.textContent="Farum";
-        setIcon(2);
-      }
-    }
+    async function loadWeather(){ try{
+      var pos=await getPosition(); var lat=+pos.coords.latitude.toFixed(4); var lon=+pos.coords.longitude.toFixed(4);
+      var r=await fetch("https://api.open-meteo.com/v1/forecast?latitude="+lat+"&longitude="+lon+"&current=temperature_2m,weather_code&timezone=auto",{cache:"no-store"}); var j=await r.json();
+      var t=Math.round(((j&&j.current)?j.current.temperature_2m:NaN)); var c=(j&&j.current)?j.current.weather_code:undefined;
+      if(isFinite(t)) elTemp.textContent=t+"°";
+      if(typeof c==="number"){ elCond.textContent=codeToDa(c); setIcon(c); }
+      try{ var rg=await fetch("https://geocoding-api.open-meteo.com/v1/reverse?latitude="+lat+"&longitude="+lon+"&language=da&format=json",{cache:"no-store"}); var gj=await rg.json(); var hit=(gj&&gj.results&&gj.results[0])||null; var city=(hit&&hit.name)||(hit&&hit.admin2)||(hit&&hit.admin1)||(pos.fallback?"København":""); if(city) elCity.textContent=city; }catch(e){ if(pos.fallback) elCity.textContent="København"; }
+    }catch(e){ if(!elTemp.textContent.trim()) elTemp.textContent="18°"; if(!elCond.textContent.trim()) elCond.textContent="Klart"; if(!elCity.textContent.trim()) elCity.textContent="Farum"; setIcon(2); } }
     loadWeather(); setInterval(loadWeather, 20*60*1000);
   })();
   </script>
