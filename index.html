@@ -5,11 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Webkiosk – start</title>
 
-  <!-- SKIFT KUN DENNE VÆRDI, hvis din forside hedder noget andet -->
   <script>
-    // <<<  ÆNDR KUN DENNE  >>>
+    // <<< PEGER PÅ DIN RIGTIGE FORSIDE >>>
     var DEFAULT_TARGET = "webkiosk_apple_crisp_with_settings_fab_SYNC_v3.html";
-    // ^^^  fx "webkiosk_apple_crisp_with_settings_fab.html" hvis det er din korrekte forside
   </script>
 
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
@@ -18,11 +16,7 @@
 
   <script>
   (function(){
-    // 1) Vælg mål (tillad override med ?target=fil.html)
-    var qp = new URLSearchParams(location.search);
-    var target = (qp.get("target") || DEFAULT_TARGET).trim();
-
-    // 2) Fjern ALLE service workers + caches under dette scope
+    // Fjern alle service workers + caches for at undgå “stale” filer
     if ('serviceWorker' in navigator) {
       try {
         navigator.serviceWorker.getRegistrations().then(function(regs){
@@ -36,8 +30,10 @@
       } catch(e){}
     }
 
-    // 3) Hård redirect til din forside med cache-buster
+    // Redirect til din forside med cache-buster
     setTimeout(function(){
+      var qp = new URLSearchParams(location.search);
+      var target = (qp.get("target") || DEFAULT_TARGET).trim();
       var url = "./" + target + (target.includes("?") ? "&" : "?") + "v=" + Date.now();
       location.replace(url);
     }, 120);
@@ -60,15 +56,14 @@
     // Manuel link med korrekt mål
     (function(){
       var qp = new URLSearchParams(location.search);
-      var target = (qp.get("target") || (typeof DEFAULT_TARGET!=="undefined"?DEFAULT_TARGET:"webkiosk_apple_crisp_with_settings_fab.html")).trim();
+      var target = (qp.get("target") || DEFAULT_TARGET).trim();
       document.getElementById("manual").href = "./" + target + "?v=" + Date.now();
       document.getElementById("manual").setAttribute("rel","nofollow");
     })();
   </script>
 
   <p style="margin-top:14px;color:#6b7280">
-    Test et andet mål uden at ændre filen: <code>?target=DIT_FILNAVN.html</code>
+    Test et andet mål uden commit: <code>?target=FIL.html</code>
   </p>
 </body>
 </html>
-
