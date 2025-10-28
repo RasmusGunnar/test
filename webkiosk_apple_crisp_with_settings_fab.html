@@ -1,4 +1,3 @@
-<!-- webkiosk_apple_crisp_with_settings_fab.html -->
 <!doctype html>
 <html lang="da">
 <head>
@@ -30,8 +29,8 @@
     .fab-home{position:fixed;left:18px;bottom:18px;height:44px;border-radius:999px;background:var(--panel);border:1px solid var(--border);padding:0 14px;display:flex;align-items:center;gap:8px;box-shadow:var(--shadow);cursor:pointer}
 
     dialog{border:none;border-radius:16px;max-width:860px;width:calc(100% - 24px);padding:0;box-shadow:0 20px 60px rgba(2,6,23,.28)}
-    .dlg-body{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:18px}
     .dlg-head{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--border)}
+    .dlg-body{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:18px}
     .dlg-foot{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-top:1px solid var(--border);background:linear-gradient(#fff,#fafafa)}
     .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
     label{font-size:12px;color:var(--muted)}
@@ -41,17 +40,6 @@
     .ghost{background:#fff;color:var(--fg);border:1px solid var(--border);border-radius:10px;padding:10px 12px}
     .hint{font-size:12px;color:var(--muted)}
     .badge{font-size:12px;background:#eef2ff;border:1px solid #c7d2fe;padding:2px 8px;border-radius:999px}
-
-    /* Webpanel overlay */
-    .wk-panel{position:fixed;inset:0;background:#00000010;backdrop-filter:saturate(1.2) blur(2px);display:none;z-index:99998}
-    .wk-panel.visible{display:block}
-    .wk-shell{position:absolute;inset:0;background:#fff;box-shadow:0 12px 60px rgba(2,6,23,.25)}
-    .wk-topbar{position:absolute;left:0;right:0;top:0;height:52px;display:flex;align-items:center;gap:10px;padding:0 12px;border-bottom:1px solid var(--border);background:linear-gradient(#fff,#fafafa);z-index:2}
-    .wk-topbar .btn{appearance:none;border:1px solid #e6e8ec;border-radius:10px;background:#fff;padding:8px 10px;cursor:pointer}
-    .wk-topbar .title{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .wk-iframe{position:absolute;top:52px;left:0;right:0;bottom:0;width:100%;height:calc(100% - 52px);border:0}
-    .wk-fallback{position:absolute;inset:52px 0 0 0;display:none;align-items:center;justify-content:center}
-    .wk-fallback .card{max-width:560px;margin:0 14px;background:#fff;border:1px solid #e6e8ec;border-radius:12px;padding:16px;box-shadow:0 10px 30px rgba(2,6,23,.08);text-align:center}
   </style>
 
   <!-- Firebase compat SDKs -->
@@ -66,13 +54,11 @@
     <div class="grid" id="grid"></div>
   </div>
 
-  <!-- Home + Settings -->
   <button class="fab-home" id="btnHome" title="Forside">
     <span>🏠</span><span>Forside</span>
   </button>
   <div class="fab" id="btnSettings" title="Indstillinger">⚙️</div>
 
-  <!-- Settings dialog -->
   <dialog id="dlg">
     <div class="dlg-head">
       <strong>Indstillinger</strong>
@@ -83,6 +69,7 @@
         <h3>Knapper</h3>
         <div id="btnForms"></div>
       </section>
+
       <section>
         <h3>Udseende</h3>
         <div class="row">
@@ -95,8 +82,10 @@
             <input type="color" id="bgColor" />
           </div>
         </div>
+      </section>
 
-        <h3 style="margin-top:16px">Synkronisering</h3>
+      <section>
+        <h3>Synkronisering</h3>
         <div class="row">
           <div>
             <label>Husstands-ID</label>
@@ -108,8 +97,10 @@
             <div><span id="syncStatus" class="badge">Offline</span></div>
           </div>
         </div>
+      </section>
 
-        <h3 style="margin-top:16px">Skærm</h3>
+      <section>
+        <h3>Skærm</h3>
         <div class="row">
           <div>
             <label>Hold skærmen vågen</label>
@@ -125,6 +116,7 @@
         </div>
       </section>
     </div>
+
     <div class="dlg-foot">
       <button class="danger" id="resetAll">Nulstil alt</button>
       <div style="display:flex;gap:8px">
@@ -134,29 +126,13 @@
     </div>
   </dialog>
 
-  <!-- Webpanel overlay -->
-  <div id="wkPanel" class="wk-panel" aria-hidden="true">
-    <div class="wk-shell">
-      <div class="wk-topbar">
-        <button id="wkBack" class="btn">← Tilbage</button>
-        <div id="wkTitle" class="title">Indlæser…</div>
-        <div style="margin-left:auto;display:flex;gap:8px">
-          <button id="wkOpenNew" class="btn" title="Åbn i ny fane">↗ Åbn i ny fane</button>
-        </div>
-      </div>
-      <iframe id="wkFrame" class="wk-iframe" sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox" referrerpolicy="no-referrer"></iframe>
-      <div id="wkFallback" class="wk-fallback">
-        <div class="card">
-          <h3>Kan ikke vise siden her</h3>
-          <p>Siden tillader ikke indlejring. Du kan åbne den i en ny fane i stedet.</p>
-          <p><button id="wkOpenNew2" class="btn">↗ Åbn i ny fane</button></p>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <script>
-    // --- Firebase init (din konfiguration)
+    // Service Worker (forudsætter service-worker.js i samme mappe)
+    if('serviceWorker' in navigator){
+      navigator.serviceWorker.register('./service-worker.js').catch(()=>{});
+    }
+
+    // Firebase init (din konfiguration)
     const firebaseConfig = {
       apiKey: "AIzaSyA_gh8y-V6kkl95hRzb0ldBxpKWFY5bAck",
       authDomain: "webkiosk-e5d32.firebaseapp.com",
@@ -169,18 +145,12 @@
     const auth = firebase.auth();
     const db   = firebase.firestore();
 
-    // --- Register SW (kræver at service-worker.js ligger i roden)
-    if('serviceWorker' in navigator){
-      navigator.serviceWorker.register('./service-worker.js').catch(()=>{});
-    }
-
-    // --- State
+    // State
     const DEFAULTS = {
       theme: { color: "#0f172a", background:"#f6f7f9" },
       householdId: null,
       wakeStrategy: "auto",
       buttons: [
-        // Eksempler. Redigér i ⚙️
         { title:"Sonos web", type:"url", url:"https://account.sonos.com", icon:"🔊", pkg:"", scheme:"" },
         { title:"Homey Dashboard", type:"url", url:"https://my.homey.app", icon:"🏠", pkg:"", scheme:"" },
         { title:"Kalender", type:"url", url:"./familieoversigt_index_v11_autosync_READY_UPDATED.html", icon:"📅", pkg:"", scheme:"" }
@@ -188,7 +158,7 @@
     };
     let settings = loadLocal() || DEFAULTS;
 
-    // --- DOM refs
+    // DOM
     const grid = document.getElementById('grid');
     const dlg = document.getElementById('dlg');
     const btnSettings = document.getElementById('btnSettings');
@@ -204,17 +174,7 @@
     const exportBtn = document.getElementById('exportBtn');
     const btnForms = document.getElementById('btnForms');
 
-    // Webpanel refs
-    const panel  = document.getElementById('wkPanel');
-    const frame  = document.getElementById('wkFrame');
-    const titleEl= document.getElementById('wkTitle');
-    const back   = document.getElementById('wkBack');
-    const openNew= document.getElementById('wkOpenNew');
-    const openNew2= document.getElementById('wkOpenNew2');
-    const fallback = document.getElementById('wkFallback');
-    let currentUrl = '';
-
-    // --- Utils
+    // Utils
     function saveLocal(s){ localStorage.setItem('webkiosk.settings', JSON.stringify(s)); }
     function loadLocal(){ try{ return JSON.parse(localStorage.getItem('webkiosk.settings')||''); }catch{return null;} }
     const isAndroid = /Android/i.test(navigator.userAgent);
@@ -226,249 +186,9 @@
     }
     function safeHost(u){ try{ return new URL(u).host; }catch{ return ''; } }
 
-    // --- Webpanel logic
-    function showPanel(){ panel.classList.add('visible'); panel.setAttribute('aria-hidden','false'); }
-    function hidePanel(){ panel.classList.remove('visible'); panel.setAttribute('aria-hidden','true'); }
-    function openWebPanel(url, t=''){
-      currentUrl = url;
-      titleEl.textContent = t || safeHost(url) || 'Webvisning';
-      frame.src = url;
-      openNew.onclick = ()=> window.open(currentUrl, '_blank', 'noopener,noreferrer');
-      openNew2.onclick = ()=> window.open(currentUrl, '_blank', 'noopener,noreferrer');
-      showPanel();
-      // fallback heuristik
-      fallback.style.display = 'none';
-      frame.addEventListener('load', ()=>{ fallback.style.display='none'; }, {once:true});
-      setTimeout(()=>{
-        try{
-          const loc = frame.contentWindow.location.href;
-          if(!loc || loc === 'about:blank'){ fallback.style.display='flex'; }
-        }catch(e){ /* cross-origin: ignorer */ }
-      }, 1200);
-    }
-    function closeWebPanel(){
-      hidePanel();
-      try{ frame.src = 'about:blank'; }catch(_){}
-      currentUrl = '';
-    }
-    back.addEventListener('click', closeWebPanel);
-
-    // --- Render UI
+    // Render
     function renderGrid(){
       document.documentElement.style.setProperty('--accent', settings.theme.color);
       document.documentElement.style.setProperty('--bg', settings.theme.background);
       grid.innerHTML = settings.buttons.map((b, i)=>`
-        <button class="card" data-idx="${i}" aria-label="${b.title}">
-          <div style="font-size:28px">${b.icon || '🔘'}</div>
-          <div class="title">${b.title}</div>
-          <div class="subtitle">${b.type==='app'
-            ? (isAndroid ? 'Åbner Android app' : (b.scheme ? 'Åbner app via scheme' : 'App kun Android'))
-            : (safeHost(b.url)) }</div>
-        </button>
-      `).join('');
-      grid.querySelectorAll('.card').forEach(el=>{
-        el.addEventListener('click', ()=>{
-          const idx = Number(el.getAttribute('data-idx'));
-          openTarget(settings.buttons[idx]);
-        });
-      });
-    }
-
-    function renderSettings(){
-      themeColor.value = settings.theme.color;
-      bgColor.value = settings.theme.background;
-      wakeStrategyEl.value = settings.wakeStrategy;
-      ensureHouseholdId();
-      householdIdEl.value = settings.householdId;
-
-      btnForms.innerHTML = settings.buttons.map((b, i)=>`
-        <fieldset style="border:1px solid var(--border);padding:12px;border-radius:12px;margin-bottom:10px">
-          <legend>Knap ${i+1}</legend>
-          <div class="row">
-            <div>
-              <label>Titel</label>
-              <input id="t-${i}" value="${b.title}">
-            </div>
-            <div>
-              <label>Ikon (emoji)</label>
-              <input id="ic-${i}" value="${b.icon || ''}" placeholder="fx 🔊">
-            </div>
-          </div>
-          <div class="row" style="margin-top:8px">
-            <div>
-              <label>Type</label>
-              <select id="ty-${i}">
-                <option value="url" ${b.type==='url'?'selected':''}>URL</option>
-                <option value="app" ${b.type==='app'?'selected':''}>Android App</option>
-              </select>
-            </div>
-            <div>
-              <label>URL (ved Type=URL)</label>
-              <input id="u-${i}" value="${b.url||''}" placeholder="https://...">
-            </div>
-          </div>
-          <div class="row" style="margin-top:8px">
-            <div>
-              <label>Android package (ved Type=App)</label>
-              <input id="pg-${i}" value="${b.pkg||''}" placeholder="fx com.sonos.acr2">
-            </div>
-            <div>
-              <label>Custom scheme (iOS/Android – valgfri)</label>
-              <input id="sc-${i}" value="${b.scheme||''}" placeholder="fx sonos://">
-            </div>
-          </div>
-        </fieldset>
-      `).join('');
-    }
-
-    // --- Åbn mål
-    function openTarget(btn){
-      if(btn.type === 'url' && btn.url){
-        // Åbn i webpanel, så man altid kan tilbage
-        openWebPanel(btn.url, btn.title);
-        return;
-      }
-      if(btn.type === 'app'){
-        if(isiOS && btn.scheme){
-          location.href = btn.scheme; // iOS forsøger scheme
-          return;
-        }
-        if(isAndroid && btn.pkg){
-          const fallback = encodeURIComponent(location.origin);
-          const intentUrl = `intent://open/#Intent;package=${btn.pkg};S.browser_fallback_url=${fallback};end;`;
-          location.href = intentUrl;
-          setTimeout(()=>{ location.href = `market://details?id=${btn.pkg}`; }, 1400);
-          return;
-        }
-        alert('Kan ikke åbne app – mangler Android package eller understøttet scheme.');
-      }
-    }
-
-    // --- Wake Lock
-    let wakeLock = null;
-    let noSleep = null;
-    async function requestWakeLock(){
-      if(settings.wakeStrategy === 'off') return releaseWakeLock();
-      try{
-        if('wakeLock' in navigator){
-          wakeLock = await navigator.wakeLock.request('screen');
-        }else{
-          if(!noSleep) noSleep = new window.NoSleep();
-          noSleep.enable(); // kræver første klik
-        }
-      }catch(_){}
-    }
-    function releaseWakeLock(){
-      try{ if(wakeLock){ wakeLock.release(); wakeLock=null; } }catch(_){}
-      try{ if(noSleep){ noSleep.disable(); noSleep=null; } }catch(_){}
-    }
-    document.addEventListener('visibilitychange', ()=>{
-      if(document.visibilityState === 'visible') requestWakeLock();
-    }, {passive:true});
-
-    // --- Firebase Auth + Firestore realtime sync
-    let unsub = null;
-    let writeTimer = null;
-    function DOC(){ return db.collection('webkiosk').doc(settings.householdId); }
-
-    async function initAuth(){
-      try{
-        await auth.signInAnonymously();
-        syncStatus.textContent = 'Online';
-      }catch(e){
-        syncStatus.textContent = 'Auth fejl';
-        console.warn(e);
-      }
-    }
-    async function startRealtime(){
-      if(unsub) unsub();
-      if(!settings.householdId) return;
-      unsub = DOC().onSnapshot(snap=>{
-        if(!snap.exists) return;
-        const remote = snap.data();
-        if(remote._ts && (!settings._ts || remote._ts > settings._ts)){
-          settings = remote;
-          saveLocal(settings);
-          applyAll();
-        }
-      }, (err)=>{ console.warn('Snapshot error', err); });
-    }
-    function queueWrite(){
-      clearTimeout(writeTimer);
-      writeTimer = setTimeout(async ()=>{
-        try{
-          settings._ts = Date.now();
-          await DOC().set(settings, {merge:true});
-          syncStatus.textContent = 'Synkroniseret';
-        }catch(e){
-          syncStatus.textContent = 'Sync fejl';
-          console.warn(e);
-        }
-      }, 300);
-    }
-
-    // --- Events
-    btnSettings.addEventListener('click', ()=>{ renderSettings(); dlg.showModal(); });
-    closeDlg.addEventListener('click', ()=> dlg.close());
-    btnHome.addEventListener('click', ()=> location.href = './index.html');
-
-    saveDlg.addEventListener('click', ()=>{
-      settings.theme.color = themeColor.value || settings.theme.color;
-      settings.theme.background = bgColor.value || settings.theme.background;
-      settings.wakeStrategy = wakeStrategyEl.value;
-
-      const prevId = settings.householdId;
-      settings.householdId = (householdIdEl.value||'').trim().toUpperCase() || settings.householdId;
-      if(settings.householdId !== prevId){ startRealtime(); }
-
-      settings.buttons = settings.buttons.map((b, i)=>({
-        title: document.getElementById(`t-${i}`).value || b.title,
-        icon: document.getElementById(`ic-${i}`).value || b.icon,
-        type: document.getElementById(`ty-${i}`).value,
-        url:  document.getElementById(`u-${i}`).value || '',
-        pkg:  document.getElementById(`pg-${i}`).value || '',
-        scheme: document.getElementById(`sc-${i}`).value || ''
-      }));
-
-      saveLocal(settings);
-      queueWrite();
-      applyAll();
-      dlg.close();
-    });
-
-    resetAll.addEventListener('click', ()=>{
-      if(!confirm('Nulstil alt til fabriksindstillinger?')) return;
-      settings = JSON.parse(JSON.stringify(DEFAULTS));
-      ensureHouseholdId();
-      saveLocal(settings);
-      queueWrite();
-      applyAll();
-    });
-
-    exportBtn.addEventListener('click', ()=>{
-      const blob = new Blob([JSON.stringify(settings,null,2)], {type:'application/json'});
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `webkiosk-settings-${settings.householdId}.json`;
-      a.click();
-      URL.revokeObjectURL(a.href);
-    });
-
-    window.addEventListener('pageshow', ()=>{ requestWakeLock(); }, {passive:true});
-    window.addEventListener('click', ()=>{
-      if(!('wakeLock' in navigator)){ try{ if(!noSleep) noSleep = new window.NoSleep(); noSleep.enable(); }catch(_){} }
-    }, {passive:true});
-
-    // --- Boot
-    ensureHouseholdId();
-    saveLocal(settings);
-    applyAll();
-    initAuth().then(startRealtime).catch(()=>{});
-
-    function applyAll(){
-      renderGrid();
-      requestWakeLock();
-    }
-  </script>
-</body>
-</html>
+        <button class="card" data-idx="${i}" aria-label="${b.titl
