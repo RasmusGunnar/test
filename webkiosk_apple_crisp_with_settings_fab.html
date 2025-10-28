@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Webkiosk</title>
+  <title>Webkiosk v2025-10-28f</title>
   <meta name="theme-color" content="#0f172a" />
   <link rel="manifest" href="./manifest.webmanifest" />
 
@@ -24,6 +24,7 @@
     .subtitle{font-size:13px;color:var(--muted)}
     @media (max-width:900px){.card{grid-column:span 6}}
     @media (max-width:640px){.card{grid-column:span 12}}
+
     .fab{position:fixed;right:18px;bottom:18px;height:56px;width:56px;border-radius:999px;background:var(--accent);color:#fff;display:grid;place-items:center;box-shadow:0 14px 40px rgba(2,6,23,.2);cursor:pointer}
     .fab:active{transform:scale(.98)}
     .fab-home{position:fixed;left:18px;bottom:18px;height:44px;border-radius:999px;background:var(--panel);border:1px solid var(--border);padding:0 14px;display:flex;align-items:center;gap:8px;box-shadow:var(--shadow);cursor:pointer}
@@ -62,8 +63,12 @@
   <dialog id="dlg">
     <div class="dlg-head">
       <strong>Indstillinger</strong>
-      <button class="ghost" id="closeDlg">Luk</button>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span id="syncStatus" class="badge">Offline</span>
+        <button class="ghost" id="closeDlg">Luk</button>
+      </div>
     </div>
+
     <div class="dlg-body">
       <section>
         <h3>Knapper</h3>
@@ -82,25 +87,21 @@
             <input type="color" id="bgColor" />
           </div>
         </div>
-      </section>
 
-      <section>
-        <h3>Synkronisering</h3>
+        <h3 style="margin-top:16px">Synkronisering</h3>
         <div class="row">
           <div>
             <label>Husstands-ID</label>
             <input id="householdId" placeholder="auto-genereres" />
-            <div class="hint">Brug samme ID på alle enheder for at synce.</div>
+            <div class="hint">Brug samme ID på alle enheder.</div>
           </div>
           <div>
             <label>Status</label>
-            <div><span id="syncStatus" class="badge">Offline</span></div>
+            <div><span id="syncStatus2" class="badge">Offline</span></div>
           </div>
         </div>
-      </section>
 
-      <section>
-        <h3>Skærm</h3>
+        <h3 style="margin-top:16px">Skærm</h3>
         <div class="row">
           <div>
             <label>Hold skærmen vågen</label>
@@ -127,20 +128,13 @@
   </dialog>
 
   <script>
-    /* ===== Version-stempel (automatisk) ===== */
-    (function(){
-      const STATIC_VERSION = "2025-10-28b"; // kan opdateres manuelt ved behov
-      const auto = new Date();
-      const pad = (n)=>String(n).padStart(2,"0");
-      const autoVer = `${auto.getFullYear()}-${pad(auto.getMonth()+1)}-${pad(auto.getDate())}T${pad(auto.getHours())}${pad(auto.getMinutes())}`;
-      window.__WEBKIOSK_VERSION__ = STATIC_VERSION || autoVer;
-      document.title = `Webkiosk v${window.__WEBKIOSK_VERSION__}`;
-    })();
+    /* ===== Version (bruges til cache-busting af SW) ===== */
+    const VERSION = "2025-10-28f";
+    document.title = `Webkiosk v${VERSION}`;
 
-    /* ===== Service Worker (cache-buster via ?vv=VERSION) ===== */
+    /* ===== Service Worker (cache-buster) ===== */
     if('serviceWorker' in navigator){
-      const vv = encodeURIComponent(window.__WEBKIOSK_VERSION__);
-      navigator.serviceWorker.register(`./service-worker.js?vv=${vv}`).catch(()=>{});
+      navigator.serviceWorker.register(`./service-worker.js?vv=${encodeURIComponent(VERSION)}`).catch(()=>{});
     }
 
     /* ===== Firebase init ===== */
@@ -179,6 +173,7 @@
     const bgColor = document.getElementById('bgColor');
     const householdIdEl = document.getElementById('householdId');
     const syncStatus = document.getElementById('syncStatus');
+    const syncStatus2 = document.getElementById('syncStatus2');
     const wakeStrategyEl = document.getElementById('wakeStrategy');
     const resetAll = document.getElementById('resetAll');
     const saveDlg = document.getElementById('saveDlg');
@@ -196,6 +191,7 @@
       }
     }
     function safeHost(u){ try{ return new URL(u).host; }catch{ return ''; } }
+    function setStatus(t){ syncStatus.textContent = t; syncStatus2.textContent = t; }
 
     /* ===== Render ===== */
     function renderGrid(){
@@ -268,7 +264,7 @@
     /* ===== Åbn mål ===== */
     function openTarget(btn){
       if(btn.type === 'url' && btn.url){
-        location.href = btn.url; // bevar din nuværende adfærd
+        location.href = btn.url; // bevar klassisk adfærd (ingen overlay)
         return;
       }
       if(btn.type === 'app'){
@@ -297,7 +293,7 @@
           wakeLock = await navigator.wakeLock.request('screen');
         }else{
           if(!noSleep) noSleep = new window.NoSleep();
-          noSleep.enable(); // kræver første interaktion
+          noSleep.enable(); // kræver første brugerinteraktion
         }
       }catch(_){}
     }
@@ -317,9 +313,9 @@
     async function initAuth(){
       try{
         await auth.signInAnonymously();
-        syncStatus.textContent = 'Online';
+        setStatus('Online');
       }catch(e){
-        syncStatus.textContent = 'Auth fejl';
+        setStatus('Auth fejl');
         console.warn(e);
       }
     }
@@ -342,9 +338,9 @@
         try{
           settings._ts = Date.now();
           await DOC().set(settings, {merge:true});
-          syncStatus.textContent = 'Synkroniseret';
+          setStatus('Synkroniseret');
         }catch(e){
-          syncStatus.textContent = 'Sync fejl';
+          setStatus('Sync fejl');
           console.warn(e);
         }
       }, 300);
