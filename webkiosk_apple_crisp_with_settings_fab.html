@@ -6,7 +6,7 @@
 <title>Webkiosk</title>
 <meta name="theme-color" content="#0f172a" />
 <style>
-  :root{--bg:#f6f7f9;--panel:#fff;--fg:#0f172a;--muted:#6b7280;--border:#e6e8ec;--accent:#0f172a;--radius:20px;--shadow:0 10px 30px rgba(2,6,23,.06);--logoH:64px;--logoBoxW:42%;--logoMaxW:280px}
+  :root{--bg:#f6f7f9;--panel:#fff;--fg:#0f172a;--muted:#6b7280;--border:#e6e8ec;--accent:#0f172a;--shadow:0 10px 30px rgba(2,6,23,.06);--logoH:64px;--logoBoxW:42%;--logoMaxW:280px}
   *{box-sizing:border-box} html,body{height:100%}
   body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--fg);display:flex;min-height:100vh}
   .wrap{width:min(1200px,100%);padding:clamp(12px,2vw,24px);margin:auto;position:relative;z-index:1}
@@ -64,25 +64,33 @@
   .left-note{color:#6b7280;font-size:12px;display:flex;align-items:center;gap:8px}
   .actions{display:flex;gap:10px}
   .btn{padding:10px 14px;border-radius:12px;border:1px solid var(--border);background:#fff;cursor:pointer;font-weight:650}
-  .btn.primary{background:var(--fg);color:#fff;border-color:var(--fg)}
+  .btn.primary{background:#0f172a;color:#fff;border-color:#0f172a}
   .sync-badge{position:fixed;left:12px;bottom:12px;z-index:95;background:#fff;border:1px solid #e6e8ec;border-radius:14px;padding:8px 12px;font:13px/1.2 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial;box-shadow:0 8px 24px rgba(2,6,23,.08);display:flex;gap:8px;align-items:center;color:#0f172a}
-  .sync-badge .dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+  .sync-badge .dot{width:10px;height:10px;border-radius:50%}
   .sync-online .dot{background:#10b981}.sync-syncing .dot{background:#f59e0b}.sync-offline .dot{background:#9ca3af}.sync-error .dot{background:#ef4444}
   .sync-badge .note{margin-left:6px;color:#6b7280;font-size:12px}
 </style>
 </head>
 <body>
+
   <div class="wrap">
     <div class="grid">
       <section class="panel widget weather" aria-label="Vejr">
         <h2>Vejr</h2>
         <div class="weather-main">
-          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 16.5a4.5 4.5 0 0 1 4.5-4.5h.5A6.5 6.5 0 1 1 20 14.5a3.5 3.5 0  0 1-3.5 3.5H8.5A5.5 5.5 0 0 1 3 16.5z"/></svg>
-          <div><div class="weather-temp" id="weatherTemp">--°</div><div class="weather-line" id="weatherCond">-</div><div class="weather-line" id="weatherCity">-</div></div>
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 16.5a4.5 4.5 0 0 1 4.5-4.5h.5A6.5 6.5 0 1 1 20 14.5a3.5 3.5 0 0 1-3.5 3.5H8.5A5.5 5.5 0 0 1 3 16.5z"/></svg>
+          <div>
+            <div class="weather-temp" id="weatherTemp">--°</div>
+            <div class="weather-line" id="weatherCond">-</div>
+            <div class="weather-line" id="weatherCity">-</div>
+          </div>
         </div>
       </section>
+
       <section class="panel widget clock" aria-label="Ur">
-        <h2>Ur</h2><div class="clock-time" id="clockTime">--:--</div><div class="clock-date" id="clockDate">--</div>
+        <h2>Ur</h2>
+        <div class="clock-time" id="clockTime">--:--</div>
+        <div class="clock-date" id="clockDate">--</div>
       </section>
 
       <div class="tiles">
@@ -90,10 +98,12 @@
           <div class="meta"><div class="label" id="labelCalendar">Kalender</div><div class="sub" id="subCalendar">Familieoversigt</div></div>
           <div class="logo-box"><img id="logoCalendar" alt="Kalender"></div>
         </button>
+
         <button class="panel tile" id="tileHomey" type="button" onclick="window.__handlers && window.__handlers.openHomey()">
           <div class="meta"><div class="label" id="labelHomey">Homey</div><div class="sub" id="subHomey">Dashboard</div></div>
           <div class="logo-box"><img id="logoHomey" alt="Homey"></div>
         </button>
+
         <button class="panel tile" id="tileSonos" type="button" onclick="window.__handlers && window.__handlers.openSonos()">
           <div class="meta"><div class="label" id="labelSonos">Sonos</div><div class="sub" id="subSonos">App eller web</div></div>
           <div class="logo-box"><img id="logoSonos" alt="Sonos"></div>
@@ -105,30 +115,37 @@
   <!-- Kalender overlay -->
   <section class="calendar-view" id="calendarView" aria-hidden="true">
     <div class="calendar-inner">
-      <div class="topbar"><button class="back-btn" id="closeCalendar" type="button" onclick="document.getElementById('calendarView').classList.remove('visible');document.getElementById('calendarView').setAttribute('aria-hidden','true');document.getElementById('calendarFrame').src='about:blank';">⬅ Tilbage</button></div>
-      <div class="calframe panel"><iframe id="calendarFrame" title="Kalender"></iframe></div>
+      <div class="topbar">
+        <button class="back-btn" id="closeCalendar" type="button"
+          onclick="document.getElementById('calendarView').classList.remove('visible');document.getElementById('calendarView').setAttribute('aria-hidden','true');document.getElementById('calendarFrame').src='about:blank';">⬅ Tilbage</button>
+      </div>
+      <div class="calframe panel">
+        <iframe id="calendarFrame" title="Kalender"></iframe>
+      </div>
     </div>
   </section>
 
-  <!-- Tandhjul -->
+  <!-- Tandhjul / Indstillinger -->
   <div class="fab">
-    <button id="openSettings" title="Indstillinger" aria-label="Indstillinger" type="button" onclick="document.getElementById('settingsModal').classList.add('visible');document.getElementById('settingsModal').setAttribute('aria-hidden','false');">
-      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c0 .66.26 1.3.73 1.77.47.47 1.11.73 1.77.73h.09a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
+    <button id="openSettings" title="Indstillinger" aria-label="Indstillinger" type="button"
+      onclick="document.getElementById('settingsModal').classList.add('visible');document.getElementById('settingsModal').setAttribute('aria-hidden','false');">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0  1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0  1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06.06a2 2 0  1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c0 .66.26 1.3.73 1.77.47.47 1.11.73 1.77.73h.09a2 2 0  1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
     </button>
   </div>
 
-  <!-- Settings modal -->
-  <div class="modal" id="settingsModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="settingsTitle" onclick="this.classList.remove('visible');this.setAttribute('aria-hidden','true');">
+  <div class="modal" id="settingsModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="settingsTitle"
+       onclick="this.classList.remove('visible');this.setAttribute('aria-hidden','true');">
     <div class="dialog" onclick="event.stopPropagation()">
       <div class="dlg-head">
         <h3 id="settingsTitle">Indstillinger</h3>
-        <div class="tabs" role="tablist" aria-label="Indstillinger faner">
+        <div class="tabs" role="tablist">
           <button class="tab active" data-tab="tab-appearance" type="button">Udseende</button>
           <button class="tab" data-tab="tab-entries" type="button">Indgange</button>
           <button class="tab" data-tab="tab-sync" type="button">Synkronisering</button>
           <button class="tab" data-tab="tab-screen" type="button">Skærm</button>
         </div>
       </div>
+
       <div class="dlg-body">
         <!-- Udseende -->
         <section id="tab-appearance" class="section active">
@@ -136,16 +153,22 @@
             <div class="field"><label for="themeColor">Primærfarve</label><input type="color" id="themeColor"/></div>
             <div class="field"><label for="bgColor">Baggrundsfarve</label><input type="color" id="bgColor"/></div>
 
-            <div class="field"><label>Kalender-logo (upload til lokalt preview)</label><div class="row"><div class="logoPreview"><img id="prevCalendar" alt=""></div><input type="file" id="logoInputCalendar" accept="image/*"/></div></div>
-            <div class="field"><label for="logoUrlCalendar">Kalender – Logo URL (GitHub)</label><input type="url" id="logoUrlCalendar" placeholder="https://raw.githubusercontent.com/…/calendar-logo.png"/></div>
+            <div class="field"><label>Kalender-logo (lokalt preview)</label>
+              <div class="row"><div class="logoPreview"><img id="prevCalendar" alt=""></div><input type="file" id="logoInputCalendar" accept="image/*"/></div>
+            </div>
+            <div class="field"><label for="logoUrlCalendar">Kalender – Logo URL (GitHub)</label><input type="url" id="logoUrlCalendar" placeholder="https://raw.githubusercontent.com/.../calendar.png"/></div>
 
-            <div class="field"><label>Homey-logo (lokalt preview)</label><div class="row"><div class="logoPreview"><img id="prevHomey" alt=""></div><input type="file" id="logoInputHomey" accept="image/*"/></div></div>
-            <div class="field"><label for="logoUrlHomey">Homey – Logo URL (GitHub)</label><input type="url" id="logoUrlHomey" placeholder="https://raw.githubusercontent.com/…/homey.png"/></div>
+            <div class="field"><label>Homey-logo (lokalt preview)</label>
+              <div class="row"><div class="logoPreview"><img id="prevHomey" alt=""></div><input type="file" id="logoInputHomey" accept="image/*"/></div>
+            </div>
+            <div class="field"><label for="logoUrlHomey">Homey – Logo URL (GitHub)</label><input type="url" id="logoUrlHomey" placeholder="https://raw.githubusercontent.com/.../homey.png"/></div>
 
-            <div class="field"><label>Sonos-logo (lokalt preview)</label><div class="row"><div class="logoPreview"><img id="prevSonos" alt=""></div><input type="file" id="logoInputSonos" accept="image/*"/></div></div>
-            <div class="field"><label for="logoUrlSonos">Sonos – Logo URL (GitHub)</label><input type="url" id="logoUrlSonos" placeholder="https://raw.githubusercontent.com/…/sonos.png"/></div>
+            <div class="field"><label>Sonos-logo (lokalt preview)</label>
+              <div class="row"><div class="logoPreview"><img id="prevSonos" alt=""></div><input type="file" id="logoInputSonos" accept="image/*"/></div>
+            </div>
+            <div class="field"><label for="logoUrlSonos">Sonos – Logo URL (GitHub)</label><input type="url" id="logoUrlSonos" placeholder="https://raw.githubusercontent.com/.../sonos.png"/></div>
           </div>
-          <p class="hint">Tip: Læg filer i dit repo, fx <code>/assets/</code>, og brug “Raw” linket fra GitHub som URL.</p>
+          <p class="hint">Tip: Læg filer i dit repo (fx <code>/assets/</code>) og brug GitHub “Raw” URL her.</p>
         </section>
 
         <!-- Indgange -->
@@ -157,14 +180,14 @@
                 <label class="row"><input type="radio" name="calendarMode" value="url"> URL</label>
                 <label class="row"><input type="radio" name="calendarMode" value="upload"> Upload HTML (kun lokalt)</label>
               </div>
-              <input type="url" id="calendarUrl" placeholder="https://raw.githubusercontent.com/…/kalender.html"/>
+              <input type="url" id="calendarUrl" placeholder="https://raw.githubusercontent.com/.../familieoversigt.html"/>
               <div class="row" id="calendarUploadRow" style="display:none;">
-                <input type="file" id="calendarFile" accept="text/html,.html" />
-                <span class="hint">Upload lagres kun lokalt. For deling på tværs: brug URL (GitHub).</span>
+                <input type="file" id="calendarFile" accept="text/html,.html"/>
+                <span class="hint">Upload gemmes kun lokalt. For deling: brug URL (GitHub).</span>
               </div>
             </div>
 
-            <div class="field"><label for="homeyUrl">Homey dashboard URL</label><input type="url" id="homeyUrl" placeholder="https://my.homey.app/…"/></div>
+            <div class="field"><label for="homeyUrl">Homey dashboard URL</label><input type="url" id="homeyUrl" placeholder="https://my.homey.app/..."/></div>
             <div class="field"><label for="sonosUrl">Sonos link (app/web/custom scheme)</label><input type="text" id="sonosUrl" placeholder="sonos:// eller https://"/></div>
             <div class="field"><label for="sonosPkg">Android package (app)</label><input type="text" id="sonosPkg" placeholder="com.sonos.acr2"/></div>
             <div class="field"><label for="sonosScheme">Custom scheme (iOS/Android)</label><input type="text" id="sonosScheme" placeholder="sonos://"/></div>
@@ -207,51 +230,54 @@
     </div>
   </div>
 
-  <!-- Webpanel -->
+  <!-- Webpanel (Homey/Sonos) -->
   <div id="wkPanel" class="wk-panel" aria-hidden="true">
     <div class="wk-shell">
       <div class="wk-topbar">
-        <button id="wkBack" class="btn" type="button" onclick="document.getElementById('wkPanel').classList.remove('visible');document.getElementById('wkPanel').setAttribute('aria-hidden','true');document.getElementById('wkFrame').src='about:blank';">← Tilbage</button>
+        <button id="wkBack" class="btn" type="button"
+          onclick="document.getElementById('wkPanel').classList.remove('visible');document.getElementById('wkPanel').setAttribute('aria-hidden','true');document.getElementById('wkFrame').src='about:blank';">← Tilbage</button>
         <div id="wkTitle" class="title">Indlæser…</div>
       </div>
       <iframe id="wkFrame" class="wk-iframe" sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox" referrerpolicy="no-referrer"></iframe>
     </div>
   </div>
 
-  <!-- Synk-badge -->
-  <div id="syncBadge" class="sync-badge sync-offline" aria-live="polite"><span class="dot"></span><span id="syncBadgeText">Offline</span><span id="syncBadgeNote" class="note"></span></div>
+  <!-- Synk badge -->
+  <div id="syncBadge" class="sync-badge sync-offline" aria-live="polite">
+    <span class="dot"></span><span id="syncBadgeText">Offline</span><span id="syncBadgeNote" class="note"></span>
+  </div>
 
-  <!-- Firebase (kun Auth + Firestore) -->
+  <!-- SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/nosleep/0.12.0/NoSleep.min.js"></script>
 
   <script>
-  /* Utils */
+  /* ===== Helpers ===== */
   const $=id=>document.getElementById(id);
   const on=(el,ev,fn)=>el&&el.addEventListener(ev,fn,false);
   const nowStr=()=>new Date().toLocaleTimeString('da-DK',{hour:'2-digit',minute:'2-digit'});
   const debounced=(ms,fn)=>{let t;return function(){clearTimeout(t);t=setTimeout(()=>fn.apply(this,arguments),ms);};};
-  const dl=(name,txt)=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type:'application/json'}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},0);};
+  const dl=(n,txt)=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type:'application/json'}));a.download=n;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},0);};
   const toB64=f=>new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>res(fr.result);fr.onerror=rej;fr.readAsDataURL(f);});
 
-  /* Clock + Weather */
-  function updateClock(){ const t=$('clockTime'), d=$('clockDate'); const n=new Date(); t.textContent=n.toLocaleTimeString('da-DK',{hour:'2-digit',minute:'2-digit'}); const dd=n.toLocaleDateString('da-DK',{weekday:'long',day:'2-digit',month:'long'}); d.textContent=dd.charAt(0).toUpperCase()+dd.slice(1);}
-  setInterval(updateClock,1000); updateClock();
-  (function(){ const T=$('weatherTemp'), C=$('weatherCity'); if(!T||!C) return;
+  /* ===== Ur & Vejr ===== */
+  function updateClock(){const t=$('clockTime'),d=$('clockDate');const n=new Date();t.textContent=n.toLocaleTimeString('da-DK',{hour:'2-digit',minute:'2-digit'});const s=n.toLocaleDateString('da-DK',{weekday:'long',day:'2-digit',month:'long'});d.textContent=s.charAt(0).toUpperCase()+s.slice(1);}
+  setInterval(updateClock,1000);updateClock();
+  (function(){const T=$('weatherTemp'),C=$('weatherCity');if(!T||!C)return;
     function pos(timeout=7000){return new Promise(r=>{let d=false;const fb=()=>{if(d)return;d=true;r({coords:{latitude:55.6761,longitude:12.5683},fallback:true});};if(!navigator.geolocation){fb();return;}const to=setTimeout(fb,timeout);navigator.geolocation.getCurrentPosition(p=>{if(d)return;d=true;clearTimeout(to);r(p);},fb,{maximumAge:900000,timeout:timeout-500});});}
     async function wx(){try{const p=await pos();const la=+p.coords.latitude.toFixed(4),lo=+p.coords.longitude.toFixed(4);const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${la}&longitude=${lo}&current=temperature_2m&timezone=auto`);const j=await r.json();const t=Math.round(j?.current?.temperature_2m);if(isFinite(t))T.textContent=t+'°';if(p.fallback)C.textContent='København';}catch{}}
-    wx(); setInterval(wx,20*60*1000);
+    wx();setInterval(wx,20*60*1000);
   })();
 
-  /* Config */
+  /* ===== Config ===== */
   const LS_KEY='webkioskConfigV2';
   const defaults={
     calendar:{mode:'url',url:'',fileName:'',fileData:''},
     homeyUrl:'',sonosUrl:'',sonosPkg:'',sonosScheme:'',
-    logos:{calendar:'',homey:'',sonos:''},           // lokale previews (base64)
-    logoUrls:{calendar:'',homey:'',sonos:''},        // GitHub/HTTP-urls der synkes
+    logos:{calendar:'',homey:'',sonos:''},           // lokale previews
+    logoUrls:{calendar:'',homey:'',sonos:''},        // GitHub/HTTP-URLs
     theme:{color:'#0f172a',background:'#f6f7f9'},
     keepAwake:true,householdId:'',_ts:0
   };
@@ -260,25 +286,31 @@
   let config=load(); if(!config.householdId){config.householdId=Math.random().toString(36).slice(2,10).toUpperCase();save(config);}
 
   function applyTheme(){document.documentElement.style.setProperty('--accent',config.theme?.color||'#0f172a');document.documentElement.style.setProperty('--bg',config.theme?.background||'#f6f7f9');}
-  function placeholder(text){return "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='64'%3E%3Crect width='160' height='64' fill='%23f0f2f5'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='14' fill='%236b7280' font-family='Inter,Arial' %3E"+encodeURIComponent(text)+"%3C/text%3E%3C/svg%3E";}
+  const placeholder=t=>"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='64'%3E%3Crect width='160' height='64' fill='%23f0f2f5'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='14' fill='%236b7280' font-family='Inter,Arial' %3E"+encodeURIComponent(t)+"%3C/text%3E%3C/svg%3E";
   function applyLogos(){
-    $('logoCalendar').src = (config.logoUrls.calendar||config.logos.calendar||placeholder('Kalender'));
-    $('logoHomey').src    = (config.logoUrls.homey||config.logos.homey||placeholder('Homey'));
-    $('logoSonos').src    = (config.logoUrls.sonos||config.logos.sonos||placeholder('Sonos'));
-    if($('prevCalendar')) $('prevCalendar').src=config.logos.calendar||config.logoUrls.calendar||'';
-    if($('prevHomey')) $('prevHomey').src=config.logos.homey||config.logoUrls.homey||'';
-    if($('prevSonos')) $('prevSonos').src=config.logos.sonos||config.logoUrls.sonos||'';
+    $('logoCalendar').src=config.logoUrls.calendar||config.logos.calendar||placeholder('Kalender');
+    $('logoHomey').src   =config.logoUrls.homey   ||config.logos.homey   ||placeholder('Homey');
+    $('logoSonos').src   =config.logoUrls.sonos   ||config.logos.sonos   ||placeholder('Sonos');
+    if($('prevCalendar'))$('prevCalendar').src=config.logos.calendar||config.logoUrls.calendar||'';
+    if($('prevHomey'))$('prevHomey').src=config.logos.homey||config.logoUrls.homey||'';
+    if($('prevSonos'))$('prevSonos').src=config.logos.sonos||config.logoUrls.sonos||'';
   }
   function applyForm(){
     $('themeColor').value=config.theme?.color||'#0f172a';
     $('bgColor').value=config.theme?.background||'#f6f7f9';
     $('keepAwake').checked=!!config.keepAwake;
-    $('calendarUrl').value=config.calendar?.url||'';
+
     $('logoUrlCalendar').value=config.logoUrls?.calendar||'';
     $('logoUrlHomey').value=config.logoUrls?.homey||'';
     $('logoUrlSonos').value=config.logoUrls?.sonos||'';
-    $('homeyUrl').value=config.homeyUrl||''; $('sonosUrl').value=config.sonosUrl||''; $('sonosPkg').value=config.sonosPkg||''; $('sonosScheme').value=config.sonosScheme||'';
+
+    $('calendarUrl').value=config.calendar?.url||'';
+    $('homeyUrl').value=config.homeyUrl||'';
+    $('sonosUrl').value=config.sonosUrl||'';
+    $('sonosPkg').value=config.sonosPkg||'';
+    $('sonosScheme').value=config.sonosScheme||'';
     $('householdId').value=(config.householdId||'').toUpperCase();
+
     const mode=config.calendar?.mode||'url';
     [...document.querySelectorAll('input[name="calendarMode"]')].forEach(r=>r.checked=(r.value===mode));
     $('calendarUploadRow').style.display=(mode==='upload')?'':'none';
@@ -286,13 +318,14 @@
   function applyAll(){applyTheme();applyForm();applyLogos();}
   applyAll();
 
-  /* Modal/tabs */
-  (function(){const tabs=[...document.querySelectorAll('.tab')], secs=[...document.querySelectorAll('.section')];
+  /* ===== Tabs & modal ===== */
+  (function(){const tabs=[...document.querySelectorAll('.tab')],secs=[...document.querySelectorAll('.section')];
     tabs.forEach(tb=>on(tb,'click',()=>{tabs.forEach(t=>t.classList.remove('active'));secs.forEach(s=>s.classList.remove('active'));tb.classList.add('active');$(tb.dataset.tab).classList.add('active');}));
   })();
-  const modal=$('settingsModal'); const closeModal=()=>{modal.classList.remove('visible');modal.setAttribute('aria-hidden','true');}; on($('closeSettings'),'click',closeModal);
+  const modal=$('settingsModal'); const closeModal=()=>{modal.classList.remove('visible');modal.setAttribute('aria-hidden','true');};
+  on($('closeSettings'),'click',closeModal);
 
-  /* Live binding */
+  /* ===== Live binding ===== */
   const writeSoon=debounced(300,queueWriteFirestore);
   function bind(){
     on($('themeColor'),'input',function(){config.theme.color=this.value;save(config);applyTheme();writeSoon();});
@@ -309,50 +342,95 @@
 
     ;[...document.querySelectorAll('input[name="calendarMode"]')].forEach(r=>on(r,'change',function(){config.calendar.mode=r.value;save(config);applyForm();}));
     on($('calendarUrl'),'input',function(){config.calendar.url=this.value.trim();save(config);writeSoon();});
-
-    on($('calendarFile'),'change',async function(){ if(this.files&&this.files[0]){ const f=this.files[0]; const txt=await f.text(); config.calendar.fileName=f.name; config.calendar.fileData="data:text/html;base64,"+btoa(unescape(encodeURIComponent(txt))); config.calendar.mode='upload'; save(config); writeSoon(); alert('Kalender gemt lokalt. For deling på tværs: upload filen til GitHub og brug URL.'); }});
+    on($('calendarFile'),'change',async function(){if(this.files&&this.files[0]){const f=this.files[0];const txt=await f.text();config.calendar.fileName=f.name;config.calendar.fileData="data:text/html;base64,"+btoa(unescape(encodeURIComponent(txt)));config.calendar.mode='upload';save(config);writeSoon();alert('Kalender gemt lokalt. For deling: brug URL til fil i GitHub.');}});
 
     on($('homeyUrl'),'input',function(){config.homeyUrl=this.value.trim();save(config);writeSoon();});
     on($('sonosUrl'),'input',function(){config.sonosUrl=this.value.trim();save(config);writeSoon();});
     on($('sonosPkg'),'input',function(){config.sonosPkg=this.value.trim();save(config);writeSoon();});
     on($('sonosScheme'),'input',function(){config.sonosScheme=this.value.trim();save(config);writeSoon();});
     on($('householdId'),'input',function(){const v=this.value.trim().toUpperCase();if(v){config.householdId=v;save(config);startRealtime();writeSoon();}});
-
     on($('exportBtn'),'click',()=>dl('webkiosk-settings-'+(config.householdId||'DEFAULT')+'.json',JSON.stringify(config,null,2)));
     on($('importBtn'),'click',function(){const t=$('importArea').value.trim();if(!t){alert('Indsæt JSON');return;}try{const o=JSON.parse(t);if(!o.householdId)o.householdId=config.householdId||o.householdId;config=Object.assign({},config,o);save(config);applyAll();startRealtime();queueWriteFirestore();alert('Import OK.');}catch(e){alert('Ugyldig JSON: '+e.message);}});
     on($('importFile'),'change',async function(){const f=this.files&&this.files[0];if(!f)return;const t=await f.text();try{const o=JSON.parse(t);if(!o.householdId)o.householdId=config.householdId||o.householdId;config=Object.assign({},config,o);save(config);applyAll();startRealtime();queueWriteFirestore();alert('Import fra fil OK.');}catch(e){alert('Ugyldig JSON i fil: '+e.message);}});
   }
   bind();
+
   on($('saveSettings'),'click',()=>{config._ts=Date.now();save(config);queueWriteFirestore();closeModal();});
   on($('resetConfig'),'click',()=>{if(confirm('Nulstil alle indstillinger?')){localStorage.removeItem(LS_KEY);config=load();if(!config.householdId){config.householdId=Math.random().toString(36).slice(2,10).toUpperCase()}save(config);applyAll();startRealtime();queueWriteFirestore();}});
 
-  /* Tiles / overlays */
-  function openCalendar(){ let src=''; if(config.calendar?.mode==='upload'&&config.calendar?.fileData){src=config.calendar.fileData;} else {src=config.calendar?.url||'';} if(!src){alert('Ingen kalenderkilde valgt.');return;} $('calendarFrame').src=src; const v=$('calendarView'); v.classList.add('visible'); v.setAttribute('aria-hidden','false'); }
-  window.__handlers={openCalendar, openHomey, openSonos};
+  /* ===== Tiles / overlays ===== */
+  window.__handlers={};
+  function openCalendar(){
+    const hid=(config.householdId||'DEFAULT').toUpperCase();
+    let src='';
+    if(config.calendar?.mode==='upload' && config.calendar?.fileData){
+      src=config.calendar.fileData; // data:URL (kan ikke få ?hid – lokal brug)
+    }else if(config.calendar?.url){
+      const u=new URL(config.calendar.url, location.href);
+      u.searchParams.set('hid', hid); // <- vigtigt: sender husstand til kalender-siden
+      src=u.toString();
+    }
+    if(!src){alert('Ingen kalenderkilde valgt.');return;}
+    $('calendarFrame').src=src; const v=$('calendarView'); v.classList.add('visible'); v.setAttribute('aria-hidden','false');
+  }
+  __handlers.openCalendar=openCalendar;
+
   function showPanel(url,title){$('wkTitle').textContent=title||url;$('wkFrame').src=url;const p=$('wkPanel');p.classList.add('visible');p.setAttribute('aria-hidden','false');}
   function hidePanel(){const p=$('wkPanel');p.classList.remove('visible');p.setAttribute('aria-hidden','true');$('wkFrame').src='about:blank';}
   on($('wkBack'),'click',hidePanel);
-  function openHomey(){const u=(config.homeyUrl||'').trim();if(!u){alert('Ingen Homey URL.');return;} if(/^https?:\/\//i.test(u))showPanel(u,'Homey');else location.href=u;}
-  const isAndroid=/Android/i.test(navigator.userAgent), isiOS=/iPhone|iPad|iPod/i.test(navigator.userAgent);
-  function openSonosNative(){const pkg=(config.sonosPkg||'').trim()||'com.sonos.acr2';const scheme=(config.sonosScheme||config.sonosUrl||'').trim();if(isiOS&&/^sonos:\/\//i.test(scheme)){location.href=scheme;return true;} if(isAndroid&&pkg){const fb=encodeURIComponent(location.href);location.href='intent://open/#Intent;package='+pkg+';S.browser_fallback_url='+fb+';end;';setTimeout(()=>{location.href='market://details?id='+pkg;},1200);return true;} return false;}
-  function openSonos(){if(openSonosNative())return;const link=(config.sonosUrl||'').trim()||'https://play.sonos.com';if(/^https?:\/\//i.test(link))showPanel(link,'Sonos');else window.open(link,'_self');}
 
-  /* NoSleep */
+  function openHomey(){const u=(config.homeyUrl||'').trim();if(!u){alert('Ingen Homey URL.');return;} if(/^https?:\/\//i.test(u))showPanel(u,'Homey');else location.href=u;}
+  __handlers.openHomey=openHomey;
+
+  const isAndroid=/Android/i.test(navigator.userAgent), isiOS=/iPhone|iPad|iPod/i.test(navigator.userAgent);
+  function openSonosNative(){
+    const pkg=(config.sonosPkg||'').trim()||'com.sonos.acr2';
+    const scheme=(config.sonosScheme||config.sonosUrl||'').trim();
+    if(isiOS && /^sonos:\/\//i.test(scheme)){location.href=scheme;return true;}
+    if(isAndroid && pkg){const fb=encodeURIComponent(location.href);location.href='intent://open/#Intent;package='+pkg+';S.browser_fallback_url='+fb+';end;';setTimeout(()=>{location.href='market://details?id='+pkg;},1200);return true;}
+    return false;
+  }
+  function openSonos(){if(openSonosNative())return;const link=(config.sonosUrl||'').trim()||'https://play.sonos.com';if(/^https?:\/\//i.test(link))showPanel(link,'Sonos');else window.open(link,'_self');}
+  __handlers.openSonos=openSonos;
+
+  /* ===== NoSleep (skærm vågen) ===== */
   let noSleep=null; window.addEventListener('click',()=>{try{if(config.keepAwake&&!noSleep&&window.NoSleep){noSleep=new NoSleep();noSleep.enable();}}catch{}});
 
-  /* Firebase (auth+firestore sync) */
+  /* ===== Firebase (Auth + Firestore sync) ===== */
   const firebaseConfig={apiKey:"AIzaSyA_gh8y-V6kkI9shRzb0ldBxpKWFY5bAck",authDomain:"webkiosk-e5d32.firebaseapp.com",projectId:"webkiosk-e5d32",storageBucket:"webkiosk-e5d32.firebasestorage.app",messagingSenderId:"920175197353",appId:"1:920175197353:web:c3520e9a3ab8146ec4fdb8"};
-  const fb=firebase.initializeApp(firebaseConfig); const auth=firebase.auth(); const db=firebase.firestore();
+  const fb=firebase.initializeApp(firebaseConfig), auth=firebase.auth(), db=firebase.firestore();
 
   function badge(state,note){const b=$('syncBadge'),t=$('syncBadgeText'),n=$('syncBadgeNote');['sync-online','sync-syncing','sync-offline','sync-error'].forEach(c=>b.classList.remove(c));b.classList.add('sync-'+state);t.textContent={online:'Online',syncing:'Synkroniserer…',offline:'Offline',error:'Fejl'}[state]||'Offline';n.textContent=note?('· '+note):'';$('syncNote').textContent=t.textContent+(note?(' '+note):'');$('lastSync').textContent=note||'—';}
   window.addEventListener('online',()=>badge('online',nowStr())); window.addEventListener('offline',()=>badge('offline',''));
   auth.signInAnonymously().then(()=>badge(navigator.onLine?'online':'offline',nowStr())).catch(e=>{console.error('[auth]',e);badge('error','auth');});
-  let unsub=null, timer=null; const docRef=()=>db.collection('webkiosk').doc((config.householdId||'DEFAULT').toUpperCase());
-  async function writeFS(){try{const toSave=JSON.parse(JSON.stringify(config)); toSave.logos={}; if(toSave.calendar) toSave.calendar.fileData=''; toSave._ts=Date.now(); save(Object.assign(config,{_ts:toSave._ts})); await docRef().set(toSave,{merge:true}); badge('online',nowStr()); }catch(e){console.error('[write]',e);badge('error',e.code||e.message||'write');}}
-  function queueWriteFirestore(){ if(timer)clearTimeout(timer); badge('syncing','…'); timer=setTimeout(writeFS,300); }
-  function startRealtime(){ try{ if(unsub)unsub(); unsub=docRef().onSnapshot(s=>{ if(!s||!s.exists) return; const r=s.data()||{}; const l=load(); if(r._ts && (!l._ts || r._ts>l._ts)){ config=Object.assign({},l,r); save(config); applyAll(); } }, e=>{console.error('[listen]',e);badge('error',e.code||'snapshot');}); }catch(e){console.error('[listen-outer]',e);badge('error','listen');}}
+
+  let unsub=null, writeTimer=null;
+  const docRef=()=>db.collection('webkiosk').doc((config.householdId||'DEFAULT').toUpperCase());
+  async function writeFirestore(){
+    try{
+      const toSave=JSON.parse(JSON.stringify(config));
+      toSave.logos={}; // base64 previews sync'es ikke (småt)
+      if(toSave.calendar) toSave.calendar.fileData=''; // ikke sync af lokal upload
+      toSave._ts=Date.now();
+      save(Object.assign(config,{_ts:toSave._ts}));
+      await docRef().set(toSave,{merge:true});
+      badge('online',nowStr());
+    }catch(e){console.error('[write]',e);badge('error',e.code||e.message||'write');}
+  }
+  function queueWriteFirestore(){if(writeTimer)clearTimeout(writeTimer);badge('syncing','…');writeTimer=setTimeout(writeFirestore,300);}
+  function startRealtime(){
+    try{
+      if(unsub)unsub();
+      unsub=docRef().onSnapshot(s=>{
+        if(!s||!s.exists) return;
+        const r=s.data()||{}, l=load();
+        if(r._ts && (!l._ts || r._ts>l._ts)){ config=Object.assign({},l,r); save(config); applyAll(); }
+      }, e=>{console.error('[listen]',e);badge('error',e.code||'snapshot');});
+    }catch(e){console.error('[listen-outer]',e);badge('error','listen');}
+  }
   startRealtime();
 
+  // sikker reset af overlays ved load
   document.addEventListener('DOMContentLoaded',()=>['calendarView','wkPanel','settingsModal'].forEach(id=>{const el=$(id);if(el){el.classList.remove('visible');el.setAttribute('aria-hidden','true');el.style.display='none';el.offsetHeight;el.style.display='';}}));
   </script>
 </body>
