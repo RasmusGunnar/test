@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="da">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Webkiosk</title>
+  <meta name="theme-color" content="#0f172a" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+
+  <style>
+    :root{
+      --bg:#f6f7f9; --panel:#ffffff; --fg:#0f172a; --muted:#6b7280;
+      --border:#e6e8ec; --accent:#0f172a; --danger:#e11d48;
+      --radius:20px; --shadow:0 10px 30px rgba(2,6,23,.06);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;background:var(--bg);color:var(--fg)}
+    .wrap{max-width:1100px;margin:0 auto;padding:clamp(14px,2vw,24px)}
+    .grid{display:grid;gap:clamp(12px,2vw,18px);grid-template-columns:repeat(12,1fr)}
+    .card{grid-column:span 4;background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:24px;display:flex;flex-direction:column;justify-content:center;align-items:center;min-height:160px;text-align:center;cursor:pointer;transition:transform .06s ease,box-shadow .1s ease}
+    .card:active{transform:scale(.99)}
+    .title{font-size:18px;font-weight:600;margin-top:8px}
+    .subtitle{font-size:13px;color:var(--muted)}
+    @media (max-width:900px){.card{grid-column:span 6}}
+    @media (max-width:640px){.card{grid-column:span 12}}
+    .fab{position:fixed;right:18px;bottom:18px;height:56px;width:56px;border-radius:999px;background:var(--accent);color:#fff;display:grid;place-items:center;box-shadow:0 14px 40px rgba(2,6,23,.2);cursor:pointer}
+    .fab:active{transform:scale(.98)}
+    .fab-home{position:fixed;left:18px;bottom:18px;height:44px;border-radius:999px;background:var(--panel);border:1px solid var(--border);padding:0 14px;display:flex;align-items:center;gap:8px;box-shadow:var(--shadow);cursor:pointer}
+
+    dialog{border:none;border-radius:16px;max-width:860px;width:calc(100% - 24px);padding:0;box-shadow:0 20px 60px rgba(2,6,23,.28)}
+    .dlg-head{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--border)}
+    .dlg-body{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:18px}
+    .dlg-foot{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-top:1px solid var(--border);background:linear-gradient(#fff,#fafafa)}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    label{font-size:12px;color:var(--muted)}
+    input,select{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:#fff}
+    .danger{color:#fff;background:var(--danger);border:none;border-radius:10px;padding:10px 12px}
+    .btn{background:var(--accent);color:#fff;border:none;border-radius:10px;padding:10px 12px}
+    .ghost{background:#fff;color:var(--fg);border:1px solid var(--border);border-radius:10px;padding:10px 12px}
+    .hint{font-size:12px;color:var(--muted)}
+    .badge{font-size:12px;background:#eef2ff;border:1px solid #c7d2fe;padding:2px 8px;border-radius:999px}
+  </style>
+
+  <!-- Firebase compat SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <!-- NoSleep fallback -->
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/nosleep/0.12.0/NoSleep.min.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function(){
+      try{
+        var dlg = document.getElementById('dlg');
+        if(dlg && typeof dlg.open !== 'undefined' && dlg.open){ dlg.close(); }
+      }catch(_){}
+    });
+  </script>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="grid" id="grid"></div>
+  </div>
+
+  <button class="fab-home" id="btnHome" title="Forside">
+    <span>🏠</span><span>Forside</span>
+  </button>
+  <div class="fab" id="btnSettings" title="Indstillinger">⚙️</div>
+
+  <dialog id="dlg">
+    <div class="dlg-head">
+      <strong>Indstillinger</strong>
+      <button class="ghost" id="closeDlg">Luk</button>
+    </div>
+    <div class="dlg-body">
+      <section>
+        <h3>Knapper</h3>
+        <div id="btnForms"></div>
+      </section>
+
+      <section>
+        <h3>Udseende</h3>
+        <div class="row">
+          <div>
+            <label>Primærfarve</label>
+            <input type="color" id="themeColor" />
+          </div>
+          <div>
+            <label>Baggrundsfarve</label>
+            <input type="color" id="bgColor" />
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h3>Synkronisering</h3>
+        <div class="row">
+          <div>
+            <label>Husstands-ID</label>
+            <input id="householdId" placeholder="auto-genereres" />
+            <div class="hint">Brug samme ID på alle enheder for at synce.</div>
+          </div>
+          <div>
+            <label>Status</label>
+            <div><span id="syncStatus" class="badge">Offline</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h3>Skærm</h3>
+        <div class="row">
+          <div>
+            <label>Hold skærmen vågen</label>
+            <select id="wakeStrategy">
+              <option value="auto" selected>Auto (Wake Lock → NoSleep)</option>
+              <option value="off">Fra</option>
+            </select>
+          </div>
+          <div>
+            <label>Note</label>
+            <div class="hint">Installer som PWA for fuldskærm & bedre navigation.</div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="dlg-foot">
+      <button class="danger" id="resetAll">Nulstil alt</button>
+      <div style="display:flex;gap:8px">
+        <button class="ghost" id="exportBtn">Eksportér</button>
+        <button class="btn" id="saveDlg">Gem</button>
+      </div>
+    </div>
+  </dialog>
+
+  <script>
+    /* ===== Version-stempel (automatisk) ===== */
+    (function(){
+      const STATIC_VERSION = "2025-10-28b"; // kan opdateres manuelt ved behov
+      const auto = new Date();
+      const pad = (n)=>String(n).padStart(2,"0");
+      const autoVer = `${auto.getFullYear()}-${pad(auto.getMonth()+1)}-${pad(auto.getDate())}T${pad(auto.getHours())}${pad(auto.getMinutes())}`;
+      window.__WEBKIOSK_VERSION__ = STATIC_VERSION || autoVer;
+      document.title = `Webkiosk v${window.__WEBKIOSK_VERSION__}`;
+    })();
+
+    /* ===== Service Worker (cache-buster via ?vv=VERSION) ===== */
+    if('serviceWorker' in navigator){
+      const vv = encodeURIComponent(window.__WEBKIOSK_VERSION__);
+      navigator.serviceWorker.register(`./service-worker.js?vv=${vv}`).catch(()=>{});
+    }
+
+    /* ===== Firebase init ===== */
+    const firebaseConfig = {
+      apiKey: "AIzaSyA_gh8y-V6kkl95hRzb0ldBxpKWFY5bAck",
+      authDomain: "webkiosk-e5d32.firebaseapp.com",
+      projectId: "webkiosk-e5d32",
+      storageBucket: "webkiosk-e5d32.firebasestorage.app",
+      messagingSenderId: "920175197353",
+      appId: "1:920175197353:web:c3520e9a3ab8146ec4fdb8"
+    };
+    const app = firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db   = firebase.firestore();
+
+    /* ===== State ===== */
+    const DEFAULTS = {
+      theme: { color: "#0f172a", background:"#f6f7f9" },
+      householdId: null,
+      wakeStrategy: "auto",
+      buttons: [
+        { title:"Sonos web", type:"url", url:"https://account.sonos.com", icon:"🔊", pkg:"", scheme:"" },
+        { title:"Homey Dashboard", type:"url", url:"https://my.homey.app", icon:"🏠", pkg:"", scheme:"" },
+        { title:"Kalender", type:"url", url:"./familieoversigt_index_v11_autosync_READY_UPDATED.html", icon:"📅", pkg:"", scheme:"" }
+      ]
+    };
+    let settings = loadLocal() || DEFAULTS;
+
+    /* ===== DOM ===== */
+    const grid = document.getElementById('grid');
+    const dlg = document.getElementById('dlg');
+    const btnSettings = document.getElementById('btnSettings');
+    const btnHome = document.getElementById('btnHome');
+    const closeDlg = document.getElementById('closeDlg');
+    const themeColor = document.getElementById('themeColor');
+    const bgColor = document.getElementById('bgColor');
+    const householdIdEl = document.getElementById('householdId');
+    const syncStatus = document.getElementById('syncStatus');
+    const wakeStrategyEl = document.getElementById('wakeStrategy');
+    const resetAll = document.getElementById('resetAll');
+    const saveDlg = document.getElementById('saveDlg');
+    const exportBtn = document.getElementById('exportBtn');
+    const btnForms = document.getElementById('btnForms');
+
+    /* ===== Utils ===== */
+    function saveLocal(s){ localStorage.setItem('webkiosk.settings', JSON.stringify(s)); }
+    function loadLocal(){ try{ return JSON.parse(localStorage.getItem('webkiosk.settings')||''); }catch{return null;} }
+    const isAndroid = /Android/i.test(navigator.userAgent);
+    const isiOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    function ensureHouseholdId(){
+      if(!settings.householdId){
+        settings.householdId = Math.random().toString(36).slice(2,10).toUpperCase();
+      }
+    }
+    function safeHost(u){ try{ return new URL(u).host; }catch{ return ''; } }
+
+    /* ===== Render ===== */
+    function renderGrid(){
+      document.documentElement.style.setProperty('--accent', settings.theme.color);
+      document.documentElement.style.setProperty('--bg', settings.theme.background);
+      grid.innerHTML = settings.buttons.map((b, i)=>`
+        <button class="card" data-idx="${i}" aria-label="${b.title}">
+          <div style="font-size:28px">${b.icon || '🔘'}</div>
+          <div class="title">${b.title}</div>
+          <div class="subtitle">${b.type==='app'
+            ? (isAndroid ? 'Åbner Android app' : (b.scheme ? 'Åbner app via scheme' : 'App kun Android'))
+            : (safeHost(b.url)) }</div>
+        </button>
+      `).join('');
+      grid.querySelectorAll('.card').forEach(el=>{
+        el.addEventListener('click', ()=>{
+          const idx = Number(el.getAttribute('data-idx'));
+          openTarget(settings.buttons[idx]);
+        });
+      });
+    }
+
+    function renderSettings(){
+      themeColor.value = settings.theme.color;
+      bgColor.value = settings.theme.background;
+      wakeStrategyEl.value = settings.wakeStrategy;
+      ensureHouseholdId();
+      householdIdEl.value = settings.householdId;
+
+      btnForms.innerHTML = settings.buttons.map((b, i)=>`
+        <fieldset style="border:1px solid var(--border);padding:12px;border-radius:12px;margin-bottom:10px">
+          <legend>Knap ${i+1}</legend>
+          <div class="row">
+            <div>
+              <label>Titel</label>
+              <input id="t-${i}" value="${b.title}">
+            </div>
+            <div>
+              <label>Ikon (emoji)</label>
+              <input id="ic-${i}" value="${b.icon || ''}" placeholder="fx 🔊">
+            </div>
+          </div>
+          <div class="row" style="margin-top:8px">
+            <div>
+              <label>Type</label>
+              <select id="ty-${i}">
+                <option value="url" ${b.type==='url'?'selected':''}>URL</option>
+                <option value="app" ${b.type==='app'?'selected':''}>Android App</option>
+              </select>
+            </div>
+            <div>
+              <label>URL (ved Type=URL)</label>
+              <input id="u-${i}" value="${b.url||''}" placeholder="https://...">
+            </div>
+          </div>
+          <div class="row" style="margin-top:8px">
+            <div>
+              <label>Android package (ved Type=App)</label>
+              <input id="pg-${i}" value="${b.pkg||''}" placeholder="fx com.sonos.acr2">
+            </div>
+            <div>
+              <label>Custom scheme (iOS/Android – valgfri)</label>
+              <input id="sc-${i}" value="${b.scheme||''}" placeholder="fx sonos://">
+            </div>
+          </div>
+        </fieldset>
+      `).join('');
+    }
+
+    /* ===== Åbn mål ===== */
+    function openTarget(btn){
+      if(btn.type === 'url' && btn.url){
+        location.href = btn.url; // bevar din nuværende adfærd
+        return;
+      }
+      if(btn.type === 'app'){
+        if(isiOS && btn.scheme){
+          location.href = btn.scheme;
+          return;
+        }
+        if(isAndroid && btn.pkg){
+          const fallback = encodeURIComponent(location.origin);
+          const intentUrl = `intent://open/#Intent;package=${btn.pkg};S.browser_fallback_url=${fallback};end;`;
+          location.href = intentUrl;
+          setTimeout(()=>{ location.href = `market://details?id=${btn.pkg}`; }, 1400);
+          return;
+        }
+        alert('Kan ikke åbne app – mangler Android package eller understøttet scheme.');
+      }
+    }
+
+    /* ===== Wake Lock ===== */
+    let wakeLock = null;
+    let noSleep = null;
+    async function requestWakeLock(){
+      if(settings.wakeStrategy === 'off') return releaseWakeLock();
+      try{
+        if('wakeLock' in navigator){
+          wakeLock = await navigator.wakeLock.request('screen');
+        }else{
+          if(!noSleep) noSleep = new window.NoSleep();
+          noSleep.enable(); // kræver første interaktion
+        }
+      }catch(_){}
+    }
+    function releaseWakeLock(){
+      try{ if(wakeLock){ wakeLock.release(); wakeLock=null; } }catch(_){}
+      try{ if(noSleep){ noSleep.disable(); noSleep=null; } }catch(_){}
+    }
+    document.addEventListener('visibilitychange', ()=>{
+      if(document.visibilityState === 'visible') requestWakeLock();
+    }, {passive:true});
+
+    /* ===== Firebase Auth + Firestore sync ===== */
+    let unsub = null;
+    let writeTimer = null;
+    function DOC(){ return db.collection('webkiosk').doc(settings.householdId); }
+
+    async function initAuth(){
+      try{
+        await auth.signInAnonymously();
+        syncStatus.textContent = 'Online';
+      }catch(e){
+        syncStatus.textContent = 'Auth fejl';
+        console.warn(e);
+      }
+    }
+    async function startRealtime(){
+      if(unsub) unsub();
+      if(!settings.householdId) return;
+      unsub = DOC().onSnapshot(snap=>{
+        if(!snap.exists) return;
+        const remote = snap.data();
+        if(remote._ts && (!settings._ts || remote._ts > settings._ts)){
+          settings = remote;
+          saveLocal(settings);
+          applyAll();
+        }
+      }, (err)=>{ console.warn('Snapshot error', err); });
+    }
+    function queueWrite(){
+      clearTimeout(writeTimer);
+      writeTimer = setTimeout(async ()=>{
+        try{
+          settings._ts = Date.now();
+          await DOC().set(settings, {merge:true});
+          syncStatus.textContent = 'Synkroniseret';
+        }catch(e){
+          syncStatus.textContent = 'Sync fejl';
+          console.warn(e);
+        }
+      }, 300);
+    }
+
+    /* ===== Events ===== */
+    btnSettings.addEventListener('click', ()=>{ renderSettings(); dlg.showModal(); });
+    closeDlg.addEventListener('click', ()=> dlg.close());
+    btnHome.addEventListener('click', ()=> location.href = './index.html');
+
+    saveDlg.addEventListener('click', ()=>{
+      settings.theme.color = themeColor.value || settings.theme.color;
+      settings.theme.background = bgColor.value || settings.theme.background;
+      settings.wakeStrategy = wakeStrategyEl.value;
+
+      const prevId = settings.householdId;
+      settings.householdId = (householdIdEl.value||'').trim().toUpperCase() || settings.householdId;
+      if(settings.householdId !== prevId){ startRealtime(); }
+
+      settings.buttons = settings.buttons.map((b, i)=>({
+        title: document.getElementById(`t-${i}`)?.value || b.title,
+        icon: document.getElementById(`ic-${i}`)?.value || b.icon,
+        type: document.getElementById(`ty-${i}`)?.value || b.type,
+        url:  document.getElementById(`u-${i}`)?.value || b.url || '',
+        pkg:  document.getElementById(`pg-${i}`)?.value || b.pkg || '',
+        scheme: document.getElementById(`sc-${i}`)?.value || b.scheme || ''
+      }));
+
+      saveLocal(settings);
+      queueWrite();
+      applyAll();
+      dlg.close();
+    });
+
+    resetAll.addEventListener('click', ()=>{
+      if(!confirm('Nulstil alt til fabriksindstillinger?')) return;
+      settings = JSON.parse(JSON.stringify(DEFAULTS));
+      ensureHouseholdId();
+      saveLocal(settings);
+      queueWrite();
+      applyAll();
+    });
+
+    exportBtn.addEventListener('click', ()=>{
+      const blob = new Blob([JSON.stringify(settings,null,2)], {type:'application/json'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `webkiosk-settings-${settings.householdId}.json`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    });
+
+    window.addEventListener('pageshow', ()=>{ requestWakeLock(); }, {passive:true});
+    window.addEventListener('click', ()=>{
+      if(!('wakeLock' in navigator)){ try{ if(!noSleep) noSleep = new window.NoSleep(); noSleep.enable(); }catch(_){} }
+    }, {passive:true});
+
+    /* ===== Boot ===== */
+    ensureHouseholdId();
+    saveLocal(settings);
+    applyAll();
+    initAuth().then(startRealtime).catch(()=>{});
+
+    function applyAll(){
+      renderGrid();
+      requestWakeLock();
+    }
+  </script>
+</body>
+</html>

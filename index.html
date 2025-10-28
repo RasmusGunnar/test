@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="da">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Webkiosk – SAFE start</title>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+  <meta http-equiv="Pragma" content="no-cache"/>
+  <meta http-equiv="Expires" content="0"/>
+  <script>
+    (function(){
+      if('serviceWorker' in navigator){
+        navigator.serviceWorker.getRegistrations().then(function(regs){
+          regs.forEach(function(r){ r.unregister(); });
+        });
+      }
+      if(window.caches){
+        caches.keys().then(function(keys){ keys.forEach(function(k){ caches.delete(k); }); });
+      }
+      setTimeout(function(){
+        var target = './webkiosk_apple_crisp_with_settings_fab.html?v=' + Date.now();
+        location.replace(target);
+      }, 150);
+    })();
+  </script>
+  <style>body{font-family:system-ui,Segoe UI,Roboto,Inter,Arial,sans-serif;padding:24px}</style>
+</head>
+<body>
+  Starter uden service worker… åbner Webkiosk om et øjeblik.
+  <div><a href="./webkiosk_apple_crisp_with_settings_fab.html?v=manual" rel="nofollow">Åbn manuelt</a></div>
+</body>
+</html>
