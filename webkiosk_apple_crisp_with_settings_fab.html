@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Webkiosk v2025-10-28g</title>
+<title>Webkiosk v2025-10-28i</title>
 <meta name="theme-color" content="#0f172a" />
 <link rel="manifest" href="./manifest.webmanifest" />
 <style>
@@ -11,7 +11,7 @@
     --bg:#f6f7f9; --panel:#ffffff; --fg:#0f172a; --muted:#6b7280;
     --border:#e6e8ec; --accent:#0f172a;
     --radius:20px; --shadow:0 10px 30px rgba(2,6,23,.06);
-    --logoH: 64px; --logoBoxW: 42%; --logoMaxW: 280px;
+    --logoH:64px; --logoBoxW:42%; --logoMaxW:280px;
   }
   @media (max-width:1100px){ :root{ --logoBoxW:45%; --logoH:60px } }
   @media (max-width:900px){  :root{ --logoBoxW:50%; --logoH:56px } }
@@ -39,17 +39,18 @@
   .widget.weather{grid-column:span 6}
   .widget.clock{grid-column:span 6}
   @media (max-width:900px){.widget.weather,.widget.clock{grid-column:span 12}.tiles{grid-template-columns:1fr}}
-  /* Kalender overlay (som før) */
+  /* Kalender overlay */
   .calendar-view{position:fixed;inset:0;padding:clamp(12px,2vw,20px);background:rgba(246,247,249,.85);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:none;z-index:60}
   .calendar-inner{height:100%;display:flex;flex-direction:column;gap:12px}
   .topbar{display:flex;align-items:center;gap:12px}
   .back-btn{display:inline-flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;background:#fff;border:1px solid var(--border);color:var(--fg);cursor:pointer;font-weight:650;box-shadow:var(--shadow)}
   .calframe.panel{flex:1;min-height:0;overflow:hidden;display:flex}
   iframe{width:100%;height:100%;border:0;display:block}
+  /* Tandhjul (din) */
   .fab{position:fixed;right:20px;bottom:20px;z-index:70}
   .fab button{width:56px;height:56px;border-radius:50%;border:1px solid var(--border);background:#fff;color:var(--fg);display:inline-flex;align-items:center;justify-content:center;box-shadow:var(--shadow);cursor:pointer}
   .fab button:hover{transform:translateY(-1px);box-shadow:0 14px 30px rgba(2,6,23,.10)}
-  /* Din modal (beholdt) */
+  /* Indstillinger (din) */
   .modal{position:fixed;inset:0;background:rgba(15,23,42,.28);display:none;align-items:center;justify-content:center;padding:20px;z-index:80}
   .modal[aria-hidden="false"]{display:flex}
   .dialog{width:min(920px,96vw);max-height:92vh;overflow:auto;background:#fff;border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);padding:20px}
@@ -67,12 +68,12 @@
   .btn.primary{background:var(--fg);color:#fff;border-color:var(--fg)}
   .logoPreview{width:140px;height:64px;display:flex;align-items:center;justify-content:center;border:1px dashed var(--border);border-radius:12px;background:#fafafa}
   .logoPreview img{max-width:100%;max-height:100%;object-fit:contain;display:block}
-  /* Webpanel overlay til Homey/Sonos (NYT men matcher dit udtryk) */
+  /* Webpanel overlay */
   .wk-panel{position:fixed;inset:0;background:#00000010;backdrop-filter:saturate(1.1) blur(4px);display:none;z-index:75}
   .wk-panel.visible{display:block}
   .wk-shell{position:absolute;inset:0;background:#fff;box-shadow:0 12px 60px rgba(2,6,23,.25)}
   .wk-topbar{position:absolute;left:0;right:0;top:0;height:52px;display:flex;align-items:center;gap:10px;padding:0 12px;border-bottom:1px solid var(--border);background:linear-gradient(#fff,#fafafa);z-index:2}
-  .wk-topbar .btn{appearance:none;border:1px solid var(--border);border-radius:10px;background:#fff;padding:8px 10px;cursor:pointer}
+  .wk-topbar .btn{border:1px solid var(--border);border-radius:10px;background:#fff;padding:8px 10px;cursor:pointer}
   .wk-topbar .title{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .wk-iframe{position:absolute;top:52px;left:0;right:0;bottom:0;width:100%;height:calc(100% - 52px);border:0}
   .wk-fallback{position:absolute;inset:52px 0 0 0;display:none;align-items:center;justify-content:center}
@@ -89,9 +90,9 @@
             <path d="M3 16.5a4.5 4.5 0 0 1 4.5-4.5h.5A6.5 6.5 0 1 1 20 14.5a3.5 3.5 0 0 1-3.5 3.5H8.5A5.5 5.5 0 0 1 3 16.5z"/>
           </svg>
           <div>
-            <div class="weather-temp">18°</div>
-            <div class="weather-line">Klart</div>
-            <div class="weather-line">Farum</div>
+            <div class="weather-temp" id="weatherTemp">18°</div>
+            <div class="weather-line" id="weatherCond">Klart</div>
+            <div class="weather-line" id="weatherCity">Farum</div>
           </div>
         </div>
       </section>
@@ -129,7 +130,7 @@
     </div>
   </section>
 
-  <!-- Tandhjul (dit) -->
+  <!-- Tandhjul (din) -->
   <div class="fab" aria-live="polite">
     <button id="openSettings" title="Indstillinger" aria-label="Indstillinger">
       <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -139,7 +140,7 @@
     </button>
   </div>
 
-  <!-- Indstillinger (din modal) + Udseende/Synkronisering/Skærm felter -->
+  <!-- Indstillinger (din) + ekstra felter -->
   <div class="modal" id="settingsModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
     <div class="dialog">
       <h3 id="settingsTitle">Indstillinger</h3>
@@ -184,7 +185,7 @@
     </div>
   </div>
 
-  <!-- Webpanel overlay (NYT) -->
+  <!-- Webpanel overlay -->
   <div id="wkPanel" class="wk-panel" aria-hidden="true">
     <div class="wk-shell">
       <div class="wk-topbar">
@@ -198,214 +199,146 @@
       <div id="wkFallback" class="wk-fallback">
         <div class="card">
           <h3>Kan ikke vise siden her</h3>
-          <p>Siden tillader ikke indlejring. Du kan åbne den i en ny fane i stedet.</p>
+          <p>Siden tillader ikke indlejring. Åbn i ny fane i stedet.</p>
           <p><button id="wkOpenNew2" class="btn">↗ Åbn i ny fane</button></p>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Firebase SDKs -->
+  <!-- SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/nosleep/0.12.0/NoSleep.min.js"></script>
+
+  <!-- App logic + hotfix samlet -->
   <script>
-  /* ===== Version + SW ===== */
-  const VERSION = "2025-10-28g";
-  if('serviceWorker' in navigator){
-    navigator.serviceWorker.register(`./service-worker.js?vv=${encodeURIComponent(VERSION)}`).catch(()=>{});
-  }
+  const VERSION="2025-10-28i";
+  if('serviceWorker' in navigator){ navigator.serviceWorker.register(`./service-worker.js?vv=${encodeURIComponent(VERSION)}`).catch(()=>{}); }
 
-  /* ===== Ur ===== */
-  function updateClock(){
+  /* Klokke */
+  function updateClock(){try{
+    const t=document.getElementById('clockTime'), d=document.getElementById('clockDate');
+    if(!t||!d) return;
     const now=new Date();
-    const t=now.toLocaleTimeString('da-DK',{hour:'2-digit',minute:'2-digit'});
-    const d=now.toLocaleDateString('da-DK',{weekday:'long',day:'2-digit',month:'long'});
-    document.getElementById('clockTime').textContent=t;
-    document.getElementById('clockDate').textContent=d.charAt(0).toUpperCase()+d.slice(1);
-  }
-  setInterval(updateClock,1000);updateClock();
+    t.textContent=now.toLocaleTimeString('da-DK',{hour:'2-digit',minute:'2-digit'});
+    const dd=now.toLocaleDateString('da-DK',{weekday:'long',day:'2-digit',month:'long'});
+    d.textContent=dd.charAt(0).toUpperCase()+dd.slice(1);
+  }catch(_){}} setInterval(updateClock,1000); updateClock();
 
-  /* ===== Local config ===== */
+  /* Local state */
   const LS_KEY='webkioskConfigV2';
-  const defaults={
-    calendar:{mode:'url',url:'',fileName:'',fileData:''},
-    homeyUrl:'',sonosUrl:'',sonosPkg:'',sonosScheme:'',
-    logos:{calendar:'',homey:'',sonos:''},
-    theme:{color:'#0f172a',background:'#f6f7f9'},
-    householdId:'',wakeStrategy:'auto',_ts:0
-  };
-  function loadConfig(){try{return Object.assign({},defaults,JSON.parse(localStorage.getItem(LS_KEY)||'{}'))}catch{return {...defaults}}}
-  function saveConfig(cfg){localStorage.setItem(LS_KEY,JSON.stringify(cfg))}
-  let config=loadConfig();
+  const defaults={calendar:{mode:'url',url:'',fileName:'',fileData:''},homeyUrl:'',sonosUrl:'',sonosPkg:'',sonosScheme:'',logos:{calendar:'',homey:'',sonos:''},theme:{color:'#0f172a',background:'#f6f7f9'},householdId:'',wakeStrategy:'auto',_ts:0};
+  function load(){try{return Object.assign({},defaults,JSON.parse(localStorage.getItem(LS_KEY)||'{}'))}catch{return {...defaults}}}
+  function save(c){localStorage.setItem(LS_KEY,JSON.stringify(c))}
+  let config=load(); if(!config.householdId){config.householdId=Math.random().toString(36).slice(2,10).toUpperCase(); save(config)}
+  document.documentElement.style.setProperty('--accent',config.theme.color); document.documentElement.style.setProperty('--bg',config.theme.background);
 
-  /* ===== Modal (din) ===== */
-  const modal=document.getElementById('settingsModal');
-  const btnOpen=document.getElementById('openSettings');
-  const btnClose=document.getElementById('closeSettings');
-  const btnSave=document.getElementById('saveSettings');
-  const btnReset=document.getElementById('resetConfig');
-  const calendarUrl=document.getElementById('calendarUrl');
-  const calendarFile=document.getElementById('calendarFile');
-  const calendarUploadRow=document.getElementById('calendarUploadRow');
-  const homeyUrl=document.getElementById('homeyUrl');
-  const sonosUrl=document.getElementById('sonosUrl');
-  const sonosPkg=document.getElementById('sonosPkg');
-  const sonosScheme=document.getElementById('sonosScheme');
-  const logoInputs={calendar:document.getElementById('logoInputCalendar'),homey:document.getElementById('logoInputHomey'),sonos:document.getElementById('logoInputSonos')};
-  const logoImgs={calendar:document.getElementById('logoCalendar'),homey:document.getElementById('logoHomey'),sonos:document.getElementById('logoSonos')};
-  const logoPreviews={calendar:document.getElementById('prevCalendar'),homey:document.getElementById('prevHomey'),sonos:document.getElementById('prevSonos')};
-  const modeRadios=[...document.querySelectorAll('input[name="calendarMode"]')];
+  /* UI refs */
+  const modal=document.getElementById('settingsModal'); const openSettings=document.getElementById('openSettings'); const closeSettings=document.getElementById('closeSettings'); const saveSettings=document.getElementById('saveSettings'); const resetConfig=document.getElementById('resetConfig');
+  const calendarUrl=document.getElementById('calendarUrl'); const calendarFile=document.getElementById('calendarFile'); const calendarUploadRow=document.getElementById('calendarUploadRow'); const modeRadios=[...document.querySelectorAll('input[name="calendarMode"]')];
+  const homeyUrl=document.getElementById('homeyUrl'); const sonosUrl=document.getElementById('sonosUrl'); const sonosPkg=document.getElementById('sonosPkg'); const sonosScheme=document.getElementById('sonosScheme');
+  const themeColor=document.getElementById('themeColor'); const bgColor=document.getElementById('bgColor'); const wakeStrategy=document.getElementById('wakeStrategy'); const householdId=document.getElementById('householdId'); const syncStatus=document.getElementById('syncStatus');
 
-  function openModal(){modal.setAttribute('aria-hidden','false');applyForm()}
-  function closeModal(){modal.setAttribute('aria-hidden','true')}
-  btnOpen.addEventListener('click',openModal);btnClose.addEventListener('click',closeModal);
-  modal.addEventListener('click',(e)=>{if(e.target===modal)closeModal()});
-  function syncCalendarModeUI(){const m=modeRadios.find(r=>r.checked)?.value||'url';calendarUploadRow.style.display=(m==='upload')?'':'none'}
-  modeRadios.forEach(r=>r.addEventListener('change',syncCalendarModeUI));
+  /* Modal open/close */
+  function openModal(){ modal.setAttribute('aria-hidden','false'); applyForm(); }
+  function closeModal(){ modal.setAttribute('aria-hidden','true'); }
+  openSettings.addEventListener('click',openModal); closeSettings.addEventListener('click',closeModal); modal.addEventListener('click',(e)=>{ if(e.target===modal) closeModal(); });
 
-  async function toBase64(file){return new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>res(fr.result);fr.onerror=rej;fr.readAsDataURL(file)})}
-  function applyLogos(){['calendar','homey','sonos'].forEach(k=>{const b64=config.logos[k];if(b64){logoImgs[k].src=b64;logoPreviews[k].src=b64}})}
-  Object.entries(logoInputs).forEach(([key,input])=>{input.addEventListener('change',async()=>{const f=input.files?.[0];if(!f)return;const b64=await toBase64(f);config.logos[key]=b64;applyLogos();})});
-  calendarFile.addEventListener('change',async()=>{const f=calendarFile.files?.[0];if(!f)return;const b64=await toBase64(f);config.calendar.fileName=f.name;config.calendar.fileData=b64});
-
-  function applyTheme(){document.documentElement.style.setProperty('--accent',config.theme.color||'#0f172a');document.documentElement.style.setProperty('--bg',config.theme.background||'#f6f7f9')}
+  /* Form apply */
   function applyForm(){
-    modeRadios.forEach(r=>r.checked=(r.value===(config.calendar.mode||'url')));syncCalendarModeUI();
-    calendarUrl.value=config.calendar.url||'';homeyUrl.value=config.homeyUrl||'';sonosUrl.value=config.sonosUrl||'';sonosPkg.value=config.sonosPkg||'';sonosScheme.value=config.sonosScheme||'';
-    const tc=document.getElementById('themeColor'),bg=document.getElementById('bgColor');if(tc)tc.value=config.theme?.color||'#0f172a';if(bg)bg.value=config.theme?.background||'#f6f7f9';
-    const hid=document.getElementById('householdId');if(hid){if(!config.householdId){config.householdId=Math.random().toString(36).slice(2,10).toUpperCase();saveConfig(config)}hid.value=config.householdId}
-    const ws=document.getElementById('wakeStrategy');if(ws)ws.value=config.wakeStrategy||'auto';
-    applyTheme();applyLogos();
+    calendarUrl.value=config.calendar.url||''; homeyUrl.value=config.homeyUrl||''; sonosUrl.value=config.sonosUrl||''; sonosPkg.value=config.sonosPkg||''; sonosScheme.value=config.sonosScheme||'';
+    themeColor.value=config.theme.color||'#0f172a'; bgColor.value=config.theme.background||'#f6f7f9'; wakeStrategy.value=config.wakeStrategy||'auto'; householdId.value=config.householdId||'';
+    modeRadios.forEach(r=>r.checked=(r.value===(config.calendar.mode||'url'))); calendarUploadRow.style.display=(config.calendar.mode==='upload')?'':'none';
   }
+  modeRadios.forEach(r=>r.addEventListener('change',()=>{config.calendar.mode=r.value; calendarUploadRow.style.display=(r.value==='upload')?'':'none';}));
 
-  btnSave.addEventListener('click',()=>{
-    config.calendar.mode=modeRadios.find(r=>r.checked)?.value||'url';
-    config.calendar.url=calendarUrl.value.trim();
-    config.homeyUrl=homeyUrl.value.trim();
-    config.sonosUrl=sonosUrl.value.trim();
-    config.sonosPkg=sonosPkg.value.trim();
-    config.sonosScheme=sonosScheme.value.trim();
-    const tc=document.getElementById('themeColor'),bg=document.getElementById('bgColor');
-    config.theme.color=tc.value||config.theme.color;config.theme.background=bg.value||config.theme.background;
-    const hid=document.getElementById('householdId');config.householdId=(hid?.value||config.householdId||'').toUpperCase();
-    const ws=document.getElementById('wakeStrategy');config.wakeStrategy=ws?.value||'auto';
-    config._ts=Date.now();saveConfig(config);applyTheme();queueWriteFirestore();closeModal();requestWakeLock();
+  /* File/Logos (valgfrit – neutral hvis ikke i brug) */
+  async function toB64(file){return new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>res(fr.result);fr.onerror=rej;fr.readAsDataURL(file)})}
+  calendarFile.addEventListener('change',async()=>{const f=calendarFile.files?.[0];if(!f)return;config.calendar.fileName=f.name;config.calendar.fileData=await toB64(f);});
+
+  /* Gem */
+  saveSettings.addEventListener('click',()=>{
+    config.calendar.url=calendarUrl.value.trim(); config.homeyUrl=homeyUrl.value.trim(); config.sonosUrl=sonosUrl.value.trim(); config.sonosPkg=sonosPkg.value.trim(); config.sonosScheme=sonosScheme.value.trim();
+    config.theme.color=themeColor.value||config.theme.color; config.theme.background=bgColor.value||config.theme.background; config.wakeStrategy=wakeStrategy.value||'auto';
+    config.householdId=(householdId.value||config.householdId||'').toUpperCase();
+    config._ts=Date.now(); save(config);
+    document.documentElement.style.setProperty('--accent',config.theme.color); document.documentElement.style.setProperty('--bg',config.theme.background);
+    queueWriteFirestore(); requestWakeLock(); closeModal();
   });
-  btnReset.addEventListener('click',()=>{if(confirm('Nulstil alle indstillinger?')){localStorage.removeItem(LS_KEY);config=loadConfig();applyForm()}});
+  resetConfig.addEventListener('click',()=>{ if(confirm('Nulstil alle indstillinger?')){ localStorage.removeItem(LS_KEY); config=load(); if(!config.householdId){config.householdId=Math.random().toString(36).slice(2,10).toUpperCase()} save(config); applyForm(); }});
 
-  /* ===== Kalender overlay ===== */
-  const calendarView=document.getElementById('calendarView');
-  const calendarFrame=document.getElementById('calendarFrame');
-  const openCal=document.getElementById('tileCalendar');
-  const closeCal=document.getElementById('closeCalendar');
+  /* Kalender overlay */
+  const tileCalendar=document.getElementById('tileCalendar'); const calendarView=document.getElementById('calendarView'); const calendarFrame=document.getElementById('calendarFrame'); const closeCalendar=document.getElementById('closeCalendar');
   function openCalendar(){
-    let src='';if(config.calendar.mode==='upload'&&config.calendar.fileData){try{const arr=config.calendar.fileData.split(',');const mime=arr[0].match(/data:(.*);base64/)[1]||'text/html';const bytes=atob(arr[1]);const buf=new Uint8Array(bytes.length);for(let i=0;i<bytes.length;i++)buf[i]=bytes.charCodeAt(i);const blob=new Blob([buf],{type:mime});src=URL.createObjectURL(blob)}catch(e){src=config.calendar.fileData}}else if(config.calendar.url){src=config.calendar.url}
-    if(!src){alert('Ingen kalenderkilde valgt. Åbn Indstillinger.');return}
-    calendarFrame.src=src;calendarView.style.display='block';
+    let src=''; if(config.calendar.mode==='upload'&&config.calendar.fileData){ try{const arr=config.calendar.fileData.split(',');const bytes=atob(arr[1]);const buf=new Uint8Array(bytes.length);for(let i=0;i<bytes.length;i++)buf[i]=bytes.charCodeAt(i);src=URL.createObjectURL(new Blob([buf],{type:'text/html'}));}catch(_){src=config.calendar.fileData} }
+    else src=config.calendar.url;
+    if(!src){ alert('Ingen kalenderkilde valgt.'); return; }
+    calendarFrame.src=src; calendarView.style.display='block'; calendarView.setAttribute('aria-hidden','false');
   }
-  function closeCalendarFn(){calendarView.style.display='none';calendarFrame.src=''}
-  openCal.addEventListener('click',openCalendar);closeCal.addEventListener('click',closeCalendarFn);
+  function closeCalendarFn(){calendarView.style.display='none';calendarView.setAttribute('aria-hidden','true');calendarFrame.src='about:blank'}
+  tileCalendar.addEventListener('click',openCalendar); closeCalendar.addEventListener('click',closeCalendarFn);
 
-  /* ===== Webpanel overlay (Homey/Sonos) ===== */
-  const wkPanel=document.getElementById('wkPanel');
-  const wkFrame=document.getElementById('wkFrame');
-  const wkTitle=document.getElementById('wkTitle');
-  const wkBack=document.getElementById('wkBack');
-  const wkOpenNew=document.getElementById('wkOpenNew');
-  const wkOpenNew2=document.getElementById('wkOpenNew2');
-  const wkFallback=document.getElementById('wkFallback');
+  /* Webpanel overlay */
+  const wkPanel=document.getElementById('wkPanel'); const wkFrame=document.getElementById('wkFrame'); const wkTitle=document.getElementById('wkTitle'); const wkBack=document.getElementById('wkBack'); const wkOpenNew=document.getElementById('wkOpenNew'); const wkOpenNew2=document.getElementById('wkOpenNew2'); const wkFallback=document.getElementById('wkFallback');
   let currentUrl='';
+  function showPanel(url,title){ currentUrl=url; wkTitle.textContent=title||url; wkOpenNew.onclick=wkOpenNew2.onclick=()=>window.open(currentUrl,'_blank','noopener,noreferrer'); wkFallback.style.display='none'; wkFrame.src=url; wkPanel.classList.add('visible'); wkPanel.setAttribute('aria-hidden','false'); setTimeout(()=>{try{if(!wkFrame.contentWindow||wkFrame.contentWindow.location.href==='about:blank'){wkFallback.style.display='flex'}}catch(_){/* cross-origin ok */}},1200); }
+  function hidePanel(){ wkPanel.classList.remove('visible'); wkPanel.setAttribute('aria-hidden','true'); try{wkFrame.src='about:blank'}catch(_){} }
+  wkBack.addEventListener('click',hidePanel);
 
-  function showPanel(){wkPanel.classList.add('visible');wkPanel.setAttribute('aria-hidden','false')}
-  function hidePanel(){wkPanel.classList.remove('visible');wkPanel.setAttribute('aria-hidden','true')}
-  function safeHost(u){try{return new URL(u).host}catch{return ''}}
-
-  function openWebPanel(url,title=''){
-    currentUrl=url;wkTitle.textContent=title||safeHost(url)||'Webvisning';
-    wkOpenNew.onclick=()=>window.open(currentUrl,'_blank','noopener,noreferrer');
-    wkOpenNew2.onclick=()=>window.open(currentUrl,'_blank','noopener,noreferrer');
-    wkFallback.style.display='none';wkFrame.src=url;showPanel();
-    wkFrame.addEventListener('load',()=>{wkFallback.style.display='none'},{once:true});
-    setTimeout(()=>{try{const loc=wkFrame.contentWindow.location.href;if(!loc||loc==='about:blank'){wkFallback.style.display='flex'}}catch(_){/* cross-origin ok */}},1200);
-  }
-  function closeWebPanel(){hidePanel();try{wkFrame.src='about:blank'}catch(_){}currentUrl=''}
-  wkBack.addEventListener('click',closeWebPanel);
-
-  /* ===== Homey/Sonos knapper → overlay/app ===== */
+  /* Homey/Sonos klik */
   document.getElementById('tileHomey').addEventListener('click',()=>{
-    const url=(config.homeyUrl||'').trim(); if(!url){alert('Ingen Homey URL sat endnu.');return}
-    if(/^https?:\/\//i.test(url)){ openWebPanel(url,'Homey') } else { location.href=url }
+    const url=(config.homeyUrl||'').trim(); if(!url){alert('Ingen Homey URL sat.');return}
+    if(/^https?:\/\//i.test(url)) showPanel(url,'Homey'); else location.href=url;
   });
   document.getElementById('tileSonos').addEventListener('click',()=>{
-    const link=(config.sonosUrl||'').trim();
-    const pkg=config.sonosPkg.trim(); const scheme=config.sonosScheme.trim();
-    const isiOS=/iPhone|iPad|iPod/i.test(navigator.userAgent); const isAndroid=/Android/i.test(navigator.userAgent);
-    if(isiOS && scheme){ location.href=scheme; return }
-    if(isAndroid && pkg){
-      const fallback=encodeURIComponent(location.href);
-      const intentUrl=`intent://open/#Intent;package=${pkg};S.browser_fallback_url=${fallback};end;`;
-      location.href=intentUrl; setTimeout(()=>{ location.href=`market://details?id=${pkg}` },1200); return;
-    }
-    if(link){ if(/^https?:\/\//i.test(link)){ openWebPanel(link,'Sonos') } else { location.href=link } }
-    else{ alert('Indsæt Sonos link (web) eller angiv package/scheme i Indstillinger.') }
+    const link=(config.sonosUrl||'').trim(); const pkg=config.sonosPkg.trim(); const scheme=config.sonosScheme.trim();
+    const isiOS=/iPhone|iPad|iPod/i.test(navigator.userAgent), isAndroid=/Android/i.test(navigator.userAgent);
+    if(isiOS && scheme){ location.href=scheme; return; }
+    if(isAndroid && pkg){ const fb=encodeURIComponent(location.href); location.href=`intent://open/#Intent;package=${pkg};S.browser_fallback_url=${fb};end;`; setTimeout(()=>{ location.href=`market://details?id=${pkg}` },1200); return; }
+    if(link){ if(/^https?:\/\//i.test(link)) showPanel(link,'Sonos'); else location.href=link; }
+    else alert('Angiv Sonos link eller app i Indstillinger.');
   });
 
-  /* ===== Wake Lock ===== */
-  let wakeLock=null,noSleep=null;
+  /* Wake Lock */
+  let wakeLock=null, noSleep=null;
   async function requestWakeLock(){
     if((config.wakeStrategy||'auto')==='off'){releaseWakeLock();return}
-    try{ if('wakeLock'in navigator){wakeLock=await navigator.wakeLock.request('screen')}
-      else{ if(!noSleep) noSleep=new window.NoSleep(); noSleep.enable() } }catch(_){}
+    try{ if('wakeLock'in navigator){ wakeLock=await navigator.wakeLock.request('screen'); } else { if(!noSleep) noSleep=new window.NoSleep(); noSleep.enable(); } }catch(_){}
   }
-  function releaseWakeLock(){ try{if(wakeLock){wakeLock.release();wakeLock=null}}catch(_){}
-    try{if(noSleep){noSleep.disable();noSleep=null}}catch(_){}
-  document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') requestWakeLock() },{passive:true});
-  window.addEventListener('pageshow',()=>{requestWakeLock()},{passive:true});
-  window.addEventListener('click',()=>{ if(!('wakeLock'in navigator)){ try{ if(!noSleep) noSleep=new window.NoSleep(); noSleep.enable() }catch(_){} } },{passive:true});
+  function releaseWakeLock(){ try{ if(wakeLock){wakeLock.release();wakeLock=null} }catch(_){} try{ if(noSleep){noSleep.disable();noSleep=null} }catch(_){} }
+  document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') requestWakeLock(); },{passive:true});
+  window.addEventListener('pageshow',()=>{ requestWakeLock(); },{passive:true});
+  window.addEventListener('click',()=>{ if(!('wakeLock'in navigator)){ try{ if(!noSleep) noSleep=new window.NoSleep(); noSleep.enable(); }catch(_){}} },{passive:true});
 
-  /* ===== Firebase (Anon + Firestore) ===== */
-  const firebaseConfig={
-    apiKey:"AIzaSyA_gh8y-V6kkl95hRzb0ldBxpKWFY5bAck",
-    authDomain:"webkiosk-e5d32.firebaseapp.com",
-    projectId:"webkiosk-e5d32",
-    storageBucket:"webkiosk-e5d32.firebasestorage.app",
-    messagingSenderId:"920175197353",
-    appId:"1:920175197353:web:c3520e9a3ab8146ec4fdb8"
-  };
-  const fbApp=firebase.initializeApp(firebaseConfig);
-  const fbAuth=firebase.auth();
-  const fbDb=firebase.firestore();
-  const syncStatusEl=document.getElementById('syncStatus');
-  fbAuth.signInAnonymously().then(()=>{ syncStatusEl.textContent='Online' }).catch(()=>{ syncStatusEl.textContent='Auth fejl' });
-
-  let unsub=null,writeTimer=null;
+  /* Firebase */
+  const firebaseConfig={apiKey:"AIzaSyA_gh8y-V6kkl95hRzb0ldBxpKWFY5bAck",authDomain:"webkiosk-e5d32.firebaseapp.com",projectId:"webkiosk-e5d32",storageBucket:"webkiosk-e5d32.firebasestorage.app",messagingSenderId:"920175197353",appId:"1:920175197353:web:c3520e9a3ab8146ec4fdb8"};
+  const fbApp=firebase.initializeApp(firebaseConfig); const fbAuth=firebase.auth(); const fbDb=firebase.firestore();
+  fbAuth.signInAnonymously().then(()=>{ syncStatus.textContent='Online' }).catch(()=>{ syncStatus.textContent='Auth fejl' });
+  let unsub=null, writeTimer=null;
   function docRef(){ return fbDb.collection('webkiosk').doc(config.householdId||'DEFAULT') }
-  function queueWriteFirestore(){
-    clearTimeout(writeTimer);
-    writeTimer=setTimeout(async()=>{ try{
-      config._ts=Date.now(); await docRef().set(config,{merge:true}); syncStatusEl.textContent='Synkroniseret'
-    }catch(e){ syncStatusEl.textContent='Sync fejl' }},250);
-  }
-  async function startRealtime(){
-    if(!config.householdId){ config.householdId=Math.random().toString(36).slice(2,10).toUpperCase(); saveConfig(config) }
-    if(unsub) unsub();
-    unsub=docRef().onSnapshot(snap=>{
-      if(!snap.exists) return;
-      const remote=snap.data(); const local=loadConfig();
-      if(remote._ts && (!local._ts || remote._ts>local._ts)){
-        config=Object.assign({},local,remote); saveConfig(config); applyForm(); applyTheme();
-      }
-    });
-  }
+  function queueWriteFirestore(){ clearTimeout(writeTimer); writeTimer=setTimeout(async()=>{ try{ config._ts=Date.now(); await docRef().set(config,{merge:true}); syncStatus.textContent='Synkroniseret'; }catch(e){ syncStatus.textContent='Sync fejl'; } },250); }
+  async function startRealtime(){ if(unsub)unsub(); unsub=docRef().onSnapshot(snap=>{ if(!snap.exists)return; const remote=snap.data(); const local=load(); if(remote._ts && (!local._ts || remote._ts>local._ts)){ config=Object.assign({},local,remote); save(config); applyForm(); document.documentElement.style.setProperty('--accent',config.theme.color); document.documentElement.style.setProperty('--bg',config.theme.background); } }); }
+  startRealtime().catch(()=>{});
 
-  /* ===== Bind/boot ===== */
-  const logoInputCalendar=document.getElementById('logoInputCalendar');
-  const logoInputHomey=document.getElementById('logoInputHomey');
-  const logoInputSonos=document.getElementById('logoInputSonos');
-  applyTheme(); applyForm(); startRealtime().catch(()=>{});
-  // Kalender knap er allerede bundet
+  /* Pointer-events fix så skjulte overlays ikke blokerer klik */
+  const patch=document.createElement('style'); patch.textContent=`
+    #settingsModal[aria-hidden="true"]{display:none!important;pointer-events:none!important}
+    .calendar-view[aria-hidden="true"], .calendar-view[style*="display: none"]{pointer-events:none!important}
+    #wkPanel:not(.visible){display:none!important;pointer-events:none!important}
+    .tile, .fab button, #openSettings{pointer-events:auto!important;cursor:pointer!important}
+  `; document.head.appendChild(patch);
+
+  /* Basalt vejr-fallback hvis intet andet sætter tekst */
+  (function(){
+    const t=document.getElementById('weatherTemp'), c=document.getElementById('weatherCond'), ci=document.getElementById('weatherCity');
+    if(t && !t.textContent.trim()) t.textContent='18°';
+    if(c && !c.textContent.trim()) c.textContent='Klart';
+    if(ci && !ci.textContent.trim()) ci.textContent='Farum';
+  })();
+
+  requestWakeLock();
   </script>
 </body>
 </html>
