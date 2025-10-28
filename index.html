@@ -7,7 +7,7 @@
 
   <script>
     // <<< PEGER PÅ DIN RIGTIGE FORSIDE >>>
-    var DEFAULT_TARGET = "webkiosk_apple_crisp_with_settings_fab_SYNC_v3.html";
+    var DEFAULT_TARGET = "webkiosk_apple_crisp_with_settings_fab.html";
   </script>
 
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
@@ -16,18 +16,12 @@
 
   <script>
   (function(){
-    // Fjern alle service workers + caches for at undgå “stale” filer
+    // Slå ALLE service workers fra + ryd caches (bullet-proof)
     if ('serviceWorker' in navigator) {
-      try {
-        navigator.serviceWorker.getRegistrations().then(function(regs){
-          regs.forEach(function(r){ r.unregister(); });
-        });
-      } catch(e){}
+      try { navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister())); } catch(e){}
     }
     if (window.caches) {
-      try {
-        caches.keys().then(function(keys){ keys.forEach(function(k){ caches.delete(k); }); });
-      } catch(e){}
+      try { caches.keys().then(keys => keys.forEach(k => caches.delete(k))); } catch(e){}
     }
 
     // Redirect til din forside med cache-buster
@@ -40,9 +34,8 @@
   })();
   </script>
 
-  <!-- Fallback hvis JS er slået fra -->
   <noscript>
-    <meta http-equiv="refresh" content="0;url=./webkiosk_apple_crisp_with_settings_fab_SYNC_v3.html"/>
+    <meta http-equiv="refresh" content="0;url=./webkiosk_apple_crisp_with_settings_fab.html"/>
   </noscript>
 
   <style>
@@ -53,7 +46,6 @@
 <body>
   Starter Webkiosk… Hvis intet sker, <a id="manual" href="#">klik her</a>.
   <script>
-    // Manuel link med korrekt mål
     (function(){
       var qp = new URLSearchParams(location.search);
       var target = (qp.get("target") || DEFAULT_TARGET).trim();
@@ -61,7 +53,6 @@
       document.getElementById("manual").setAttribute("rel","nofollow");
     })();
   </script>
-
   <p style="margin-top:14px;color:#6b7280">
     Test et andet mål uden commit: <code>?target=FIL.html</code>
   </p>
