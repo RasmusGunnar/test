@@ -789,5 +789,72 @@
 
   grid.addEventListener('dblclick', (e)=>{ const day = e.target.closest('.day'); if(day){ openNew(day.getAttribute('data-date')); }});
 </script>
+<!-- Firebase compat SDKs -->
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+
+<script>
+// === Firebase init (brug samme config som Webkiosk) ===
+const firebaseConfig = {
+  apiKey: "AIzaSyA_gh8y-V6kkI9shRzb0ldBxpKWFY5bAck",
+  authDomain: "webkiosk-e5d32.firebaseapp.com",
+  projectId: "webkiosk-e5d32",
+  storageBucket: "webkiosk-e5d32.firebasestorage.app",
+  messagingSenderId: "920175197353",
+  appId: "1:920175197353:web:c3520e9a3ab8146ec4fdb8"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db   = firebase.firestore();
+
+// === Læs husstands-ID fra URL ===
+const hid = (new URLSearchParams(location.search).get('hid') || 'DEFAULT').toUpperCase();
+
+// === Samling: households/<HID>/calendar/v1/items ===
+const itemsCol = db.collection('households')
+  .doc(hid)
+  .collection('calendar')
+  .doc('v1')
+  .collection('items');
+
+// === Auth + realtime lytning ===
+auth.signInAnonymously().then(() => {
+  // Løbende sync
+  itemsCol.orderBy('createdAt', 'asc').onSnapshot(snap => {
+    const data = [];
+    snap.forEach(doc => data.push({ id: doc.id, ...doc.data() }));
+    renderItems(data); // <- KALD DIN EKSISTERENDE RENDER-FUNKTION
+  });
+});
+
+// === CRUD helpers ===
+function addItem({ title, date, notes='' }) {
+  // hvorfor: serverTimestamp for korrekt sortering på tværs
+  return itemsCol.add({
+    title: title || '',
+    date:  date || null, // ISO string eller yyyy-mm-dd
+    notes: notes || '',
+    done:  false,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+  });
+}
+
+function updateItem(id, patch) {
+  patch.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
+  return itemsCol.doc(id).set(patch, { merge: true });
+}
+
+function deleteItem(id) {
+  return itemsCol.doc(id).delete();
+}
+
+// === Eksempel på binding til dit UI ===
+// KALD disse fra dine eksisterende knapper/inputs:
+window.CalendarAPI = {
+  addItem, updateItem, deleteItem, hid
+};
+</script>
 </body>
 </html>
