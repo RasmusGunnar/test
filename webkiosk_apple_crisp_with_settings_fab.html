@@ -24,7 +24,6 @@
   .logo-box img{max-height:100%;max-width:100%;object-fit:contain;display:block}
   .widget.weather{grid-column:span 6} .widget.clock{grid-column:span 6}
   @media (max-width:900px){.widget.weather,.widget.clock{grid-column:span 12}.tiles{grid-template-columns:1fr}}
-
   .calendar-view,.wk-panel,.modal{display:none;pointer-events:none}
   .calendar-view.visible,.wk-panel.visible,.modal.visible{display:block;pointer-events:auto}
   .calendar-view{position:fixed;inset:0;padding:clamp(12px,2vw,20px);background:rgba(246,247,249,.92);backdrop-filter:blur(8px);z-index:60}
@@ -33,17 +32,14 @@
   .back-btn{display:inline-flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;background:#fff;border:1px solid var(--border);color:#0f172a;cursor:pointer;font-weight:650;box-shadow:var(--shadow)}
   .calframe.panel{flex:1;min-height:0;overflow:hidden;display:flex}
   iframe{width:100%;height:100%;border:0;display:block}
-
   .fab{position:fixed;right:20px;bottom:20px;z-index:90}
   .fab button{width:56px;height:56px;border-radius:50%;border:1px solid var(--border);background:#fff;color:#0f172a;display:inline-flex;align-items:center;justify-content:center;box-shadow:var(--shadow);cursor:pointer}
-
   .wk-panel{position:fixed;inset:0;background:#00000010;backdrop-filter:saturate(1.1) blur(4px);z-index:80}
   .wk-shell{position:absolute;inset:0;background:#fff;box-shadow:0 12px 60px rgba(2,6,23,.25)}
   .wk-topbar{position:absolute;left:0;right:0;top:0;height:52px;display:flex;align-items:center;gap:10px;padding:0 12px;border-bottom:1px solid var(--border);background:linear-gradient(#fff,#fafafa);z-index:2}
   .wk-topbar .btn{border:1px solid var(--border);border-radius:10px;background:#fff;padding:8px 10px;cursor:pointer}
   .wk-topbar .title{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .wk-iframe{position:absolute;top:52px;left:0;right:0;bottom:0;width:100%;height:calc(100% - 52px);border:0}
-
   .modal{position:fixed;inset:0;background:rgba(15,23,42,.35);z-index:100;display:none;align-items:center;justify-content:center;padding:20px}
   .modal.visible{display:flex}
   .dialog{width:min(980px,96vw);max-height:92vh;overflow:hidden;background:#fff;border:1px solid var(--border);border-radius:18px;box-shadow:0 22px 60px rgba(2,6,23,.18);display:flex;flex-direction:column}
@@ -69,7 +65,7 @@
   .actions{display:flex;gap:10px}
   .btn{padding:10px 14px;border-radius:12px;border:1px solid var(--border);background:#fff;cursor:pointer;font-weight:650}
   .btn.primary{background:#0f172a;color:#fff;border-color:#0f172a}
-  .sync-badge{position:fixed;left:12px;bottom:12px;z-index:95;background:#fff;border:1px solid #e6e8ec;border-radius:14px;padding:8px 12px;font:13px/1.2 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial;box-shadow:0 8px 24px rgba(2,6,23,.08);display:flex;gap:8px;align-items:center;color:#0f172a}
+  .sync-badge{position:fixed;left:12px;bottom:12px;z-index:95;background:#fff;border:1px solid #e6e8ec;border-radius:14px;padding:8px 12px;font:13px/1.2 ui-sans-serif;box-shadow:0 8px 24px rgba(2,6,23,.08);display:flex;gap:8px;align-items:center;color:#0f172a}
   .sync-badge .dot{width:10px;height:10px;border-radius:50%}
   .sync-online .dot{background:#10b981}.sync-syncing .dot{background:#f59e0b}.sync-offline .dot{background:#9ca3af}.sync-error .dot{background:#ef4444}
   .sync-badge .note{margin-left:6px;color:#6b7280;font-size:12px}
@@ -82,7 +78,7 @@
       <section class="panel widget weather" aria-label="Vejr">
         <h2>Vejr</h2>
         <div class="weather-main">
-          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 16.5a4.5 4.5 0 0 1 4.5-4.5h.5A6.5 6.5 0 1 1 20 14.5a3.5 3.5 0 0 1-3.5 3.5H8.5A5.5 5.5 0 0 1 3 16.5z"/></svg>
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 16.5a4.5 4.5 0 0 1 4.5-4.5h.5A6.5 6.5 0 1 1 20 14.5a3.5 3.5 0  1 1-3.5 3.5H8.5A5.5 5.5 0 0 1 3 16.5z"/></svg>
           <div>
             <div class="weather-temp" id="weatherTemp">--°</div>
             <div class="weather-line" id="weatherCond">—</div>
@@ -133,7 +129,7 @@
   <div class="fab">
     <button id="openSettings" title="Indstillinger" aria-label="Indstillinger" type="button"
       onclick="document.getElementById('settingsModal').classList.add('visible');document.getElementById('settingsModal').setAttribute('aria-hidden','false');">
-      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c0 .66.26 1.3.73 1.77.47.47 1.11.73 1.77.73h.09a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0  1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0  1 1-2.83-2.83l.06-.06a1.65 1.65 0  0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0  1 1 0-4h.09a1.65 1.65 0  0 0 1.51-1 1.65 1.65 0  0 0-.33-1.82l-.06-.06a2 2 0  1 1 2.83-2.83l.06.06a1.65 1.65 0  0 0 1.82.33H9a1.65 1.65 0  0 0 1-1.51V3a2 2 0  1  1 4 0v.09a1.65 1.65 0  0 0 1 1.51 1.65 1.65 0  0 0 1.82-.33l.06.06a2 2 0  1  1 2.83 2.83l-.06.06a1.65 1.65 0  0 0-.33 1.82V9c0 .66.26 1.3.73 1.77.47.47 1.11.73 1.77.73h.09a2 2 0  1  1 0 4h-.09a1.65 1.65 0  0 0-1.51 1Z"/></svg>
     </button>
   </div>
 
@@ -268,8 +264,7 @@
 
   /* ===== Ur ===== */
   function updateClock(){
-    const t=$('clockTime'),d=$('clockDate');
-    const n=new Date();
+    const t=$('clockTime'),d=$('clockDate');const n=new Date();
     t.textContent=n.toLocaleTimeString('da-DK',{hour:'2-digit',minute:'2-digit'});
     const s=n.toLocaleDateString('da-DK',{weekday:'long',day:'2-digit',month:'long'});
     d.textContent=s.charAt(0).toUpperCase()+s.slice(1);
@@ -278,90 +273,38 @@
 
   /* ===== Vejr (temp + beskrivelse) ===== */
   (function(){
-    const T=$('weatherTemp'), C=$('weatherCity'), D=$('weatherCond');
-    if(!T||!C||!D) return;
-
+    const T=$('weatherTemp'), C=$('weatherCity'), D=$('weatherCond'); if(!T||!C||!D) return;
     const WMAP={0:'Klart',1:'Mest klart',2:'Delvist skyet',3:'Overskyet',45:'Tåge',48:'Isslud/tåge',51:'Finregn',53:'Regn',55:'Kraftig regn',56:'Isfinregn',57:'Isregn',61:'Let regn',63:'Regn',65:'Kraftig regn',66:'Isregn',67:'Kraftig isregn',71:'Let sne',73:'Snefald',75:'Kraftig sne',77:'Snebyger',80:'Lette byger',81:'Byger',82:'Kraftige byger',85:'Snebyger',86:'Kraftige snebyger',95:'Tordenvejr',96:'Torden/hagl',99:'Torden/kraftig hagl'};
-
-    function pos(timeout=7000){
-      return new Promise(r=>{
-        let done=false;
-        const fb=()=>{ if(done) return; done=true; r({coords:{latitude:55.6761,longitude:12.5683},fallback:true}); };
-        if(!navigator.geolocation){ fb(); return; }
-        const to=setTimeout(fb,timeout);
-        navigator.geolocation.getCurrentPosition(
-          p=>{ if(done) return; done=true; clearTimeout(to); r(p); },
-          fb,
-          {maximumAge:900000, timeout:timeout-500}
-        );
-      });
-    }
-
-    async function wx(){
-      try{
-        const p=await pos();
-        const la=+p.coords.latitude.toFixed(4), lo=+p.coords.longitude.toFixed(4);
-        const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${la}&longitude=${lo}&current=temperature_2m,weather_code&timezone=auto`);
-        const j=await r.json();
-        const t=Math.round(j?.current?.temperature_2m);
-        const code=j?.current?.weather_code;
-        if(Number.isFinite(t)) T.textContent=t+'°';
-        D.textContent=WMAP[code]||'—';
-        if(p.fallback) C.textContent='København';
-      }catch{ D.textContent='—'; }
-    }
-
+    function pos(timeout=7000){return new Promise(r=>{let d=false;const fb=()=>{if(d)return;d=true;r({coords:{latitude:55.6761,longitude:12.5683},fallback:true});};if(!navigator.geolocation){fb();return;}const to=setTimeout(fb,timeout);navigator.geolocation.getCurrentPosition(p=>{if(d)return;d=true;clearTimeout(to);r(p);},fb,{maximumAge:900000,timeout:timeout-500});});}
+    async function wx(){try{const p=await pos();const la=+p.coords.latitude.toFixed(4),lo=+p.coords.longitude.toFixed(4);const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${la}&longitude=${lo}&current=temperature_2m,weather_code&timezone=auto`);const j=await r.json();const t=Math.round(j?.current?.temperature_2m);const code=j?.current?.weather_code;if(Number.isFinite(t))T.textContent=t+'°';D.textContent=WMAP[code]||'—';if(p.fallback)C.textContent='København';}catch{D.textContent='—';}}
     wx(); setInterval(wx,20*60*1000);
   })();
 
   /* ===== Config (local + Firestore sync) ===== */
   const LS_KEY='webkioskConfigV2';
-  const defaults={
-    calendar:{mode:'url',url:'',fileName:'',fileData:''},
-    homeyUrl:'',sonosUrl:'',sonosPkg:'',sonosScheme:'',
-    logos:{calendar:'',homey:'',sonos:''},
-    logoUrls:{calendar:'',homey:'',sonos:''},
-    theme:{color:'#0f172a',background:'#f6f7f9'},
-    keepAwake:true,householdId:'',_ts:0
-  };
+  const defaults={calendar:{mode:'url',url:'',fileName:'',fileData:''},homeyUrl:'',sonosUrl:'',sonosPkg:'',sonosScheme:'',logos:{calendar:'',homey:'',sonos:''},logoUrls:{calendar:'',homey:'',sonos:''},theme:{color:'#0f172a',background:'#f6f7f9'},keepAwake:true,householdId:'',_ts:0};
   function load(){try{const o=JSON.parse(localStorage.getItem(LS_KEY)||'{}');const deep=(m,d)=>{const r=Array.isArray(d)?[]:{};for(const k in d){if(d[k]&&typeof d[k]==='object'&&!Array.isArray(d[k]))r[k]=deep((m||{})[k]||{},d[k]);else r[k]=(m||{})[k]!==undefined?(m||{})[k]:d[k];}return r;};return deep(o,defaults);}catch{return JSON.parse(JSON.stringify(defaults));}}
   function save(c){try{localStorage.setItem(LS_KEY,JSON.stringify(c));}catch{}}
   let config=load(); if(!config.householdId){config.householdId=Math.random().toString(36).slice(2,10).toUpperCase();save(config);}
 
   function applyTheme(){document.documentElement.style.setProperty('--accent',config.theme?.color||'#0f172a');document.documentElement.style.setProperty('--bg',config.theme?.background||'#f6f7f9');}
   const placeholder=t=>"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='64'%3E%3Crect width='160' height='64' fill='%23f0f2f5'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='14' fill='%236b7280' font-family='Inter,Arial' %3E"+encodeURIComponent(t)+"%3C/text%3E%3C/svg%3E";
-  function applyLogos(){
-    $('logoCalendar').src=config.logoUrls.calendar||config.logos.calendar||placeholder('Kalender');
-    $('logoHomey').src   =config.logoUrls.homey   ||config.logos.homey   ||placeholder('Homey');
-    $('logoSonos').src   =config.logoUrls.sonos   ||config.logos.sonos   ||placeholder('Sonos');
-    if($('prevCalendar'))$('prevCalendar').src=config.logos.calendar||config.logoUrls.calendar||'';
-    if($('prevHomey'))$('prevHomey').src=config.logos.homey||config.logoUrls.homey||'';
-    if($('prevSonos'))$('prevSonos').src=config.logos.sonos||config.logoUrls.sonos||'';
-  }
-  function applyForm(){
-    $('themeColor').value=config.theme?.color||'#0f172a';
-    $('bgColor').value=config.theme?.background||'#f6f7f9';
-    $('keepAwake').checked=!!config.keepAwake;
+  function applyLogos(){ $('logoCalendar').src=config.logoUrls.calendar||config.logos.calendar||placeholder('Kalender'); $('logoHomey').src=config.logoUrls.homey||config.logos.homey||placeholder('Homey'); $('logoSonos').src=config.logoUrls.sonos||config.logos.sonos||placeholder('Sonos'); if($('prevCalendar'))$('prevCalendar').src=config.logos.calendar||config.logoUrls.calendar||''; if($('prevHomey'))$('prevHomey').src=config.logos.homey||config.logoUrls.homey||''; if($('prevSonos'))$('prevSonos').src=config.logos.sonos||config.logoUrls.sonos||''; }
+  function applyForm(){ $('themeColor').value=config.theme?.color||'#0f172a'; $('bgColor').value=config.theme?.background||'#f6f7f9'; $('keepAwake').checked=!!config.keepAwake; $('logoUrlCalendar').value=config.logoUrls?.calendar||''; $('logoUrlHomey').value=config.logoUrls?.homey||''; $('logoUrlSonos').value=config.logoUrls?.sonos||''; $('calendarUrl').value=config.calendar?.url||''; $('homeyUrl').value=config.homeyUrl||''; $('sonosUrl').value=config.sonosUrl||''; $('sonosPkg').value=config.sonosPkg||''; $('sonosScheme').value=config.sonosScheme||''; $('householdId').value=(config.householdId||'').toUpperCase(); const mode=config.calendar?.mode||'url'; [...document.querySelectorAll('input[name="calendarMode"]')].forEach(r=>r.checked=(r.value===mode)); $('calendarUploadRow').style.display=(mode==='upload')?'':'none'; }
+  function applyAll(){applyTheme();applyForm();applyLogos();} applyAll();
 
-    $('logoUrlCalendar').value=config.logoUrls?.calendar||'';
-    $('logoUrlHomey').value=config.logoUrls?.homey||'';
-    $('logoUrlSonos').value=config.logoUrls?.sonos||'';
+  /* ===== Failsafe tab-delegation (fix for "døde tabs") ===== */
+  document.addEventListener('click',function(e){
+    const btn=e.target.closest('.tab'); if(!btn) return;
+    const dlg=btn.closest('.dialog')||document;
+    dlg.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    dlg.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+    btn.classList.add('active');
+    const target=document.getElementById(btn.dataset.tab);
+    if(target) target.classList.add('active');
+  });
 
-    $('calendarUrl').value=config.calendar?.url||'';
-    $('homeyUrl').value=config.homeyUrl||'';
-    $('sonosUrl').value=config.sonosUrl||'';
-    $('sonosPkg').value=config.sonosPkg||'';
-    $('sonosScheme').value=config.sonosScheme||'';
-    $('householdId').value=(config.householdId||'').toUpperCase();
-
-    const mode=config.calendar?.mode||'url';
-    [...document.querySelectorAll('input[name="calendarMode"]')].forEach(r=>r.checked=(r.value===mode));
-    $('calendarUploadRow').style.display=(mode==='upload')?'':'none';
-  }
-  function applyAll(){applyTheme();applyForm();applyLogos();}
-  applyAll();
-
-  /* ===== Indstillinger bindings ===== */
+  /* ===== Bindings ===== */
   const writeSoon=debounced(300,queueWriteFirestore);
   function bind(){
     on($('themeColor'),'input',function(){config.theme.color=this.value;save(config);applyTheme();writeSoon();});
@@ -378,12 +321,13 @@
 
     ;[...document.querySelectorAll('input[name="calendarMode"]')].forEach(r=>on(r,'change',function(){config.calendar.mode=r.value;save(config);applyForm();}));
     on($('calendarUrl'),'input',function(){config.calendar.url=this.value.trim();save(config);writeSoon();});
-    on($('calendarFile'),'change',async function(){if(this.files&&this.files[0]){const f=this.files[0];const txt=await f.text();config.calendar.fileName=f.name;config.calendar.fileData="data:text/html;base64,"+btoa(unescape(encodeURIComponent(txt)));config.calendar.mode='upload';save(config);writeSoon();alert('Kalender gemt lokalt. For deling: brug URL til fil i GitHub.');}});
+    on($('calendarFile'),'change',async function(){if(this.files&&this.files[0]){const f=this.files[0];const txt=await f.text();config.calendar.fileName=f.name;config.calendar.fileData="data:text/html;base64,"+btoa(unescape(encodeURIComponent(txt)));config.calendar.mode='upload';save(config);writeSoon();alert('Kalender gemt lokalt. For deling: brug URL (GitHub).');}});
 
     on($('homeyUrl'),'input',function(){config.homeyUrl=this.value.trim();save(config);writeSoon();});
     on($('sonosUrl'),'input',function(){config.sonosUrl=this.value.trim();save(config);writeSoon();});
     on($('sonosPkg'),'input',function(){config.sonosPkg=this.value.trim();save(config);writeSoon();});
     on($('sonosScheme'),'input',function(){config.sonosScheme=this.value.trim();save(config);writeSoon();});
+
     on($('householdId'),'input',function(){const v=this.value.trim().toUpperCase();if(v){config.householdId=v;save(config);startRealtime();writeSoon();}});
 
     on($('saveSettings'),'click',()=>{config._ts=Date.now();save(config);queueWriteFirestore();document.getElementById('settingsModal').classList.remove('visible');document.getElementById('settingsModal').setAttribute('aria-hidden','true');});
@@ -394,18 +338,12 @@
 
   /* ===== Tiles / overlays ===== */
   window.__handlers={};
-
   function openCalendar(){
     const hid=(config.householdId||'DEFAULT').toUpperCase();
     let src='';
-    if(config.calendar?.mode==='upload' && config.calendar?.fileData){
-      src=config.calendar.fileData;
-    }else if(config.calendar?.url){
-      const u=new URL(config.calendar.url, location.href);
-      u.searchParams.set('hid', hid);
-      src=u.toString();
-    }
-    if(!src){alert('Ingen kalenderkilde valgt.');return;}
+    if(config.calendar?.mode==='upload' && config.calendar?.fileData){ src=config.calendar.fileData; }
+    else if(config.calendar?.url){ const u=new URL(config.calendar.url,location.href); u.searchParams.set('hid',hid); src=u.toString(); }
+    if(!src){ alert('Ingen kalenderkilde valgt.'); return; }
     $('calendarFrame').src=src; const v=$('calendarView'); v.classList.add('visible'); v.setAttribute('aria-hidden','false');
   }
   window.__handlers.openCalendar=openCalendar;
@@ -428,10 +366,10 @@
   function openSonos(){if(openSonosNative())return;const link=(config.sonosUrl||'').trim()||'https://play.sonos.com';if(/^https?:\/\//i.test(link))showPanel(link,'Sonos');else window.open(link,'_self');}
   window.__handlers.openSonos=openSonos;
 
-  /* ===== NoSleep (hold skærm vågen) ===== */
+  /* ===== NoSleep ===== */
   let noSleep=null; window.addEventListener('click',()=>{try{if(config.keepAwake&&!noSleep&&window.NoSleep){noSleep=new NoSleep();noSleep.enable();}}catch{}});
 
-  /* ===== Firebase init + sync (din config) ===== */
+  /* ===== Firebase init + sync ===== */
   const firebaseConfig = {
     apiKey: "AIzaSyA_gh8y-V6kkl95hRzb0ldBxpKWFY5bAck",
     authDomain: "webkiosk-e5d32.firebaseapp.com",
@@ -445,27 +383,19 @@
 
   function badge(state,note){const b=$('syncBadge'),t=$('syncBadgeText'),n=$('syncBadgeNote');['sync-online','sync-syncing','sync-offline','sync-error'].forEach(c=>b.classList.remove(c));b.classList.add('sync-'+state);t.textContent={online:'Online',syncing:'Synkroniserer…',offline:'Offline',error:'Fejl'}[state]||'Offline';n.textContent=note?('· '+note):'';$('syncNote').textContent=t.textContent+(note?(' '+note):'');$('lastSync').textContent=note||'—';}
   window.addEventListener('online',()=>badge('online',nowStr())); window.addEventListener('offline',()=>badge('offline',''));
-
-  auth.signInAnonymously()
-    .then(()=>badge(navigator.onLine?'online':'offline',nowStr()))
-    .catch(e=>{console.error('[auth]',e);badge('error','auth');});
+  auth.signInAnonymously().then(()=>badge(navigator.onLine?'online':'offline',nowStr())).catch(e=>{console.error('[auth]',e);badge('error','auth');});
 
   let unsub=null, writeTimer=null;
   const docRef=()=>db.collection('webkiosk').doc((config.householdId||'DEFAULT').toUpperCase());
-
   async function writeFirestore(){
     try{
       const toSave=JSON.parse(JSON.stringify(config));
-      toSave.logos={};                    // ikke sync base64
-      if(toSave.calendar) toSave.calendar.fileData=''; // ikke sync data:URL
-      toSave._ts=Date.now();
-      save(Object.assign(config,{_ts:toSave._ts}));
-      await docRef().set(toSave,{merge:true});
-      badge('online',nowStr());
+      toSave.logos={}; if(toSave.calendar) toSave.calendar.fileData='';
+      toSave._ts=Date.now(); save(Object.assign(config,{_ts:toSave._ts}));
+      await docRef().set(toSave,{merge:true}); badge('online',nowStr());
     }catch(e){console.error('[write]',e);badge('error',e.code||e.message||'write');}
   }
   function queueWriteFirestore(){if(writeTimer)clearTimeout(writeTimer);badge('syncing','…');writeTimer=setTimeout(writeFirestore,300);}
-
   function startRealtime(){
     try{
       if(unsub)unsub();
@@ -478,7 +408,6 @@
   }
   startRealtime();
 
-  // sikker reset af overlays ved load (i tilfælde af caching)
   document.addEventListener('DOMContentLoaded',()=>['calendarView','wkPanel','settingsModal'].forEach(id=>{const el=$(id);if(el){el.classList.remove('visible');el.setAttribute('aria-hidden','true');el.style.display='none';el.offsetHeight;el.style.display='';}}));
   </script>
 </body>
