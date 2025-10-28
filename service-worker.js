@@ -1,5 +1,5 @@
-// service-worker.js — v2025-10-28a
-const CACHE = "webkiosk-v3"; // <- bump denne ved hver ændring
+// service-worker.js — v2025-10-28e
+const CACHE = "webkiosk-2025-10-28e";
 const ASSETS = [
   "./",
   "./index.html",
@@ -9,16 +9,14 @@ const ASSETS = [
 ];
 
 self.addEventListener("install", (e) => {
-  e.waitUntil(
-    caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting())
-  );
+  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));
 });
 
 self.addEventListener("activate", (e) => {
   e.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
-    ).then(() => self.clients.claim())
+    caches.keys()
+      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then(() => self.clients.claim())
   );
 });
 
@@ -26,10 +24,9 @@ self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET") return;
   e.respondWith(
     caches.match(e.request).then((cached) => {
-      const fetchP = fetch(e.request).then((res) => {
-        caches.open(CACHE).then((c) => c.put(e.request, res.clone()));
-        return res;
-      }).catch(() => cached);
+      const fetchP = fetch(e.request)
+        .then((res) => { caches.open(CACHE).then((c) => c.put(e.request, res.clone())); return res; })
+        .catch(() => cached);
       return cached || fetchP;
     })
   );
