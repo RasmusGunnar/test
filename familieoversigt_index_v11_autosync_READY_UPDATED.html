@@ -42,7 +42,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 
   <script>
-  // === Din Firebase-config (identisk med Webkiosk) ===
+  /* === Firebase config (identisk med Webkiosk) === */
   const firebaseConfig = {
     apiKey: "AIzaSyA_gh8y-V6kkl95hRzb0ldBxpKWFY5bAck",
     authDomain: "webkiosk-e5d32.firebaseapp.com",
@@ -53,70 +53,98 @@
     measurementId: "G-X6LHDEPS8H"
   };
   firebase.initializeApp(firebaseConfig);
-  const auth = firebase.auth();
-  const db   = firebase.firestore();
+  const auth=firebase.auth(), db=firebase.firestore();
 
-  // === HID fra query (?hid=XXXX) ===
-  const HID = (new URLSearchParams(location.search).get('hid') || 'DEFAULT').toUpperCase();
-  document.getElementById('hidPill').textContent = HID;
+  /* === HID === */
+  const HID=(new URLSearchParams(location.search).get('hid')||'DEFAULT').toUpperCase();
+  document.getElementById('hidPill').textContent=HID;
 
-  // === Path: households/<HID>/calendar/v1/items ===
-  const itemsCol = db.collection('households').doc(HID).collection('calendar').doc('v1').collection('items');
+  /* === Kalender collection === */
+  const itemsCol=db.collection('households').doc(HID).collection('calendar').doc('v1').collection('items');
 
-  // === Ekporteret API så din egen UI kan overtage rendering ===
-  const itemsListeners = new Set();
-  window.CalendarData = {
-    hid: HID,
-    onItems(cb){ itemsListeners.add(cb); return ()=>itemsListeners.delete(cb); },
-    async addItem({title,date,notes=''}) {
-      return itemsCol.add({
-        title: title||'',
-        date:  date||null,
-        notes: notes||'',
-        done:  false,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      });
-    },
-    async updateItem(id, patch){
-      patch = Object.assign({}, patch, {updatedAt: firebase.firestore.FieldValue.serverTimestamp()});
-      return itemsCol.doc(id).set(patch, {merge:true});
-    },
-    async deleteItem(id){ return itemsCol.doc(id).delete(); },
+  /* === API til din egen UI === */
+  const itemsListeners=new Set();
+  window.CalendarData={
+    hid:HID,
+    onItems(cb){itemsListeners.add(cb);return()=>itemsListeners.delete(cb);},
+    async addItem({title,date,notes=''}){return itemsCol.add({title:title||'',date:date||null,notes:notes||'',done:false,createdAt:firebase.firestore.FieldValue.serverTimestamp(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});},
+    async updateItem(id,patch){patch=Object.assign({},patch,{updatedAt:firebase.firestore.FieldValue.serverTimestamp()});return itemsCol.doc(id).set(patch,{merge:true});},
+    async deleteItem(id){return itemsCol.doc(id).delete();}
   };
 
-  // === Auth + realtime feed ===
+  /* === Realtime feed === */
   auth.signInAnonymously().then(()=>{
     itemsCol.orderBy('createdAt','asc').onSnapshot(snap=>{
-      const data=[]; snap.forEach(doc=>data.push({id:doc.id, ...doc.data()}));
-      itemsListeners.forEach(cb=>{ try{ cb(data); }catch(e){} });
+      const data=[]; snap.forEach(d=>data.push({id:d.id,...d.data()}));
+      itemsListeners.forEach(cb=>{try{cb(data);}catch{}});
       if(itemsListeners.size===0) renderFallback(data);
     });
   }).catch(e=>console.error('[auth]',e));
 
-  // ===== Fallback UI (kan fjernes) =====
+  /* === Fallback UI (kan fjernes) === */
   const $=id=>document.getElementById(id);
   function renderFallback(items){
-    const box = $('fallbackList'); box.innerHTML='';
-    if(!items.length){ box.innerHTML='<div class="empty">Ingen punkter endnu.</div>'; return; }
+    const box=$('fallbackList'); box.innerHTML='';
+    if(!items.length){box.innerHTML='<div class="empty">Ingen punkter endnu.</div>';return;}
     for(const it of items){
-      const row=document.createElement('div'); row.className='row';
-      const cb=document.createElement('input'); cb.type='checkbox'; cb.checked=!!it.done;
-      cb.onchange=()=>window.CalendarData.updateItem(it.id,{done:cb.checked});
-      const title=document.createElement('div'); title.className='grow'; title.textContent=it.title||'';
-      const date=document.createElement('div'); date.className='date'; date.textContent=it.date||'';
-      const del=document.createElement('button'); del.textContent='Slet'; del.style.background='#ef4444'; del.style.borderColor='#ef4444'; del.style.color='#fff'; del.style.cursor='pointer'; del.style.borderRadius='10px'; del.style.padding='8px 10px'; del.onclick=()=>window.CalendarData.deleteItem(it.id);
-      row.append(cb,title,date,del);
-      box.append(row);
+      const row=document.createElement('div');row.className='row';
+      const cb=document.createElement('input');cb.type='checkbox';cb.checked=!!it.done;cb.onchange=()=>window.CalendarData.updateItem(it.id,{done:cb.checked});
+      const title=document.createElement('div');title.className='grow';title.textContent=it.title||'';
+      const date=document.createElement('div');date.className='date';date.textContent=it.date||'';
+      const del=document.createElement('button');del.textContent='Slet';del.style.background='#ef4444';del.style.borderColor='#ef4444';del.style.color='#fff';del.style.cursor='pointer';del.style.borderRadius='10px';del.style.padding='8px 10px';del.onclick=()=>window.CalendarData.deleteItem(it.id);
+      row.append(cb,title,date,del);box.append(row);
     }
   }
-  $('addBtn').onclick=()=>{
-    const t=$('titleIn').value.trim(); const d=$('dateIn').value; const n=$('notesIn').value.trim();
-    if(!t){ alert('Titel mangler'); return; }
-    window.CalendarData.addItem({title:t,date:d,notes:n}).then(()=>{
-      $('titleIn').value=''; $('notesIn').value='';
-    });
-  };
+  $('addBtn').onclick=()=>{const t=$('titleIn').value.trim(),d=$('dateIn').value,n=$('notesIn').value.trim();if(!t){alert('Titel mangler');return;}window.CalendarData.addItem({title:t,date:d,notes:n}).then(()=>{$('titleIn').value='';$('notesIn').value='';});};
+
+  /* === Avatar-URL pr. familie-medlem (GitHub Raw) – synkes i Firestore ===
+     Kræver at din Indstillinger • Familie-UI har en DOM-struktur med en række pr. person,
+     hvor der findes et navn og et file-input. Scriptet tilføjer et ekstra URL-felt.
+  */
+  (function(){
+    const col=db.collection('households').doc(HID).collection('calendar').doc('v1').collection('profiles');
+
+    function rowKey(row){
+      const id=row.getAttribute('data-person-id'); if(id) return id.trim();
+      const nameInput=row.querySelector('input[type="text"], input[name*="name"], input[name*="navn"]');
+      const name=(nameInput?.value||nameInput?.placeholder||nameInput?.getAttribute('value')||'').trim();
+      return name||('person_'+Math.random().toString(36).slice(2,7));
+    }
+
+    function enhanceRows(){
+      document.querySelectorAll('.dialog .family-row, .dialog .row, .dialog li, .dialog .person-row').forEach(row=>{
+        const file=row.querySelector('input[type="file"]');
+        if(!file || row.querySelector('.avatar-url')) return;
+
+        const url=document.createElement('input');
+        url.type='url';
+        url.placeholder='https://raw.githubusercontent.com/<user>/<repo>/<branch>/assets/billede.png';
+        url.className='avatar-url';
+        url.style.marginLeft='8px'; url.style.flex='1 1 280px';
+        url.style.padding='10px 12px'; url.style.borderRadius='12px'; url.style.border='1px solid #e6e8ec';
+        file.insertAdjacentElement('afterend',url);
+
+        const img=row.querySelector('img, .avatar img, .photo');
+        const key=rowKey(row);
+
+        col.doc(key).get().then(s=>{const u=s.exists?(s.data().avatarUrl||''):''; if(u){url.value=u; if(img) img.src=u;}});
+
+        url.addEventListener('change',async ()=>{
+          const val=url.value.trim();
+          try{
+            if(img && val) img.src=val;
+            await col.doc(key).set({avatarUrl:val,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+          }catch(e){console.error('[avatarUrl write]',e);alert('Kunne ikke gemme avatar-URL');}
+        });
+      });
+    }
+
+    const settings=document.getElementById('settingsModal')||document;
+    const ro=new MutationObserver(enhanceRows);
+    ro.observe(settings,{childList:true,subtree:true});
+    if(document.readyState!=='loading') enhanceRows();
+    else document.addEventListener('DOMContentLoaded',enhanceRows);
+  })();
   </script>
 </body>
 </html>
