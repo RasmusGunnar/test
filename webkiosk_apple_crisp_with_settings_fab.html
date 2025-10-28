@@ -3,9 +3,8 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Webkiosk – Final SAFE</title>
+<title>Webkiosk</title>
 <meta name="theme-color" content="#0f172a" />
-<!-- ingen manifest / ingen service worker -->
 
 <style>
   :root{
@@ -40,7 +39,7 @@
   .widget.clock{grid-column:span 6}
   @media (max-width:900px){.widget.weather,.widget.clock{grid-column:span 12}.tiles{grid-template-columns:1fr}}
 
-  /* Overlays – aldrig klikbare når skjult */
+  /* Overlays default OFF */
   .calendar-view,.wk-panel,.modal{display:none;pointer-events:none}
   .calendar-view.visible,.wk-panel.visible,.modal.visible{display:block;pointer-events:auto}
 
@@ -61,6 +60,35 @@
   .wk-topbar .title{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .wk-iframe{position:absolute;top:52px;left:0;right:0;bottom:0;width:100%;height:calc(100% - 52px);border:0}
 
+  /* Modal / Settings */
+  .modal{position:fixed;inset:0;background:rgba(15,23,42,.35);z-index:100;display:none;align-items:center;justify-content:center;padding:20px}
+  .modal.visible{display:flex}
+  .dialog{width:min(980px,96vw);max-height:92vh;overflow:hidden;background:#fff;border:1px solid var(--border);border-radius:18px;box-shadow:0 22px 60px rgba(2,6,23,.18);display:flex;flex-direction:column}
+  .dlg-head{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+  .dlg-head h3{margin:0;font-size:20px}
+  .tabs{display:flex;gap:4px;flex-wrap:wrap}
+  .tab{padding:8px 12px;border:1px solid var(--border);border-radius:10px;background:#fbfbfb;cursor:pointer;font-weight:600;color:#334155}
+  .tab.active{background:#0f172a;color:#fff;border-color:#0f172a}
+  .dlg-body{padding:16px 20px 6px;overflow:auto}
+  .section{display:none}
+  .section.active{display:block}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .form-grid .full{grid-column:1/-1}
+  .field{display:flex;flex-direction:column;gap:8px}
+  .field label{font-weight:600;font-size:14px;color:#334155}
+  .hint{font-size:12px;color:#6b7280}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  input[type="text"],input[type="url"],select,input[type="color"],input[type="search"],input[type="checkbox"]{padding:10px 12px;border-radius:12px;border:1px solid var(--border);font-size:14px}
+  input[type="text"],input[type="url"],select,input[type="color"],input[type="search"]{width:100%}
+  input[type="file"]{font-size:13px}
+  .logoPreview{width:160px;height:64px;display:flex;align-items:center;justify-content:center;border:1px dashed var(--border);border-radius:12px;background:#fafafa}
+  .logoPreview img{max-width:100%;max-height:100%;object-fit:contain;display:block}
+  .dlg-foot{padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:space-between;background:#fafafa;position:sticky;bottom:0}
+  .left-note{color:#6b7280;font-size:12px;display:flex;align-items:center;gap:8px}
+  .actions{display:flex;gap:10px}
+  .btn{padding:10px 14px;border-radius:12px;border:1px solid var(--border);background:#fff;cursor:pointer;font-weight:650}
+  .btn.primary{background:var(--fg);color:#fff;border-color:var(--fg)}
+
   /* Sync badge */
   .sync-badge{position:fixed;left:12px;bottom:12px;z-index:95;background:#fff;border:1px solid #e6e8ec;border-radius:14px;padding:8px 12px;font:13px/1.2 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial;box-shadow:0 8px 24px rgba(2,6,23,.08);display:flex;gap:8px;align-items:center;color:#0f172a}
   .sync-badge .dot{width:10px;height:10px;border-radius:50%;display:inline-block}
@@ -78,7 +106,7 @@
         <h2>Vejr</h2>
         <div class="weather-main">
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M3 16.5a4.5 4.5 0 0 1 4.5-4.5h.5A6.5 6.5 0 1 1 20 14.5a3.5 3.5 0 0 1-3.5 3.5H8.5A5.5 5.5 0 0 1 3 16.5z"/>
+            <path d="M3 16.5a4.5 4.5 0 0 1 4.5-4.5h.5A6.5 6.5 0  1 1 20 14.5a3.5 3.5 0 0 1-3.5 3.5H8.5A5.5 5.5 0 0 1 3 16.5z"/>
           </svg>
           <div>
             <div class="weather-temp" id="weatherTemp">--°</div>
@@ -125,52 +153,90 @@
     </div>
   </section>
 
-  <!-- Tandhjul -->
+  <!-- FAB -->
   <div class="fab" aria-live="polite">
     <button id="openSettings" title="Indstillinger" aria-label="Indstillinger" type="button"
       onclick="document.getElementById('settingsModal').classList.add('visible');document.getElementById('settingsModal').setAttribute('aria-hidden','false');">
       <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c0 .66.26 1.3.73 1.77.47.47 1.11.73 1.77.73h.09a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/>
+        <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0  0 0-1.82-.33 1.65 1.65 0  0 0-1 1.51V21a2 2 0  1 1-4 0v-.09a1.65 1.65 0  0 0-1-1.51 1.65 1.65 0  0  0-1.82.33l-.06.06a2 2 0  1 1-2.83-2.83l.06-.06a1.65 1.65 0  0 0 .33-1.82 1.65 1.65 0  0  0-1.51-1H3a2 2 0  1 1 0-4h.09a1.65 1.65 0  0 0 1.51-1 1.65 1.65 0  0  0-.33-1.82l-.06-.06a2 2 0  1 1 2.83-2.83l.06.06a1.65 1.65 0  0 0 1.82.33H9a1.65 1.65 0  0 0 1-1.51V3a2 2 0  1 1 4 0v.09a1.65 1.65 0  0 0 1 1.51 1.65 1.65 0  0 0 1.82-.33l.06.06a2 2 0  1 1 2.83 2.83l-.06.06a1.65 1.65 0  0 0-.33 1.82V9c0 .66.26 1.3.73 1.77.47.47 1.11.73 1.77.73h.09a2 2 0  1 1 0 4h-.09a1.65 1.65 0  0 0-1.51 1Z"/>
       </svg>
     </button>
   </div>
 
-  <!-- Indstillinger modal -->
+  <!-- Settings modal -->
   <div class="modal" id="settingsModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="settingsTitle" onclick="this.classList.remove('visible');this.setAttribute('aria-hidden','true');">
     <div class="dialog" onclick="event.stopPropagation()">
-      <h3 id="settingsTitle">Indstillinger</h3>
-      <div class="form-grid">
-        <div class="field full">
-          <label>Kalenderkilde</label>
-          <div class="row">
-            <label class="row"><input type="radio" name="calendarMode" value="url" checked> URL</label>
-            <label class="row"><input type="radio" name="calendarMode" value="upload"> Upload HTML</label>
-          </div>
-          <input type="url" id="calendarUrl" placeholder="https://…" />
-          <div class="row" id="calendarUploadRow" style="display:none;">
-            <input type="file" id="calendarFile" accept="text/html,.html" />
-            <span class="hint">Gemmes lokalt i browseren.</span>
-          </div>
+      <div class="dlg-head">
+        <h3 id="settingsTitle">Indstillinger</h3>
+        <div class="tabs" role="tablist" aria-label="Indstillinger faner">
+          <button class="tab active" data-tab="tab-appearance" type="button">Udseende</button>
+          <button class="tab" data-tab="tab-entries" type="button">Indgange</button>
+          <button class="tab" data-tab="tab-sync" type="button">Synkronisering</button>
+          <button class="tab" data-tab="tab-screen" type="button">Skærm</button>
         </div>
-
-        <div class="field"><label for="homeyUrl">Homey dashboard URL</label><input type="url" id="homeyUrl" placeholder="https://my.homey.app/…"/></div>
-        <div class="field"><label for="sonosUrl">Sonos link (app/web/custom scheme)</label><input type="text" id="sonosUrl" placeholder="sonos:// eller https://"/></div>
-        <div class="field"><label for="sonosPkg">Android package (app)</label><input type="text" id="sonosPkg" placeholder="com.sonos.acr2"/></div>
-        <div class="field"><label for="sonosScheme">Custom scheme (iOS/Android)</label><input type="text" id="sonosScheme" placeholder="sonos://"/></div>
-
-        <div class="field"><label>Kalender-logo</label><div class="row"><div class="logoPreview"><img id="prevCalendar" alt=""></div><input type="file" id="logoInputCalendar" accept="image/*"/></div></div>
-        <div class="field"><label>Homey-logo</label><div class="row"><div class="logoPreview"><img id="prevHomey" alt=""></div><input type="file" id="logoInputHomey" accept="image/*"/></div></div>
-        <div class="field"><label>Sonos-logo</label><div class="row"><div class="logoPreview"><img id="prevSonos" alt=""></div><input type="file" id="logoInputSonos" accept="image/*"/></div></div>
-
-        <div class="field"><label for="themeColor">Primærfarve</label><input type="color" id="themeColor"/></div>
-        <div class="field"><label for="bgColor">Baggrundsfarve</label><input type="color" id="bgColor"/></div>
-        <div class="field"><label for="householdId">Husstands-ID</label><input id="householdId" placeholder="auto-genereres"/><div class="hint">Brug samme ID på alle enheder.</div></div>
       </div>
 
-      <div class="actions">
-        <button class="btn" id="resetConfig" type="button">Nulstil</button>
-        <button class="btn" id="closeSettings" type="button" onclick="document.getElementById('settingsModal').classList.remove('visible');document.getElementById('settingsModal').setAttribute('aria-hidden','true');">Luk</button>
-        <button class="btn primary" id="saveSettings" type="button">Gem</button>
+      <div class="dlg-body">
+        <!-- Udseende -->
+        <section id="tab-appearance" class="section active">
+          <div class="form-grid">
+            <div class="field"><label for="themeColor">Primærfarve</label><input type="color" id="themeColor"/></div>
+            <div class="field"><label for="bgColor">Baggrundsfarve</label><input type="color" id="bgColor"/></div>
+
+            <div class="field"><label>Kalender-logo</label><div class="row"><div class="logoPreview"><img id="prevCalendar" alt=""></div><input type="file" id="logoInputCalendar" accept="image/*"/></div></div>
+            <div class="field"><label>Homey-logo</label><div class="row"><div class="logoPreview"><img id="prevHomey" alt=""></div><input type="file" id="logoInputHomey" accept="image/*"/></div></div>
+            <div class="field"><label>Sonos-logo</label><div class="row"><div class="logoPreview"><img id="prevSonos" alt=""></div><input type="file" id="logoInputSonos" accept="image/*"/></div></div>
+          </div>
+        </section>
+
+        <!-- Indgange -->
+        <section id="tab-entries" class="section">
+          <div class="form-grid">
+            <div class="field full">
+              <label>Kalenderkilde</label>
+              <div class="row">
+                <label class="row"><input type="radio" name="calendarMode" value="url"> URL</label>
+                <label class="row"><input type="radio" name="calendarMode" value="upload"> Upload HTML</label>
+              </div>
+              <input type="url" id="calendarUrl" placeholder="https://…" />
+              <div class="row" id="calendarUploadRow" style="display:none;">
+                <input type="file" id="calendarFile" accept="text/html,.html" />
+                <span class="hint">Gemmes lokalt i browseren.</span>
+              </div>
+            </div>
+
+            <div class="field"><label for="homeyUrl">Homey dashboard URL</label><input type="url" id="homeyUrl" placeholder="https://my.homey.app/…"/></div>
+
+            <div class="field"><label for="sonosUrl">Sonos link (app/web/custom scheme)</label><input type="text" id="sonosUrl" placeholder="sonos:// eller https://"/></div>
+            <div class="field"><label for="sonosPkg">Android package (app)</label><input type="text" id="sonosPkg" placeholder="com.sonos.acr2"/></div>
+            <div class="field"><label for="sonosScheme">Custom scheme (iOS/Android)</label><input type="text" id="sonosScheme" placeholder="sonos://"/></div>
+          </div>
+        </section>
+
+        <!-- Synkronisering -->
+        <section id="tab-sync" class="section">
+          <div class="form-grid">
+            <div class="field"><label for="householdId">Husstands-ID</label><input id="householdId" placeholder="auto-genereres"/></div>
+            <div class="field"><label>Status</label><div class="left-note"><span id="lastSync">—</span></div></div>
+            <div class="field full"><span class="hint">Brug samme Husstands-ID på alle enheder for at dele indstillinger (farver, logoer, links m.m.).</span></div>
+          </div>
+        </section>
+
+        <!-- Skærm -->
+        <section id="tab-screen" class="section">
+          <div class="form-grid">
+            <div class="field"><label for="keepAwake">Hold skærm vågen</label><div class="row"><input type="checkbox" id="keepAwake"/><span class="hint">Aktiverer NoSleep efter første tryk.</span></div></div>
+          </div>
+        </section>
+      </div>
+
+      <div class="dlg-foot">
+        <div class="left-note"><strong>Synk:</strong> <span id="syncNote">—</span></div>
+        <div class="actions">
+          <button class="btn" id="resetConfig" type="button">Nulstil</button>
+          <button class="btn" id="closeSettings" type="button">Luk</button>
+          <button class="btn primary" id="saveSettings" type="button">Gem</button>
+        </div>
       </div>
     </div>
   </div>
@@ -205,6 +271,7 @@
   function on(el,ev,fn){ if(el && el.addEventListener) el.addEventListener(ev,fn,false); }
   function toB64(file){ return new Promise(function(res,rej){ var fr=new FileReader(); fr.onload=function(){ res(fr.result); }; fr.onerror=rej; fr.readAsDataURL(file); }); }
   function nowStr(){ return new Date().toLocaleTimeString('da-DK',{hour:'2-digit',minute:'2-digit'}); }
+  function debounced(ms,fn){ let t; return function(){ clearTimeout(t); t=setTimeout(()=>fn.apply(this,arguments),ms); }; }
 
   /* clock */
   function updateClock(){ var t=$('clockTime'), d=$('clockDate'); var now=new Date(); t.textContent=now.toLocaleTimeString('da-DK',{hour:'2-digit',minute:'2-digit'}); var dd=now.toLocaleDateString('da-DK',{weekday:'long',day:'2-digit',month:'long'}); d.textContent=dd.charAt(0).toUpperCase()+dd.slice(1); }
@@ -220,7 +287,7 @@
 
   /* local config */
   var LS_KEY='webkioskConfigV2';
-  var defaults={calendar:{mode:'url',url:'',fileName:'',fileData:''},homeyUrl:'',sonosUrl:'',sonosPkg:'',sonosScheme:'',logos:{calendar:'',homey:'',sonos:''},theme:{color:'#0f172a',background:'#f6f7f9'},householdId:'',_ts:0};
+  var defaults={calendar:{mode:'url',url:'',fileName:'',fileData:''},homeyUrl:'',sonosUrl:'',sonosPkg:'',sonosScheme:'',logos:{calendar:'',homey:'',sonos:''},theme:{color:'#0f172a',background:'#f6f7f9'},keepAwake:true,householdId:'',_ts:0};
   function load(){ try{ var o=JSON.parse(localStorage.getItem(LS_KEY)||'{}'); var r={}; for(var k in defaults){ r[k]=defaults[k]; if(typeof defaults[k]==='object' && defaults[k] && !Array.isArray(defaults[k])){ r[k]=Object.assign({},defaults[k],o[k]||{});} else if(o[k]!==undefined){ r[k]=o[k]; } } return r; }catch(e){ return JSON.parse(JSON.stringify(defaults)); } }
   function save(c){ try{ localStorage.setItem(LS_KEY, JSON.stringify(c)); }catch(e){} }
   var config=load(); if(!config.householdId){ config.householdId=Math.random().toString(36).slice(2,10).toUpperCase(); save(config); }
@@ -228,31 +295,76 @@
   function applyTheme(){ document.documentElement.style.setProperty('--accent',config.theme&&config.theme.color?config.theme.color:'#0f172a'); document.documentElement.style.setProperty('--bg',config.theme&&config.theme.background?config.theme.background:'#f6f7f9'); }
   function applyLogos(){ var m=config.logos||{}; if($('logoCalendar') && m.calendar) $('logoCalendar').src=m.calendar; if($('logoHomey') && m.homey) $('logoHomey').src=m.homey; if($('logoSonos') && m.sonos) $('logoSonos').src=m.sonos; if($('prevCalendar') && m.calendar) $('prevCalendar').src=m.calendar; if($('prevHomey') && m.homey) $('prevHomey').src=m.homey; if($('prevSonos') && m.sonos) $('prevSonos').src=m.sonos; }
   function applyForm(){
+    if($('themeColor')) $('themeColor').value=(config.theme&&config.theme.color)||'#0f172a';
+    if($('bgColor')) $('bgColor').value=(config.theme&&config.theme.background)||'#f6f7f9';
+    if($('keepAwake')) $('keepAwake').checked = !!config.keepAwake;
+
     if($('calendarUrl')) $('calendarUrl').value=(config.calendar&&config.calendar.url)||'';
     if($('homeyUrl')) $('homeyUrl').value=config.homeyUrl||'';
     if($('sonosUrl')) $('sonosUrl').value=config.sonosUrl||'';
     if($('sonosPkg')) $('sonosPkg').value=config.sonosPkg||'';
     if($('sonosScheme')) $('sonosScheme').value=config.sonosScheme||'';
-    if($('themeColor')) $('themeColor').value=(config.theme&&config.theme.color)||'#0f172a';
-    if($('bgColor')) $('bgColor').value=(config.theme&&config.theme.background)||'#f6f7f9';
     if($('householdId')) $('householdId').value=(config.householdId||'').toUpperCase();
-    var radios=[].slice.call(document.querySelectorAll('input[name="calendarMode"]')); radios.forEach(function(r){ r.checked=(r.value===((config.calendar&&config.calendar.mode)||'url')); });
-    var uploadRow=$('calendarUploadRow'); if(uploadRow) uploadRow.style.display=((config.calendar&&config.calendar.mode)==='upload')?'':''; }
+
+    var mode=((config.calendar&&config.calendar.mode)||'url');
+    var radios=[].slice.call(document.querySelectorAll('input[name="calendarMode"]'));
+    radios.forEach(function(r){ r.checked=(r.value===mode); });
+    var uploadRow=$('calendarUploadRow'); if(uploadRow) uploadRow.style.display=(mode==='upload')?'':'none';
+  }
   function applyAllFromConfig(){ applyTheme(); applyForm(); applyLogos(); }
   applyAllFromConfig();
 
-  /* modal & inputs */
-  var modal=$('settingsModal'); function closeModal(){ modal.classList.remove('visible'); modal.setAttribute('aria-hidden','true'); }
-  on($('closeSettings'),'click',closeModal);
-  on($('resetConfig'),'click',function(){ if(confirm('Nulstil alle indstillinger?')){ localStorage.removeItem(LS_KEY); config=load(); if(!config.householdId){config.householdId=Math.random().toString(36).slice(2,10).toUpperCase()} save(config); applyAllFromConfig(); queueWriteFirestore(); }});
-  ;[].slice.call(document.querySelectorAll('input[name="calendarMode"]')).forEach(function(r){ on(r,'change',function(){ config.calendar.mode=r.value; var r2=$('calendarUploadRow'); if(r2) r2.style.display=(r.value==='upload')?'':''; }); });
-  on($('logoInputCalendar'),'change',async function(){ if(!this.files||!this.files[0])return; config.logos.calendar=await toB64(this.files[0]); config._ts=Date.now(); save(config); applyLogos(); queueWriteFirestore(); });
-  on($('logoInputHomey'),'change',async function(){ if(!this.files||!this.files[0])return; config.logos.homey=await toB64(this.files[0]); config._ts=Date.now(); save(config); applyLogos(); queueWriteFirestore(); });
-  on($('logoInputSonos'),'change',async function(){ if(!this.files||!this.files[0])return; config.logos.sonos=await toB64(this.files[0]); config._ts=Date.now(); save(config); applyLogos(); queueWriteFirestore(); });
-  on($('calendarFile'),'change',async function(){ if(!this.files||!this.files[0])return; config.calendar.fileName=this.files[0].name; config.calendar.fileData=await toB64(this.files[0]); config._ts=Date.now(); save(config); queueWriteFirestore(); });
-  on($('saveSettings'),'click',function(){ if($('calendarUrl')) config.calendar.url=$('calendarUrl').value.trim(); if($('homeyUrl')) config.homeyUrl=$('homeyUrl').value.trim(); if($('sonosUrl')) config.sonosUrl=$('sonosUrl').value.trim(); if($('sonosPkg')) config.sonosPkg=$('sonosPkg').value.trim(); if($('sonosScheme')) config.sonosScheme=$('sonosScheme').value.trim(); if($('themeColor')) config.theme.color=$('themeColor').value||config.theme.color; if($('bgColor')) config.theme.background=$('bgColor').value||config.theme.background; if($('householdId')) config.householdId=$('householdId').value.trim().toUpperCase()||config.householdId; config._ts=Date.now(); save(config); applyAllFromConfig(); closeModal(); queueWriteFirestore(); });
+  /* tabs */
+  (function(){
+    var tabs=[].slice.call(document.querySelectorAll('.tab'));
+    var secs=[].slice.call(document.querySelectorAll('.section'));
+    tabs.forEach(function(tb){
+      on(tb,'click',function(){
+        tabs.forEach(t=>t.classList.remove('active'));
+        secs.forEach(s=>s.classList.remove('active'));
+        tb.classList.add('active');
+        var id=tb.getAttribute('data-tab'); var sec=$(id); if(sec) sec.classList.add('active');
+      });
+    });
+  })();
 
-  /* calendar overlay open/close (inline + js) */
+  /* modal events */
+  var modal=$('settingsModal');
+  function closeModal(){ modal.classList.remove('visible'); modal.setAttribute('aria-hidden','true'); }
+  on($('closeSettings'),'click',closeModal);
+
+  /* inputs → config (live) + debounce write */
+  const writeSoon = debounced(300, queueWriteFirestore);
+  function liveBind(){
+    on($('themeColor'),'input',function(){ config.theme.color=this.value||config.theme.color; save(config); applyTheme(); writeSoon(); });
+    on($('bgColor'),'input',function(){ config.theme.background=this.value||config.theme.background; save(config); applyTheme(); writeSoon(); });
+    on($('keepAwake'),'change',function(){ config.keepAwake=!!this.checked; save(config); writeSoon(); });
+
+    ;[].slice.call(document.querySelectorAll('input[name="calendarMode"]')).forEach(function(r){
+      on(r,'change',function(){ config.calendar.mode=r.value; save(config); applyForm(); writeSoon(); });
+    });
+    on($('calendarUrl'),'input',function(){ config.calendar.url=this.value.trim(); save(config); writeSoon(); });
+    on($('homeyUrl'),'input',function(){ config.homeyUrl=this.value.trim(); save(config); writeSoon(); });
+    on($('sonosUrl'),'input',function(){ config.sonosUrl=this.value.trim(); save(config); writeSoon(); });
+    on($('sonosPkg'),'input',function(){ config.sonosPkg=this.value.trim(); save(config); writeSoon(); });
+    on($('sonosScheme'),'input',function(){ config.sonosScheme=this.value.trim(); save(config); writeSoon(); });
+    on($('householdId'),'input',function(){ var v=this.value.trim().toUpperCase(); if(v){ config.householdId=v; save(config); startRealtime(); writeSoon(); } });
+
+    on($('logoInputCalendar'),'change',async function(){ if(!this.files||!this.files[0])return; config.logos.calendar=await toB64(this.files[0]); save(config); applyLogos(); writeSoon(); });
+    on($('logoInputHomey'),'change',async function(){ if(!this.files||!this.files[0])return; config.logos.homey=await toB64(this.files[0]); save(config); applyLogos(); writeSoon(); });
+    on($('logoInputSonos'),'change',async function(){ if(!this.files||!this.files[0])return; config.logos.sonos=await toB64(this.files[0]); save(config); applyLogos(); writeSoon(); });
+    on($('calendarFile'),'change',async function(){ if(!this.files||!this.files[0])return; config.calendar.fileName=this.files[0].name; config.calendar.fileData=await toB64(this.files[0]); save(config); writeSoon(); });
+  }
+  liveBind();
+
+  /* Save knap (manuel) */
+  on($('saveSettings'),'click',function(){
+    // værdier er allerede i config pga liveBind; bump timestamp + skriv
+    config._ts=Date.now(); save(config); queueWriteFirestore(); closeModal();
+  });
+  on($('resetConfig'),'click',function(){ if(confirm('Nulstil alle indstillinger?')){ localStorage.removeItem(LS_KEY); config=load(); if(!config.householdId){config.householdId=Math.random().toString(36).slice(2,10).toUpperCase()} save(config); applyAllFromConfig(); startRealtime(); queueWriteFirestore(); }});
+
+  /* Tiles/overlays */
   function openCalendar(){
     var src='';
     if(config.calendar && config.calendar.mode==='upload' && config.calendar.fileData){
@@ -264,16 +376,13 @@
   on($('tileCalendar'),'click',openCalendar);
   window.__handlers = window.__handlers||{}; window.__handlers.openCalendar=openCalendar;
 
-  /* webpanel helpers */
   function showPanel(url,title){ $('wkTitle').textContent=title||url; $('wkFrame').src=url; var p=$('wkPanel'); p.classList.add('visible'); p.setAttribute('aria-hidden','false'); }
   function hidePanel(){ var p=$('wkPanel'); p.classList.remove('visible'); p.setAttribute('aria-hidden','true'); $('wkFrame').src='about:blank'; }
   on($('wkBack'),'click',hidePanel);
 
-  /* Homey */
   function openHomey(){ var url=(config.homeyUrl||'').trim(); if(!url){ alert('Ingen Homey URL sat.'); return; } if(/^https?:\/\//i.test(url)) showPanel(url,'Homey'); else location.href=url; }
   on($('tileHomey'),'click',openHomey); window.__handlers.openHomey=openHomey;
 
-  /* Sonos */
   var isAndroid=/Android/i.test(navigator.userAgent), isiOS=/iPhone|iPad|iPod/i.test(navigator.userAgent);
   function openSonosNative(){
     var pkg=(config.sonosPkg||'').trim() || 'com.sonos.acr2';
@@ -290,26 +399,47 @@
   function openSonos(){ if(openSonosNative()) return; var link=(config.sonosUrl||'').trim() || 'https://play.sonos.com'; if(/^https?:\/\//i.test(link)) showPanel(link,'Sonos'); else window.open(link,'_self'); }
   on($('tileSonos'),'click',openSonos); window.__handlers.openSonos=openSonos;
 
-  /* NoSleep (hold skærm vågen) */
-  var noSleep=null; on(window,'click',function(){ try{ if(!noSleep && window.NoSleep){ noSleep=new NoSleep(); noSleep.enable(); } }catch(e){} });
+  /* NoSleep (kun hvis valgt) */
+  var noSleep=null;
+  on(window,'click',function(){ try{ if(config.keepAwake && !noSleep && window.NoSleep){ noSleep=new NoSleep(); noSleep.enable(); } }catch(e){} });
 
   /* Firebase anon + Firestore sync */
   var firebaseConfig={apiKey:"AIzaSyA_gh8y-V6kkl95hRzb0ldBxpKWFY5bAck",authDomain:"webkiosk-e5d32.firebaseapp.com",projectId:"webkiosk-e5d32",storageBucket:"webkiosk-e5d32.firebasestorage.app",messagingSenderId:"920175197353",appId:"1:920175197353:web:c3520e9a3ab8146ec4fdb8"};
   var fbApp=firebase.initializeApp(firebaseConfig), fbAuth=firebase.auth(), fbDb=firebase.firestore();
 
-  function badge(state,note){ var b=$('syncBadge'), t=$('syncBadgeText'), n=$('syncBadgeNote'); ['sync-online','sync-syncing','sync-offline','sync-error'].forEach(c=>b.classList.remove(c)); b.classList.add('sync-'+state); t.textContent={online:'Online',syncing:'Synkroniserer…',offline:'Offline',error:'Fejl'}[state]||'Offline'; n.textContent=note?('· '+note):''; }
+  function badge(state,note){ var b=$('syncBadge'), t=$('syncBadgeText'), n=$('syncBadgeNote'); ['sync-online','sync-syncing','sync-offline','sync-error'].forEach(c=>b.classList.remove(c)); b.classList.add('sync-'+state); t.textContent={online:'Online',syncing:'Synkroniserer…',offline:'Offline',error:'Fejl'}[state]||'Offline'; n.textContent=note?('· '+note):''; $('syncNote').textContent=t.textContent+(note?(' '+note):''); $('lastSync').textContent = note ? note : '—'; }
   window.addEventListener('online',  ()=>badge('online', nowStr()));
   window.addEventListener('offline', ()=>badge('offline',''));
+
   fbAuth.signInAnonymously().then(function(){ badge(navigator.onLine?'online':'offline', nowStr()); }).catch(function(){ badge('error','auth'); });
 
   var unsub=null, writeTimer=null;
   function docRef(){ return fbDb.collection('webkiosk').doc((config.householdId||'DEFAULT').toUpperCase()); }
-  function queueWriteFirestore(){ if(writeTimer) clearTimeout(writeTimer); writeTimer=setTimeout(async function(){ try{ config._ts=Date.now(); save(config); await docRef().set(config,{merge:true}); badge('online', nowStr()); }catch(e){ badge('error','write'); } },250); }
-  function startRealtime(){ try{ if(unsub) unsub(); unsub=docRef().onSnapshot(function(snap){ if(!snap||!snap.exists) return; var remote=snap.data()||{}; var local=load(); if(remote._ts && (!local._ts || remote._ts>local._ts)){ config=Object.assign({},local,remote); save(config); applyAllFromConfig(); } }, function(){ badge('error','snapshot'); }); }catch(e){ badge('error','listen'); } }
+  function queueWriteFirestore(){
+    if(writeTimer) clearTimeout(writeTimer);
+    writeTimer=setTimeout(async function(){
+      try{
+        config._ts=Date.now(); save(config);
+        await docRef().set(config,{merge:true});
+        badge('online', nowStr());
+      }catch(e){ badge('error','write'); }
+    },250);
+  }
+  function startRealtime(){
+    try{
+      if(unsub) unsub();
+      unsub=docRef().onSnapshot(function(snap){
+        if(!snap||!snap.exists) return;
+        var remote=snap.data()||{}; var local=load();
+        if(remote._ts && (!local._ts || remote._ts>local._ts)){
+          config=Object.assign({},local,remote); save(config); applyAllFromConfig();
+        }
+      }, function(){ badge('error','snapshot'); });
+    }catch(e){ badge('error','listen'); }
+  }
   startRealtime();
-  ;['saveSettings','logoInputCalendar','logoInputHomey','logoInputSonos','calendarFile'].forEach(function(id){ var el=$(id); if(!el) return; el.addEventListener('change', queueWriteFirestore); el.addEventListener('click', queueWriteFirestore); });
 
-  /* sikkerhed ved load – alle overlays OFF */
+  /* sikkerhed ved load – overlays OFF */
   document.addEventListener('DOMContentLoaded', function(){ ['calendarView','wkPanel','settingsModal'].forEach(function(id){ var el=$(id); if(el){ el.classList.remove('visible'); el.setAttribute('aria-hidden','true'); el.style.display='none'; el.offsetHeight; el.style.display=''; } }); });
   </script>
 </body>
