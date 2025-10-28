@@ -3,16 +3,11 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Webkiosk v2025-10-28j</title>
+<title>Webkiosk v2025-10-28m</title>
 <meta name="theme-color" content="#0f172a" />
 <link rel="manifest" href="./manifest.webmanifest" />
 <style>
-  :root{
-    --bg:#f6f7f9; --panel:#ffffff; --fg:#0f172a; --muted:#6b7280;
-    --border:#e6e8ec; --accent:#0f172a;
-    --radius:20px; --shadow:0 10px 30px rgba(2,6,23,.06);
-    --logoH:64px; --logoBoxW:42%; --logoMaxW:280px;
-  }
+  :root{ --bg:#f6f7f9; --panel:#ffffff; --fg:#0f172a; --muted:#6b7280; --border:#e6e8ec; --accent:#0f172a; --radius:20px; --shadow:0 10px 30px rgba(2,6,23,.06); --logoH:64px; --logoBoxW:42%; --logoMaxW:280px; }
   @media (max-width:1100px){ :root{ --logoBoxW:45%; --logoH:60px } }
   @media (max-width:900px){  :root{ --logoBoxW:50%; --logoH:56px } }
   *{box-sizing:border-box}
@@ -23,15 +18,12 @@
   .panel{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
   .widget{padding:clamp(16px,2.2vw,24px)}
   .widget h2{margin:0 0 6px;font-size:clamp(15px,1.6vw,18px);color:var(--muted);font-weight:600;letter-spacing:.2px}
-
   .clock-time{font-size:clamp(40px,6vw,56px);line-height:1;font-weight:750}
   .clock-date{margin-top:6px;font-size:clamp(14px,1.8vw,18px);color:var(--muted)}
-
   .weather-main{display:flex;align-items:center;gap:14px}
   .weather-temp{font-size:clamp(40px,6vw,56px);font-weight:750}
   .weather-line{font-size:clamp(14px,1.8vw,18px);color:var(--muted)}
   .widget .icon{width:clamp(34px,4.5vw,48px);height:clamp(34px,4.5vw,48px);color:var(--accent)}
-
   .tiles{grid-column:1/-1;display:grid;gap:clamp(12px,2vw,18px);grid-template-columns:repeat(3,1fr)}
   .tile{min-height:140px;padding:clamp(16px,2.4vw,24px);display:grid;grid-template-columns:1fr minmax(160px,min(var(--logoMaxW),var(--logoBoxW)));align-items:center;gap:clamp(12px,2vw,20px);cursor:pointer;user-select:none;transition:transform .12s ease,box-shadow .12s ease,border-color .12s ease}
   .tile:hover{transform:translateY(-1px);box-shadow:0 14px 30px rgba(2,6,23,.10)}
@@ -39,12 +31,10 @@
   .meta .sub{color:var(--muted);font-size:clamp(12px,1.8vw,15px);margin-top:6px}
   .logo-box{height:var(--logoH);display:flex;align-items:center;justify-content:flex-end}
   .logo-box img{max-height:100%;max-width:100%;object-fit:contain;display:block}
-
   .widget.weather{grid-column:span 6}
   .widget.clock{grid-column:span 6}
   @media (max-width:900px){.widget.weather,.widget.clock{grid-column:span 12}.tiles{grid-template-columns:1fr}}
 
-  /* Kalender overlay */
   .calendar-view{position:fixed;inset:0;padding:clamp(12px,2vw,20px);background:rgba(246,247,249,.85);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:none;z-index:60}
   .calendar-inner{height:100%;display:flex;flex-direction:column;gap:12px}
   .topbar{display:flex;align-items:center;gap:12px}
@@ -52,12 +42,10 @@
   .calframe.panel{flex:1;min-height:0;overflow:hidden;display:flex}
   iframe{width:100%;height:100%;border:0;display:block}
 
-  /* Tandhjul (din) */
   .fab{position:fixed;right:20px;bottom:20px;z-index:70}
   .fab button{width:56px;height:56px;border-radius:50%;border:1px solid var(--border);background:#fff;color:var(--fg);display:inline-flex;align-items:center;justify-content:center;box-shadow:var(--shadow);cursor:pointer}
   .fab button:hover{transform:translateY(-1px);box-shadow:0 14px 30px rgba(2,6,23,.10)}
 
-  /* Indstillinger (din) */
   .modal{position:fixed;inset:0;background:rgba(15,23,42,.28);display:none;align-items:center;justify-content:center;padding:20px;z-index:80}
   .modal[aria-hidden="false"]{display:flex}
   .dialog{width:min(920px,96vw);max-height:92vh;overflow:auto;background:#fff;border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);padding:20px}
@@ -76,7 +64,6 @@
   .logoPreview{width:140px;height:64px;display:flex;align-items:center;justify-content:center;border:1px dashed var(--border);border-radius:12px;background:#fafafa}
   .logoPreview img{max-width:100%;max-height:100%;object-fit:contain;display:block}
 
-  /* Webpanel overlay */
   .wk-panel{position:fixed;inset:0;background:#00000010;backdrop-filter:saturate(1.1) blur(4px);display:none;z-index:75}
   .wk-panel.visible{display:block}
   .wk-shell{position:absolute;inset:0;background:#fff;box-shadow:0 12px 60px rgba(2,6,23,.25)}
@@ -143,7 +130,7 @@
     <button id="openSettings" title="Indstillinger" aria-label="Indstillinger">
       <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <circle cx="12" cy="12" r="3"/>
-        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c0 .66.26 1.3.73 1.77.47.47 1.11.73 1.77.73h.09a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c0 .66.26 1.3.73 1.77.47.47 1.11.73 1.77.73h.09a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/>
       </svg>
     </button>
   </div>
@@ -199,7 +186,7 @@
       <div class="wk-topbar">
         <button id="wkBack" class="btn">← Tilbage</button>
         <div id="wkTitle" class="title">Indlæser…</div>
-        <div style="margin-left:auto;display:flex;gap:8px">
+        <div id="wkTopbarRight" style="margin-left:auto;display:flex;gap:8px">
           <button id="wkOpenNew" class="btn" title="Åbn i ny fane">↗ Åbn i ny fane</button>
         </div>
       </div>
@@ -207,7 +194,7 @@
       <div id="wkFallback" class="wk-fallback">
         <div class="card">
           <h3>Kan ikke vise siden her</h3>
-          <p>Siden tillader ikke indlejring. Åbn i ny fane i stedet.</p>
+          <p>Siden tillader ikke indlejring. Du kan åbne den i ny fane.</p>
           <p><button id="wkOpenNew2" class="btn">↗ Åbn i ny fane</button></p>
         </div>
       </div>
@@ -222,7 +209,7 @@
 
   <!-- App logic -->
   <script>
-  const VERSION="2025-10-28j";
+  const VERSION="2025-10-28m";
   if('serviceWorker' in navigator){ navigator.serviceWorker.register(`./service-worker.js?vv=${encodeURIComponent(VERSION)}`).catch(()=>{}); }
 
   /* Ur */
@@ -240,16 +227,20 @@
   function load(){try{return Object.assign({},defaults,JSON.parse(localStorage.getItem(LS_KEY)||'{}'))}catch{return {...defaults}}}
   function save(c){localStorage.setItem(LS_KEY,JSON.stringify(c))}
   let config=load(); if(!config.householdId){config.householdId=Math.random().toString(36).slice(2,10).toUpperCase(); save(config)}
-  document.documentElement.style.setProperty('--accent',config.theme.color); document.documentElement.style.setProperty('--bg',config.theme.background);
+  function applyTheme(){document.documentElement.style.setProperty('--accent',config.theme.color||'#0f172a'); document.documentElement.style.setProperty('--bg',config.theme.background||'#f6f7f9');}
+  function applyLogos(){ const m=config.logos||{}; if(m.calendar) document.getElementById('logoCalendar').src=m.calendar; if(m.homey) document.getElementById('logoHomey').src=m.homey; if(m.sonos) document.getElementById('logoSonos').src=m.sonos; const pc=document.getElementById('prevCalendar'); if(pc&&m.calendar) pc.src=m.calendar; const ph=document.getElementById('prevHomey'); if(ph&&m.homey) ph.src=m.homey; const ps=document.getElementById('prevSonos'); if(ps&&m.sonos) ps.src=m.sonos; }
+  function applyAllFromConfig(){ applyTheme(); applyForm(); applyLogos(); }
+  applyAllFromConfig();
 
   /* UI refs */
   const modal=document.getElementById('settingsModal'); const openSettings=document.getElementById('openSettings'); const closeSettings=document.getElementById('closeSettings'); const saveSettings=document.getElementById('saveSettings'); const resetConfig=document.getElementById('resetConfig');
   const calendarUrl=document.getElementById('calendarUrl'); const calendarFile=document.getElementById('calendarFile'); const calendarUploadRow=document.getElementById('calendarUploadRow'); const modeRadios=[...document.querySelectorAll('input[name="calendarMode"]')];
   const homeyUrl=document.getElementById('homeyUrl'); const sonosUrl=document.getElementById('sonosUrl'); const sonosPkg=document.getElementById('sonosPkg'); const sonosScheme=document.getElementById('sonosScheme');
   const themeColor=document.getElementById('themeColor'); const bgColor=document.getElementById('bgColor'); const wakeStrategy=document.getElementById('wakeStrategy'); const householdId=document.getElementById('householdId'); const syncStatus=document.getElementById('syncStatus');
+  const logoInputs={calendar:document.getElementById('logoInputCalendar'),homey:document.getElementById('logoInputHomey'),sonos:document.getElementById('logoInputSonos')};
 
   /* Modal open/close */
-  function openModal(){ modal.setAttribute('aria-hidden','false'); applyForm(); }
+  function openModal(){ modal.setAttribute('aria-hidden','false'); applyForm(); applyLogos(); }
   function closeModal(){ modal.setAttribute('aria-hidden','true'); }
   openSettings.addEventListener('click',openModal); closeSettings.addEventListener('click',closeModal); modal.addEventListener('click',(e)=>{ if(e.target===modal) closeModal(); });
 
@@ -259,22 +250,31 @@
     themeColor.value=config.theme.color||'#0f172a'; bgColor.value=config.theme.background||'#f6f7f9'; wakeStrategy.value=config.wakeStrategy||'auto'; householdId.value=config.householdId||'';
     modeRadios.forEach(r=>r.checked=(r.value===(config.calendar.mode||'url'))); calendarUploadRow.style.display=(config.calendar.mode==='upload')?'':'none';
   }
+
   modeRadios.forEach(r=>r.addEventListener('change',()=>{config.calendar.mode=r.value; calendarUploadRow.style.display=(r.value==='upload')?'':'none';}));
 
-  /* File (valgfri) */
+  /* Logo upload → vis nu + auto-save + sync */
   async function toB64(file){return new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>res(fr.result);fr.onerror=rej;fr.readAsDataURL(file)})}
-  calendarFile.addEventListener('change',async()=>{const f=calendarFile.files?.[0];if(!f)return;config.calendar.fileName=f.name;config.calendar.fileData=await toB64(f);});
+  Object.entries(logoInputs).forEach(([k,input])=>{
+    input.addEventListener('change',async()=>{
+      const f=input.files?.[0]; if(!f) return;
+      const b64=await toB64(f);
+      config.logos=config.logos||{}; config.logos[k]=b64;
+      config._ts=Date.now(); save(config); applyLogos(); queueWriteFirestore(); // auto sync
+    });
+  });
 
-  /* Gem */
+  /* Kalenderfil upload */
+  calendarFile.addEventListener('change',async()=>{const f=calendarFile.files?.[0];if(!f)return;config.calendar.fileName=f.name;config.calendar.fileData=await toB64(f);config._ts=Date.now();save(config);queueWriteFirestore();});
+
+  /* Gem (resten af felter) */
   saveSettings.addEventListener('click',()=>{
     config.calendar.url=calendarUrl.value.trim(); config.homeyUrl=homeyUrl.value.trim(); config.sonosUrl=sonosUrl.value.trim(); config.sonosPkg=sonosPkg.value.trim(); config.sonosScheme=sonosScheme.value.trim();
     config.theme.color=themeColor.value||config.theme.color; config.theme.background=bgColor.value||config.theme.background; config.wakeStrategy=wakeStrategy.value||'auto';
     config.householdId=(householdId.value||config.householdId||'').toUpperCase();
-    config._ts=Date.now(); save(config);
-    document.documentElement.style.setProperty('--accent',config.theme.color); document.documentElement.style.setProperty('--bg',config.theme.background);
-    queueWriteFirestore(); requestWakeLock(); closeModal();
+    config._ts=Date.now(); save(config); applyAllFromConfig(); queueWriteFirestore(); requestWakeLock(); closeModal();
   });
-  resetConfig.addEventListener('click',()=>{ if(confirm('Nulstil alle indstillinger?')){ localStorage.removeItem(LS_KEY); config=load(); if(!config.householdId){config.householdId=Math.random().toString(36).slice(2,10).toUpperCase()} save(config); applyForm(); }});
+  resetConfig.addEventListener('click',()=>{ if(confirm('Nulstil alle indstillinger?')){ localStorage.removeItem(LS_KEY); config=load(); if(!config.householdId){config.householdId=Math.random().toString(36).slice(2,10).toUpperCase()} save(config); applyAllFromConfig(); queueWriteFirestore(); }});
 
   /* Kalender overlay */
   const tileCalendar=document.getElementById('tileCalendar'); const calendarView=document.getElementById('calendarView'); const calendarFrame=document.getElementById('calendarFrame'); const closeCalendar=document.getElementById('closeCalendar');
@@ -288,10 +288,29 @@
   tileCalendar.addEventListener('click',openCalendar); closeCalendar.addEventListener('click',closeCalendarFn);
 
   /* Webpanel overlay */
-  const wkPanel=document.getElementById('wkPanel'); const wkFrame=document.getElementById('wkFrame'); const wkTitle=document.getElementById('wkTitle'); const wkBack=document.getElementById('wkBack'); const wkOpenNew=document.getElementById('wkOpenNew'); const wkOpenNew2=document.getElementById('wkOpenNew2'); const wkFallback=document.getElementById('wkFallback');
+  const wkPanel=document.getElementById('wkPanel');
+  const wkFrame=document.getElementById('wkFrame');
+  const wkTitle=document.getElementById('wkTitle');
+  const wkBack=document.getElementById('wkBack');
+  const wkOpenNew=document.getElementById('wkOpenNew');
+  const wkOpenNew2=document.getElementById('wkOpenNew2');
+  const wkTopbarRight=document.getElementById('wkTopbarRight');
+  const wkFallback=document.getElementById('wkFallback');
+
   let currentUrl='';
-  function showPanel(url,title){ currentUrl=url; wkTitle.textContent=title||url; wkOpenNew.onclick=wkOpenNew2.onclick=()=>window.open(currentUrl,'_blank','noopener,noreferrer'); wkFallback.style.display='none'; wkFrame.src=url; wkPanel.classList.add('visible'); wkPanel.setAttribute('aria-hidden','false'); setTimeout(()=>{try{if(!wkFrame.contentWindow||wkFrame.contentWindow.location.href==='about:blank'){wkFallback.style.display='flex'}}catch(_){/* cross-origin ok */}},1200); }
-  function hidePanel(){ wkPanel.classList.remove('visible'); wkPanel.setAttribute('aria-hidden','true'); try{wkFrame.src='about:blank'}catch(_){} }
+  function showPanel(url,title,opts={hideOpenNew:false}){
+    currentUrl=url;
+    wkTitle.textContent=title||url;
+    if(wkOpenNew) wkOpenNew.onclick=()=>window.open(currentUrl,'_blank','noopener,noreferrer');
+    if(wkOpenNew2) wkOpenNew2.onclick=()=>window.open(currentUrl,'_blank','noopener,noreferrer');
+    wkFallback.style.display='none';
+    wkFrame.src=url;
+    wkPanel.classList.add('visible');
+    wkPanel.setAttribute('aria-hidden','false');
+    if(opts.hideOpenNew && wkTopbarRight) wkTopbarRight.style.display='none'; else if(wkTopbarRight) wkTopbarRight.style.display='flex';
+    setTimeout(()=>{ try{ if(!wkFrame.contentWindow || wkFrame.contentWindow.location.href==='about:blank'){ wkFallback.style.display='flex'; } }catch(_){ } },1200);
+  }
+  function hidePanel(){ wkPanel.classList.remove('visible'); wkPanel.setAttribute('aria-hidden','true'); try{ wkFrame.src='about:blank'; }catch(_){} if(wkTopbarRight) wkTopbarRight.style.display='flex'; }
   wkBack.addEventListener('click',hidePanel);
 
   /* Homey/Sonos klik */
@@ -299,34 +318,52 @@
     const url=(config.homeyUrl||'').trim(); if(!url){alert('Ingen Homey URL sat.');return}
     if(/^https?:\/\//i.test(url)) showPanel(url,'Homey'); else location.href=url;
   });
+
+  // Sonos: **Native først**, web (overlay) som fallback, og helt uden “åbn i ny fane”
+  const isAndroid=/Android/i.test(navigator.userAgent), isiOS=/iPhone|iPad|iPod/i.test(navigator.userAgent);
+  function openSonosNative(){
+    const pkg=(config.sonosPkg||'').trim() || 'com.sonos.acr2';
+    const scheme=(config.sonosScheme||'').trim();
+    if(isiOS && scheme){ location.href=scheme; return true; }
+    if(isAndroid && pkg){
+      const fb=encodeURIComponent(location.href);
+      location.href=`intent://open/#Intent;package=${pkg};S.browser_fallback_url=${fb};end;`;
+      setTimeout(()=>{ location.href=`market://details?id=${pkg}` },1200);
+      return true;
+    }
+    return false;
+  }
   document.getElementById('tileSonos').addEventListener('click',()=>{
-    const link=(config.sonosUrl||'').trim(); const pkg=config.sonosPkg.trim(); const scheme=config.sonosScheme.trim();
-    const isiOS=/iPhone|iPad|iPod/i.test(navigator.userAgent), isAndroid=/Android/i.test(navigator.userAgent);
-    if(isiOS && scheme){ location.href=scheme; return; }
-    if(isAndroid && pkg){ const fb=encodeURIComponent(location.href); location.href=`intent://open/#Intent;package=${pkg};S.browser_fallback_url=${fb};end;`; setTimeout(()=>{ location.href=`market://details?id=${pkg}` },1200); return; }
-    if(link){ if(/^https?:\/\//i.test(link)) showPanel(link,'Sonos'); else location.href=link; }
-    else alert('Angiv Sonos link eller app i Indstillinger.');
+    // 1) Native først
+    if(openSonosNative()) return;
+    // 2) Web som fallback, men bliv i overlay og skjul “åbn i ny fane”
+    const link=(config.sonosUrl||'').trim() || 'https://play.sonos.com';
+    showPanel(link,'Sonos',{hideOpenNew:true});
+    // Tilpas fallback-kort til “Åbn i Sonos-app”
+    const cardBtn = document.querySelector('#wkFallback .card button');
+    const cardH3  = document.querySelector('#wkFallback .card h3');
+    const cardP   = document.querySelector('#wkFallback .card p');
+    if(cardH3) cardH3.textContent='Kan ikke vise Sonos her';
+    if(cardP && cardP.firstChild) cardP.firstChild.textContent='Sonos Web App blokerer ofte for indlejring. Åbn Sonos-appen i stedet.';
+    if(cardBtn){ cardBtn.textContent='Åbn i Sonos-app'; cardBtn.onclick=()=>{ openSonosNative() || window.open('https://play.sonos.com','_blank','noopener,noreferrer'); }; }
   });
 
   /* Wake Lock */
   let wakeLock=null, noSleep=null;
-  async function requestWakeLock(){
-    if((config.wakeStrategy||'auto')==='off'){releaseWakeLock();return}
-    try{ if('wakeLock'in navigator){ wakeLock=await navigator.wakeLock.request('screen'); } else { if(!noSleep) noSleep=new window.NoSleep(); noSleep.enable(); } }catch(_){}
-  }
+  async function requestWakeLock(){ if((config.wakeStrategy||'auto')==='off'){releaseWakeLock();return} try{ if('wakeLock'in navigator){ wakeLock=await navigator.wakeLock.request('screen'); } else { if(!noSleep) noSleep=new window.NoSleep(); noSleep.enable(); } }catch(_){}} 
   function releaseWakeLock(){ try{ if(wakeLock){wakeLock.release();wakeLock=null} }catch(_){} try{ if(noSleep){noSleep.disable();noSleep=null} }catch(_){} }
   document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') requestWakeLock(); },{passive:true});
   window.addEventListener('pageshow',()=>{ requestWakeLock(); },{passive:true});
   window.addEventListener('click',()=>{ if(!('wakeLock'in navigator)){ try{ if(!noSleep) noSleep=new window.NoSleep(); noSleep.enable(); }catch(_){}} },{passive:true});
 
-  /* Firebase */
+  /* Firebase sync */
   const firebaseConfig={apiKey:"AIzaSyA_gh8y-V6kkl95hRzb0ldBxpKWFY5bAck",authDomain:"webkiosk-e5d32.firebaseapp.com",projectId:"webkiosk-e5d32",storageBucket:"webkiosk-e5d32.firebasestorage.app",messagingSenderId:"920175197353",appId:"1:920175197353:web:c3520e9a3ab8146ec4fdb8"};
   const fbApp=firebase.initializeApp(firebaseConfig); const fbAuth=firebase.auth(); const fbDb=firebase.firestore();
   fbAuth.signInAnonymously().then(()=>{ syncStatus.textContent='Online' }).catch(()=>{ syncStatus.textContent='Auth fejl' });
   let unsub=null, writeTimer=null;
-  function docRef(){ return fbDb.collection('webkiosk').doc(config.householdId||'DEFAULT') }
-  function queueWriteFirestore(){ clearTimeout(writeTimer); writeTimer=setTimeout(async()=>{ try{ config._ts=Date.now(); await docRef().set(config,{merge:true}); syncStatus.textContent='Synkroniseret'; }catch(e){ syncStatus.textContent='Sync fejl'; } },250); }
-  async function startRealtime(){ if(unsub)unsub(); unsub=docRef().onSnapshot(snap=>{ if(!snap.exists)return; const remote=snap.data(); const local=load(); if(remote._ts && (!local._ts || remote._ts>local._ts)){ config=Object.assign({},local,remote); save(config); applyForm(); document.documentElement.style.setProperty('--accent',config.theme.color); document.documentElement.style.setProperty('--bg',config.theme.background); } }); }
+  function docRef(){ return fbDb.collection('webkiosk').doc((config.householdId||'DEFAULT').toUpperCase()) }
+  function queueWriteFirestore(){ clearTimeout(writeTimer); writeTimer=setTimeout(async()=>{ try{ config._ts=Date.now(); save(config); await docRef().set(config,{merge:true}); syncStatus.textContent='Synkroniseret'; }catch(e){ syncStatus.textContent='Sync fejl'; } },250); }
+  async function startRealtime(){ if(unsub)unsub(); unsub=docRef().onSnapshot(snap=>{ if(!snap.exists)return; const remote=snap.data(); const local=load(); if(remote._ts && (!local._ts || remote._ts>local._ts)){ config=Object.assign({},local,remote); save(config); applyAllFromConfig(); } }); }
   startRealtime().catch(()=>{});
 
   /* Skjulte overlays må ikke blokere klik */
@@ -341,14 +378,10 @@
   <!-- Vejr (Open-Meteo) + Ikon -->
   <script>
   (function(){
-    const elTemp = document.getElementById('weatherTemp');
-    const elCond = document.getElementById('weatherCond');
-    const elCity = document.getElementById('weatherCity');
-    const elIcon = document.querySelector('.widget.weather .icon');
-    if(!elTemp || !elCond || !elCity || !elIcon) return;
-
-    function iconMarkup(code){
-      const g=(d)=>`<path d="${d}" />`; const C=String(code);
+    const elTemp=document.getElementById('weatherTemp'), elCond=document.getElementById('weatherCond'), elCity=document.getElementById('weatherCity'), elIcon=document.querySelector('.widget.weather .icon');
+    if(!elTemp||!elCond||!elCity||!elIcon) return;
+    const g=(d)=>`<path d="${d}" />`;
+    const iconSVG=(c)=>{c=String(c);
       const sun=`${g("M12 4v2 M12 18v2 M4 12H2 M22 12h-2 M5 5l-1.4-1.4 M20.4 20.4L19 19 M5 19l-1.4 1.4 M20.4 3.6L19 5")}${g("M12 8a4 4 0 1 1 0 8a4 4 0 0 1 0-8")}`;
       const cloud=g("M3 16.5a4.5 4.5 0 0 1 4.5-4.5h.5A6.5 6.5 0 1 1 20 14.5a3.5 3.5 0 0 1-3.5 3.5H8.5A5.5 5.5 0 0 1 3 16.5z");
       const sunCloud=`${g("M7.5 7.5l-1.2-1.2 M12 5V3.8 M16.5 7.5l1.2-1.2 M5 12H3.8")}${g("M10.5 6.5a3 3 0 1 1 4.5 4.5")}${g("M6 18h9a3 3 0 0 0 0-6h-.3a5.5 5.5 0 0 0-10.6 2")}`;
@@ -357,60 +390,23 @@
       const snow=`${cloud}${g("M10.5 18l-1.5 2 M10.5 20l-1.5-2 M13.5 18l-1.5 2 M13.5 20l-1.5-2")}`;
       const fog=`${cloud}${g("M5 20h10 M6 22h8")}`;
       const thunder=`${cloud}${g("M12 16l-2 4h3l-1.5 3")}`;
-      if(C==="0") return sun;
-      if(C==="1"||C==="2") return sunCloud;
-      if(C==="3") return cloud;
-      if(C==="45"||C==="48") return fog;
-      if(C==="51"||C==="53"||C==="55"||C==="56"||C==="57") return drizzle;
-      if(C==="61"||C==="63"||C==="65"||C==="66"||C==="67"||C==="80"||C==="81"||C==="82") return rain;
-      if(C==="71"||C==="73"||C==="75"||C==="77"||C==="85"||C==="86") return snow;
-      if(C==="95"||C==="96"||C==="99") return thunder;
-      return sunCloud;
-    }
-    function setIcon(code){
-      elIcon.setAttribute("viewBox","0 0 24 24");
-      elIcon.setAttribute("fill","none");
-      elIcon.setAttribute("stroke","currentColor");
-      elIcon.setAttribute("stroke-width","2.2");
-      elIcon.setAttribute("stroke-linecap","round");
-      elIcon.setAttribute("stroke-linejoin","round");
-      elIcon.innerHTML = iconMarkup(code);
-    }
-    function getPosition(timeoutMs=7000){
-      return new Promise((resolve)=>{
-        let done=false;
-        const fallback=()=>{ if(done) return; done=true; resolve({coords:{latitude:55.6761,longitude:12.5683},fallback:true}); };
-        if(!navigator.geolocation){ fallback(); return; }
-        const to=setTimeout(fallback,timeoutMs);
-        navigator.geolocation.getCurrentPosition(
-          (pos)=>{ if(done) return; done=true; clearTimeout(to); resolve(pos); },
-          ()=>{ fallback(); },
-          { enableHighAccuracy:false, maximumAge:15*60*1000, timeout:timeoutMs-500 }
-        );
-      });
-    }
+      if(c==="0")return sun; if(c==="1"||c==="2")return sunCloud; if(c==="3")return cloud; if(c==="45"||c==="48")return fog;
+      if("51,53,55,56,57".includes(c))return drizzle; if("61,63,65,66,67,80,81,82".includes(c))return rain;
+      if("71,73,75,77,85,86".includes(c))return snow; if("95,96,99".includes(c))return thunder; return sunCloud;
+    };
+    function setIcon(code){ elIcon.setAttribute("viewBox","0 0 24 24"); elIcon.setAttribute("fill","none"); elIcon.setAttribute("stroke","currentColor"); elIcon.setAttribute("stroke-width","2.2"); elIcon.setAttribute("stroke-linecap","round"); elIcon.setAttribute("stroke-linejoin","round"); elIcon.innerHTML=iconSVG(code); }
+    function getPosition(timeoutMs=7000){ return new Promise((resolve)=>{ let done=false; const fb=()=>{if(done)return;done=true;resolve({coords:{latitude:55.6761,longitude:12.5683},fallback:true})}; if(!navigator.geolocation){fb();return} const to=setTimeout(fb,timeoutMs); navigator.geolocation.getCurrentPosition(p=>{if(done)return;done=true;clearTimeout(to);resolve(p)},()=>fb(),{enableHighAccuracy:false,maximumAge:9e5,timeout:timeoutMs-500}); }); }
     const WMO_DA={0:"Klart",1:"Mest klart",2:"Delvist skyet",3:"Overskyet",45:"Tåge",48:"Rimtåge",51:"Finregn let",53:"Finregn",55:"Finregn kraftig",56:"Isfinregn let",57:"Isfinregn",61:"Regn let",63:"Regn",65:"Regn kraftig",66:"Isregn let",67:"Isregn",71:"Sne let",73:"Sne",75:"Sne kraftig",77:"Sneslud",80:"Byger let",81:"Byger",82:"Byger kraftig",85:"Snebyger let",86:"Snebyger kraftig",95:"Torden",96:"Torden m. hagl",99:"Kraftig torden m. hagl"};
     const codeToDa=(c)=>WMO_DA[c]??"Ukendt";
-    async function loadWeather(){
-      try{
-        const pos=await getPosition(); const lat=+pos.coords.latitude.toFixed(4); const lon=+pos.coords.longitude.toFixed(4);
-        const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&timezone=auto`,{cache:"no-store"}); const j=await r.json();
-        const t=Math.round(j?.current?.temperature_2m ?? NaN); const c=j?.current?.weather_code;
-        if(Number.isFinite(t)) elTemp.textContent=`${t}°`;
-        if(typeof c==="number"){ elCond.textContent=codeToDa(c); setIcon(c); }
-        try{
-          const rg=await fetch(`https://geocoding-api.open-meteo.com/v1/reverse?latitude=${lat}&longitude=${lon}&language=da&format=json`,{cache:"no-store"}); const gj=await rg.json();
-          const hit=gj?.results?.[0]; const city=hit?.name||hit?.admin2||hit?.admin1||(pos.fallback?"København":""); if(city) elCity.textContent=city;
-        }catch(_){ if(pos.fallback) elCity.textContent="København"; }
-      }catch(_){
-        if(!elTemp.textContent.trim()) elTemp.textContent="18°";
-        if(!elCond.textContent.trim()) elCond.textContent="Klart";
-        if(!elCity.textContent.trim()) elCity.textContent="Farum";
-        setIcon(2);
-      }
-    }
-    loadWeather();
-    setInterval(loadWeather, 20*60*1000);
+    async function loadWeather(){ try{
+      const pos=await getPosition(); const lat=+pos.coords.latitude.toFixed(4); const lon=+pos.coords.longitude.toFixed(4);
+      const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&timezone=auto`,{cache:"no-store"}); const j=await r.json();
+      const t=Math.round(j?.current?.temperature_2m ?? NaN), c=j?.current?.weather_code;
+      if(Number.isFinite(t)) elTemp.textContent=`${t}°`;
+      if(typeof c==="number"){ elCond.textContent=codeToDa(c); setIcon(c); }
+      try{ const rg=await fetch(`https://geocoding-api.open-meteo.com/v1/reverse?latitude=${lat}&longitude=${lon}&language=da&format=json`,{cache:"no-store"}); const gj=await rg.json(); const hit=gj?.results?.[0]; const city=hit?.name||hit?.admin2||hit?.admin1||(pos.fallback?"København":""); if(city) elCity.textContent=city; }catch(_){ if(pos.fallback) elCity.textContent="København"; }
+    }catch(_){ if(!elTemp.textContent.trim()) elTemp.textContent="18°"; if(!elCond.textContent.trim()) elCond.textContent="Klart"; if(!elCity.textContent.trim()) elCity.textContent="Farum"; setIcon(2); } }
+    loadWeather(); setInterval(loadWeather, 20*60*1000);
   })();
   </script>
 </body>
