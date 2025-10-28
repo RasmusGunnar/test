@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Webkiosk v2025-10-28n</title>
+<title>Webkiosk v2025-10-28p</title>
 <meta name="theme-color" content="#0f172a" />
 <link rel="manifest" href="./manifest.webmanifest" />
 <style>
@@ -18,15 +18,12 @@
   .panel{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
   .widget{padding:clamp(16px,2.2vw,24px)}
   .widget h2{margin:0 0 6px;font-size:clamp(15px,1.6vw,18px);color:var(--muted);font-weight:600;letter-spacing:.2px}
-
   .clock-time{font-size:clamp(40px,6vw,56px);line-height:1;font-weight:750}
   .clock-date{margin-top:6px;font-size:clamp(14px,1.8vw,18px);color:var(--muted)}
-
   .weather-main{display:flex;align-items:center;gap:14px}
   .weather-temp{font-size:clamp(40px,6vw,56px);font-weight:750}
   .weather-line{font-size:clamp(14px,1.8vw,18px);color:var(--muted)}
   .widget .icon{width:clamp(34px,4.5vw,48px);height:clamp(34px,4.5vw,48px);color:var(--accent)}
-
   .tiles{grid-column:1/-1;display:grid;gap:clamp(12px,2vw,18px);grid-template-columns:repeat(3,1fr)}
   .tile{min-height:140px;padding:clamp(16px,2.4vw,24px);display:grid;grid-template-columns:1fr minmax(160px,min(var(--logoMaxW),var(--logoBoxW)));align-items:center;gap:clamp(12px,2vw,20px);cursor:pointer;user-select:none;transition:transform .12s ease,box-shadow .12s ease,border-color .12s ease}
   .tile:hover{transform:translateY(-1px);box-shadow:0 14px 30px rgba(2,6,23,.10)}
@@ -39,7 +36,6 @@
   .widget.clock{grid-column:span 6}
   @media (max-width:900px){.widget.weather,.widget.clock{grid-column:span 12}.tiles{grid-template-columns:1fr}}
 
-  /* Kalender overlay */
   .calendar-view{position:fixed;inset:0;padding:clamp(12px,2vw,20px);background:rgba(246,247,249,.85);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:none;z-index:60}
   .calendar-inner{height:100%;display:flex;flex-direction:column;gap:12px}
   .topbar{display:flex;align-items:center;gap:12px}
@@ -47,12 +43,10 @@
   .calframe.panel{flex:1;min-height:0;overflow:hidden;display:flex}
   iframe{width:100%;height:100%;border:0;display:block}
 
-  /* Tandhjul (din) */
   .fab{position:fixed;right:20px;bottom:20px;z-index:70}
   .fab button{width:56px;height:56px;border-radius:50%;border:1px solid var(--border);background:#fff;color:var(--fg);display:inline-flex;align-items:center;justify-content:center;box-shadow:var(--shadow);cursor:pointer}
   .fab button:hover{transform:translateY(-1px);box-shadow:0 14px 30px rgba(2,6,23,.10)}
 
-  /* Indstillinger (din) */
   .modal{position:fixed;inset:0;background:rgba(15,23,42,.28);display:none;align-items:center;justify-content:center;padding:20px;z-index:80}
   .modal[aria-hidden="false"]{display:flex}
   .dialog{width:min(920px,96vw);max-height:92vh;overflow:auto;background:#fff;border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);padding:20px}
@@ -71,7 +65,6 @@
   .logoPreview{width:140px;height:64px;display:flex;align-items:center;justify-content:center;border:1px dashed var(--border);border-radius:12px;background:#fafafa}
   .logoPreview img{max-width:100%;max-height:100%;object-fit:contain;display:block}
 
-  /* Webpanel overlay */
   .wk-panel{position:fixed;inset:0;background:#00000010;backdrop-filter:saturate(1.1) blur(4px);display:none;z-index:75}
   .wk-panel.visible{display:block}
   .wk-shell{position:absolute;inset:0;background:#fff;box-shadow:0 12px 60px rgba(2,6,23,.25)}
@@ -82,7 +75,6 @@
   .wk-fallback{position:absolute;inset:52px 0 0 0;display:none;align-items:center;justify-content:center}
   .wk-fallback .card{max-width:560px;margin:0 14px;background:#fff;border:1px solid var(--border);border-radius:12px;padding:16px;box-shadow:0 10px 30px rgba(2,6,23,.08);text-align:center}
 
-  /* --- Synk-status badge (kun i pop-up) --- */
   .status-badge{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600}
   .status-dot{width:10px;height:10px;border-radius:50%;display:inline-block;border:1px solid rgba(0,0,0,.08)}
   .state-offline .status-dot{background:#9ca3af}
@@ -132,7 +124,6 @@
     </div>
   </div>
 
-  <!-- Kalender overlay -->
   <section class="calendar-view" id="calendarView" aria-hidden="true">
     <div class="calendar-inner">
       <div class="topbar">
@@ -142,7 +133,6 @@
     </div>
   </section>
 
-  <!-- Tandhjul (din) -->
   <div class="fab" aria-live="polite">
     <button id="openSettings" title="Indstillinger" aria-label="Indstillinger">
       <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -152,7 +142,6 @@
     </button>
   </div>
 
-  <!-- Indstillinger (din) + ekstra felter -->
   <div class="modal" id="settingsModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
     <div class="dialog">
       <h3 id="settingsTitle">Indstillinger</h3>
@@ -184,7 +173,6 @@
 
         <div class="field"><label for="householdId">Husstands-ID</label><input id="householdId" placeholder="auto-genereres"/><div class="hint">Brug samme ID på alle enheder.</div></div>
 
-        <!-- Synk-status badge -->
         <div class="field">
           <label>Status</label>
           <div class="row">
@@ -208,7 +196,6 @@
     </div>
   </div>
 
-  <!-- Webpanel overlay -->
   <div id="wkPanel" class="wk-panel" aria-hidden="true">
     <div class="wk-shell">
       <div class="wk-topbar">
@@ -229,258 +216,326 @@
     </div>
   </div>
 
-  <!-- SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/nosleep/0.12.0/NoSleep.min.js"></script>
 
-  <!-- App logic -->
   <script>
-  const VERSION="2025-10-28n";
-  if('serviceWorker' in navigator){ navigator.serviceWorker.register(`./service-worker.js?vv=${encodeURIComponent(VERSION)}`).catch(()=>{}); }
+  const VERSION="2025-10-28p";
+  if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('./service-worker.js?vv='+encodeURIComponent(VERSION)); }catch(e){} }
+
+  function $(id){ return document.getElementById(id); }
+  function on(el,ev,fn){ if(el && el.addEventListener) el.addEventListener(ev,fn,false); }
 
   /* Ur */
-  function updateClock(){try{
-    const t=document.getElementById('clockTime'), d=document.getElementById('clockDate');
-    const now=new Date();
-    t.textContent=now.toLocaleTimeString('da-DK',{hour:'2-digit',minute:'2-digit'});
-    const dd=now.toLocaleDateString('da-DK',{weekday:'long',day:'2-digit',month:'long'});
-    d.textContent=dd.charAt(0).toUpperCase()+dd.slice(1);
-  }catch(_){}} setInterval(updateClock,1000); updateClock();
+  function updateClock(){
+    try{
+      var t=$('clockTime'), d=$('clockDate'); if(!t||!d) return;
+      var now=new Date();
+      t.textContent=now.toLocaleTimeString('da-DK',{hour:'2-digit',minute:'2-digit'});
+      var dd=now.toLocaleDateString('da-DK',{weekday:'long',day:'2-digit',month:'long'});
+      d.textContent=dd.charAt(0).toUpperCase()+dd.slice(1);
+    }catch(e){}
+  }
+  setInterval(updateClock,1000); updateClock();
 
   /* Local state */
-  const LS_KEY='webkioskConfigV2';
-  const defaults={calendar:{mode:'url',url:'',fileName:'',fileData:''},homeyUrl:'',sonosUrl:'',sonosPkg:'',sonosScheme:'',logos:{calendar:'',homey:'',sonos:''},theme:{color:'#0f172a',background:'#f6f7f9'},householdId:'',wakeStrategy:'auto',_ts:0};
-  function load(){try{return Object.assign({},defaults,JSON.parse(localStorage.getItem(LS_KEY)||'{}'))}catch{return {...defaults}}}
-  function save(c){localStorage.setItem(LS_KEY,JSON.stringify(c))}
-  let config=load(); if(!config.householdId){config.householdId=Math.random().toString(36).slice(2,10).toUpperCase(); save(config)}
-
-  function applyTheme(){document.documentElement.style.setProperty('--accent',config.theme.color||'#0f172a'); document.documentElement.style.setProperty('--bg',config.theme.background||'#f6f7f9');}
-  function applyLogos(){ const m=config.logos||{}; if(m.calendar) document.getElementById('logoCalendar').src=m.calendar; if(m.homey) document.getElementById('logoHomey').src=m.homey; if(m.sonos) document.getElementById('logoSonos').src=m.sonos; const pc=document.getElementById('prevCalendar'); if(pc&&m.calendar) pc.src=m.calendar; const ph=document.getElementById('prevHomey'); if(ph&&m.homey) ph.src=m.homey; const ps=document.getElementById('prevSonos'); if(ps&&m.sonos) ps.src=m.sonos; }
+  var LS_KEY='webkioskConfigV2';
+  var defaults={calendar:{mode:'url',url:'',fileName:'',fileData:''},homeyUrl:'',sonosUrl:'',sonosPkg:'',sonosScheme:'',logos:{calendar:'',homey:'',sonos:''},theme:{color:'#0f172a',background:'#f6f7f9'},householdId:'',wakeStrategy:'auto',_ts:0};
+  function load(){ try{ var o=JSON.parse(localStorage.getItem(LS_KEY)||'{}'); var r={}; for(var k in defaults){ r[k]=defaults[k]; if(typeof defaults[k]==='object' && defaults[k] && !Array.isArray(defaults[k])){ r[k]=Object.assign({},defaults[k],o[k]||{});} else if(o[k]!==undefined){ r[k]=o[k]; } } return r; }catch(e){ return JSON.parse(JSON.stringify(defaults)); } }
+  function save(c){ try{ localStorage.setItem(LS_KEY, JSON.stringify(c)); }catch(e){} }
+  var config=load(); if(!config.householdId){ config.householdId=Math.random().toString(36).slice(2,10).toUpperCase(); save(config); }
+  function applyTheme(){ document.documentElement.style.setProperty('--accent',config.theme&&config.theme.color?config.theme.color:'#0f172a'); document.documentElement.style.setProperty('--bg',config.theme&&config.theme.background?config.theme.background:'#f6f7f9'); }
+  function applyLogos(){
+    try{
+      var m=config.logos||{};
+      var lc=$('logoCalendar'), lh=$('logoHomey'), ls=$('logoSonos');
+      if(lc && m.calendar) lc.src=m.calendar;
+      if(lh && m.homey)    lh.src=m.homey;
+      if(ls && m.sonos)    ls.src=m.sonos;
+      var pc=$('prevCalendar'), ph=$('prevHomey'), ps=$('prevSonos');
+      if(pc && m.calendar) pc.src=m.calendar;
+      if(ph && m.homey)    ph.src=m.homey;
+      if(ps && m.sonos)    ps.src=m.sonos;
+    }catch(e){}
+  }
   function applyAllFromConfig(){ applyTheme(); applyForm(); applyLogos(); }
   applyAllFromConfig();
 
   /* UI refs */
-  const modal=document.getElementById('settingsModal'); const openSettings=document.getElementById('openSettings'); const closeSettings=document.getElementById('closeSettings'); const saveSettings=document.getElementById('saveSettings'); const resetConfig=document.getElementById('resetConfig');
-  const calendarUrl=document.getElementById('calendarUrl'); const calendarFile=document.getElementById('calendarFile'); const calendarUploadRow=document.getElementById('calendarUploadRow'); const modeRadios=[...document.querySelectorAll('input[name="calendarMode"]')];
-  const homeyUrl=document.getElementById('homeyUrl'); const sonosUrl=document.getElementById('sonosUrl'); const sonosPkg=document.getElementById('sonosPkg'); const sonosScheme=document.getElementById('sonosScheme');
-  const themeColor=document.getElementById('themeColor'); const bgColor=document.getElementById('bgColor'); const wakeStrategy=document.getElementById('wakeStrategy'); const householdId=document.getElementById('householdId');
+  var modal=$('settingsModal'), openSettings=$('openSettings'), closeSettings=$('closeSettings'), saveSettings=$('saveSettings'), resetConfig=$('resetConfig');
+  var calendarUrl=$('calendarUrl'), calendarFile=$('calendarFile'), calendarUploadRow=$('calendarUploadRow'), modeRadios=[].slice.call(document.querySelectorAll('input[name="calendarMode"]'));
+  var homeyUrl=$('homeyUrl'), sonosUrl=$('sonosUrl'), sonosPkg=$('sonosPkg'), sonosScheme=$('sonosScheme');
+  var themeColor=$('themeColor'), bgColor=$('bgColor'), wakeStrategy=$('wakeStrategy'), householdId=$('householdId');
 
-  /* Synk UI-refs */
-  const syncBadge=document.getElementById('syncStatus');
-  const syncText=document.getElementById('syncText');
-  const syncNote=document.getElementById('syncNote');
+  /* Synk UI */
+  var syncBadge=$('syncStatus'), syncText=$('syncText'), syncNote=$('syncNote');
 
-  /* Modal open/close */
-  function openModal(){ modal.setAttribute('aria-hidden','false'); applyForm(); applyLogos(); }
-  function closeModal(){ modal.setAttribute('aria-hidden','true'); }
-  openSettings.addEventListener('click',openModal); closeSettings.addEventListener('click',closeModal); modal.addEventListener('click',(e)=>{ if(e.target===modal) closeModal(); });
+  function openModal(){ if(modal) modal.setAttribute('aria-hidden','false'); applyForm(); applyLogos(); }
+  function closeModal(){ if(modal) modal.setAttribute('aria-hidden','true'); }
+  on(openSettings,'click',openModal);
+  on(closeSettings,'click',closeModal);
+  on(modal,'click',function(e){ if(e && e.target===modal) closeModal(); });
 
-  /* Form apply */
   function applyForm(){
-    calendarUrl.value=config.calendar.url||''; homeyUrl.value=config.homeyUrl||''; sonosUrl.value=config.sonosUrl||''; sonosPkg.value=config.sonosPkg||''; sonosScheme.value=config.sonosScheme||'';
-    themeColor.value=config.theme.color||'#0f172a'; bgColor.value=config.theme.background||'#f6f7f9'; wakeStrategy.value=config.wakeStrategy||'auto'; householdId.value=(config.householdId||'').toUpperCase();
-    modeRadios.forEach(r=>r.checked=(r.value===(config.calendar.mode||'url'))); calendarUploadRow.style.display=(config.calendar.mode==='upload')?'':'none';
+    if(calendarUrl) calendarUrl.value=(config.calendar&&config.calendar.url)||'';
+    if(homeyUrl) homeyUrl.value=config.homeyUrl||'';
+    if(sonosUrl) sonosUrl.value=config.sonosUrl||'';
+    if(sonosPkg) sonosPkg.value=config.sonosPkg||'';
+    if(sonosScheme) sonosScheme.value=config.sonosScheme||'';
+    if(themeColor) themeColor.value=(config.theme&&config.theme.color)||'#0f172a';
+    if(bgColor)    bgColor.value=(config.theme&&config.theme.background)||'#f6f7f9';
+    if(wakeStrategy) wakeStrategy.value=config.wakeStrategy||'auto';
+    if(householdId) householdId.value=(config.householdId||'').toUpperCase();
+    modeRadios.forEach(function(r){ r.checked=(r.value===((config.calendar&&config.calendar.mode)||'url')); });
+    if(calendarUploadRow) calendarUploadRow.style.display=((config.calendar&&config.calendar.mode)==='upload')?'':'none';
   }
+  modeRadios.forEach(function(r){ on(r,'change',function(){ config.calendar.mode=r.value; if(calendarUploadRow) calendarUploadRow.style.display=(r.value==='upload')?'':''; }); });
 
-  modeRadios.forEach(r=>r.addEventListener('change',()=>{config.calendar.mode=r.value; calendarUploadRow.style.display=(r.value==='upload')?'':'none';}));
+  function toB64(file){ return new Promise(function(res,rej){ try{ var fr=new FileReader(); fr.onload=function(){ res(fr.result); }; fr.onerror=function(e){ rej(e); }; fr.readAsDataURL(file); }catch(e){ rej(e); } }); }
+  var logoInputCalendar=$('logoInputCalendar'), logoInputHomey=$('logoInputHomey'), logoInputSonos=$('logoInputSonos');
+  on(logoInputCalendar,'change',async function(){ try{ var f=logoInputCalendar.files&&logoInputCalendar.files[0]; if(!f) return; var b64=await toB64(f); config.logos=config.logos||{}; config.logos.calendar=b64; config._ts=Date.now(); save(config); applyLogos(); queueWriteFirestore(); }catch(e){} });
+  on(logoInputHomey,'change',async function(){ try{ var f=logoInputHomey.files&&logoInputHomey.files[0]; if(!f) return; var b64=await toB64(f); config.logos=config.logos||{}; config.logos.homey=b64; config._ts=Date.now(); save(config); applyLogos(); queueWriteFirestore(); }catch(e){} });
+  on(logoInputSonos,'change',async function(){ try{ var f=logoInputSonos.files&&logoInputSonos.files[0]; if(!f) return; var b64=await toB64(f); config.logos=config.logos||{}; config.logos.sonos=b64; config._ts=Date.now(); save(config); applyLogos(); queueWriteFirestore(); }catch(e){} });
 
-  /* Logo upload → vis nu + auto-save + sync */
-  async function toB64(file){return new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>res(fr.result);fr.onerror=rej;fr.readAsDataURL(file)})}
-  const logoInputs={calendar:document.getElementById('logoInputCalendar'),homey:document.getElementById('logoInputHomey'),sonos:document.getElementById('logoInputSonos')};
-  Object.entries(logoInputs).forEach(([k,input])=>{
-    input.addEventListener('change',async()=>{
-      const f=input.files?.[0]; if(!f) return;
-      const b64=await toB64(f);
-      config.logos=config.logos||{}; config.logos[k]=b64;
-      config._ts=Date.now(); save(config); applyLogos(); queueWriteFirestore(); // auto sync
-    });
-  });
+  on(calendarFile,'change',async function(){ try{ var f=calendarFile.files&&calendarFile.files[0]; if(!f) return; config.calendar.fileName=f.name; config.calendar.fileData=await toB64(f); config._ts=Date.now(); save(config); queueWriteFirestore(); }catch(e){} });
 
-  /* Kalenderfil upload */
-  calendarFile.addEventListener('change',async()=>{const f=calendarFile.files?.[0];if(!f)return;config.calendar.fileName=f.name;config.calendar.fileData=await toB64(f);config._ts=Date.now();save(config);queueWriteFirestore();});
-
-  /* Gem (felter) */
-  saveSettings.addEventListener('click',()=>{
-    config.calendar.url=calendarUrl.value.trim(); config.homeyUrl=homeyUrl.value.trim(); config.sonosUrl=sonosUrl.value.trim(); config.sonosPkg=sonosPkg.value.trim(); config.sonosScheme=sonosScheme.value.trim();
-    config.theme.color=themeColor.value||config.theme.color; config.theme.background=bgColor.value||config.theme.background; config.wakeStrategy=wakeStrategy.value||'auto';
-    config.householdId=(householdId.value||config.householdId||'').toUpperCase();
+  on(saveSettings,'click',function(){
+    if(calendarUrl) config.calendar.url=(calendarUrl.value||'').trim();
+    if(homeyUrl)    config.homeyUrl=(homeyUrl.value||'').trim();
+    if(sonosUrl)    config.sonosUrl=(sonosUrl.value||'').trim();
+    if(sonosPkg)    config.sonosPkg=(sonosPkg.value||'').trim();
+    if(sonosScheme) config.sonosScheme=(sonosScheme.value||'').trim();
+    if(themeColor)  config.theme.color=themeColor.value||config.theme.color;
+    if(bgColor)     config.theme.background=bgColor.value||config.theme.background;
+    if(wakeStrategy)config.wakeStrategy=wakeStrategy.value||'auto';
+    if(householdId) config.householdId=(householdId.value||config.householdId||'').toUpperCase();
     config._ts=Date.now(); save(config); applyAllFromConfig(); queueWriteFirestore(); requestWakeLock(); closeModal();
   });
-  resetConfig.addEventListener('click',()=>{ if(confirm('Nulstil alle indstillinger?')){ localStorage.removeItem(LS_KEY); config=load(); if(!config.householdId){config.householdId=Math.random().toString(36).slice(2,10).toUpperCase()} save(config); applyAllFromConfig(); queueWriteFirestore(); }});
+  on(resetConfig,'click',function(){ if(confirm('Nulstil alle indstillinger?')){ try{ localStorage.removeItem(LS_KEY); }catch(e){} config=load(); if(!config.householdId){config.householdId=Math.random().toString(36).slice(2,10).toUpperCase()} save(config); applyAllFromConfig(); queueWriteFirestore(); } });
 
   /* Kalender overlay */
-  const tileCalendar=document.getElementById('tileCalendar'); const calendarView=document.getElementById('calendarView'); const calendarFrame=document.getElementById('calendarFrame'); const closeCalendar=document.getElementById('closeCalendar');
+  var tileCalendar=$('tileCalendar'), calendarView=$('calendarView'), calendarFrame=$('calendarFrame'), closeCalendar=$('closeCalendar');
   function openCalendar(){
-    let src=''; if(config.calendar.mode==='upload'&&config.calendar.fileData){ try{const arr=config.calendar.fileData.split(',');const bytes=atob(arr[1]);const buf=new Uint8Array(bytes.length);for(let i=0;i<bytes.length;i++)buf[i]=bytes.charCodeAt(i);src=URL.createObjectURL(new Blob([buf],{type:'text/html'}));}catch(_){src=config.calendar.fileData} }
-    else src=config.calendar.url;
-    if(!src){ alert('Ingen kalenderkilde valgt.'); return; }
-    calendarFrame.src=src; calendarView.style.display='block'; calendarView.setAttribute('aria-hidden','false');
+    var src=''; try{
+      if(config.calendar && config.calendar.mode==='upload' && config.calendar.fileData){
+        try{
+          var arr=(config.calendar.fileData||'').split(',');
+          var bytes=atob(arr[1]||''); var buf=new Uint8Array(bytes.length);
+          for(var i=0;i<bytes.length;i++) buf[i]=bytes.charCodeAt(i);
+          src=URL.createObjectURL(new Blob([buf],{type:'text/html'}));
+        }catch(e){ src=config.calendar.fileData; }
+      }else{
+        src=(config.calendar&&config.calendar.url)||'';
+      }
+      if(!src){ alert('Ingen kalenderkilde valgt.'); return; }
+      if(calendarFrame) calendarFrame.src=src;
+      if(calendarView){ calendarView.style.display='block'; calendarView.setAttribute('aria-hidden','false'); }
+    }catch(e){}
   }
-  function closeCalendarFn(){calendarView.style.display='none';calendarView.setAttribute('aria-hidden','true');calendarFrame.src='about:blank'}
-  tileCalendar.addEventListener('click',openCalendar); closeCalendar.addEventListener('click',closeCalendarFn);
+  function closeCalendarFn(){ if(calendarView){ calendarView.style.display='none'; calendarView.setAttribute('aria-hidden','true'); } if(calendarFrame) try{ calendarFrame.src='about:blank'; }catch(e){} }
+  on(tileCalendar,'click',openCalendar);
+  on(closeCalendar,'click',closeCalendarFn);
 
   /* Webpanel overlay */
-  const wkPanel=document.getElementById('wkPanel');
-  const wkFrame=document.getElementById('wkFrame');
-  const wkTitle=document.getElementById('wkTitle');
-  const wkBack=document.getElementById('wkBack');
-  const wkOpenNew=document.getElementById('wkOpenNew');
-  const wkOpenNew2=document.getElementById('wkOpenNew2');
-  const wkTopbarRight=document.getElementById('wkTopbarRight');
-  const wkFallback=document.getElementById('wkFallback');
-
-  let currentUrl='';
-  function showPanel(url,title,opts={hideOpenNew:false}){
-    currentUrl=url;
-    wkTitle.textContent=title||url;
-    if(wkOpenNew) wkOpenNew.onclick=()=>window.open(currentUrl,'_blank','noopener,noreferrer');
-    if(wkOpenNew2) wkOpenNew2.onclick=()=>window.open(currentUrl,'_blank','noopener,noreferrer');
-    wkFallback.style.display='none';
-    wkFrame.src=url;
-    wkPanel.classList.add('visible');
-    wkPanel.setAttribute('aria-hidden','false');
-    if(opts.hideOpenNew && wkTopbarRight) wkTopbarRight.style.display='none'; else if(wkTopbarRight) wkTopbarRight.style.display='flex';
-    setTimeout(()=>{ try{ if(!wkFrame.contentWindow || wkFrame.contentWindow.location.href==='about:blank'){ wkFallback.style.display='flex'; } }catch(_){ } },1200);
+  var wkPanel=$('wkPanel'), wkFrame=$('wkFrame'), wkTitle=$('wkTitle'), wkBack=$('wkBack'), wkOpenNew=$('wkOpenNew'), wkOpenNew2=$('wkOpenNew2'), wkTopbarRight=$('wkTopbarRight'), wkFallback=$('wkFallback');
+  var currentUrl='';
+  function showPanel(url,title,opts){ opts=opts||{}; currentUrl=url;
+    if(wkTitle) wkTitle.textContent=title||url;
+    if(wkOpenNew) wkOpenNew.onclick=function(){ window.open(currentUrl,'_blank','noopener,noreferrer'); };
+    if(wkOpenNew2) wkOpenNew2.onclick=function(){ window.open(currentUrl,'_blank','noopener,noreferrer'); };
+    if(wkFallback) wkFallback.style.display='none';
+    if(wkFrame) wkFrame.src=url;
+    if(wkPanel){ wkPanel.classList.add('visible'); wkPanel.setAttribute('aria-hidden','false'); }
+    if(wkTopbarRight){ wkTopbarRight.style.display = (opts.hideOpenNew?'none':'flex'); }
+    setTimeout(function(){ try{ if(!wkFrame || !wkFrame.contentWindow || wkFrame.contentWindow.location.href==='about:blank'){ if(wkFallback) wkFallback.style.display='flex'; } }catch(e){} },1200);
   }
-  function hidePanel(){ wkPanel.classList.remove('visible'); wkPanel.setAttribute('aria-hidden','true'); try{ wkFrame.src='about:blank'; }catch(_){} if(wkTopbarRight) wkTopbarRight.style.display='flex'; }
-  wkBack.addEventListener('click',hidePanel);
+  function hidePanel(){ if(wkPanel){ wkPanel.classList.remove('visible'); wkPanel.setAttribute('aria-hidden','true'); } try{ if(wkFrame) wkFrame.src='about:blank'; }catch(e){} if(wkTopbarRight) wkTopbarRight.style.display='flex'; }
+  on(wkBack,'click',hidePanel);
 
-  /* Homey/Sonos klik */
-  document.getElementById('tileHomey').addEventListener('click',()=>{
-    const url=(config.homeyUrl||'').trim(); if(!url){alert('Ingen Homey URL sat.');return}
+  /* Homey */
+  var tileHomey=$('tileHomey');
+  on(tileHomey,'click',function(){
+    var url=(config.homeyUrl||'').trim(); if(!url){ alert('Ingen Homey URL sat.'); return; }
     if(/^https?:\/\//i.test(url)) showPanel(url,'Homey'); else location.href=url;
   });
 
-  // Sonos: Native først, web (overlay) fallback, ingen “åbn i ny fane”
-  const isAndroid=/Android/i.test(navigator.userAgent), isiOS=/iPhone|iPad|iPod/i.test(navigator.userAgent);
+  /* Sonos: Native først, web fallback i overlay (ingen “åbn i ny fane”) */
+  var tileSonos=$('tileSonos');
+  var isAndroid=/Android/i.test(navigator.userAgent), isiOS=/iPhone|iPad|iPod/i.test(navigator.userAgent);
   function openSonosNative(){
-    const pkg=(config.sonosPkg||'').trim() || 'com.sonos.acr2';
-    const scheme=(config.sonosScheme||'').trim();
+    var pkg=(config.sonosPkg||'').trim() || 'com.sonos.acr2';
+    var scheme=(config.sonosScheme||'').trim();
     if(isiOS && scheme){ location.href=scheme; return true; }
     if(isAndroid && pkg){
-      const fb=encodeURIComponent(location.href);
-      location.href=`intent://open/#Intent;package=${pkg};S.browser_fallback_url=${fb};end;`;
-      setTimeout(()=>{ location.href=`market://details?id=${pkg}` },1200);
+      var fb=encodeURIComponent(location.href);
+      location.href='intent://open/#Intent;package='+pkg+';S.browser_fallback_url='+fb+';end;';
+      setTimeout(function(){ location.href='market://details?id='+pkg; },1200);
       return true;
     }
     return false;
   }
-  document.getElementById('tileSonos').addEventListener('click',()=>{
+  on(tileSonos,'click',function(){
     if(openSonosNative()) return;
-    const link=(config.sonosUrl||'').trim() || 'https://play.sonos.com';
+    var link=(config.sonosUrl||'').trim() || 'https://play.sonos.com';
     showPanel(link,'Sonos',{hideOpenNew:true});
-    const btn=document.querySelector('#wkFallback .card button');
-    const h3=document.querySelector('#wkFallback .card h3');
-    const p=document.querySelector('#wkFallback .card p');
+    var btn = document.querySelector('#wkFallback .card button');
+    var h3  = document.querySelector('#wkFallback .card h3');
+    var p   = document.querySelector('#wkFallback .card p');
     if(h3) h3.textContent='Kan ikke vise Sonos her';
-    if(p && p.firstChild) p.firstChild.textContent='Sonos Web App blokerer ofte for indlejring. Åbn Sonos-appen i stedet.';
-    if(btn){ btn.textContent='Åbn i Sonos-app'; btn.onclick=()=>{ openSonosNative() || window.open('https://play.sonos.com','_blank','noopener,noreferrer'); }; }
+    if(p)  p.textContent='Sonos Web App blokerer ofte for indlejring. Åbn Sonos-appen i stedet.';
+    if(btn){ btn.textContent='Åbn i Sonos-app'; btn.onclick=function(){ openSonosNative() || window.open('https://play.sonos.com','_blank','noopener,noreferrer'); }; }
   });
 
   /* Wake Lock */
-  let wakeLock=null, noSleep=null;
-  async function requestWakeLock(){ if((config.wakeStrategy||'auto')==='off'){releaseWakeLock();return} try{ if('wakeLock'in navigator){ wakeLock=await navigator.wakeLock.request('screen'); } else { if(!noSleep) noSleep=new window.NoSleep(); noSleep.enable(); } }catch(_){}} 
-  function releaseWakeLock(){ try{ if(wakeLock){wakeLock.release();wakeLock=null} }catch(_){} try{ if(noSleep){noSleep.disable();noSleep=null} }catch(_){} }
-  document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') requestWakeLock(); },{passive:true});
-  window.addEventListener('pageshow',()=>{ requestWakeLock(); },{passive:true});
-  window.addEventListener('click',()=>{ if(!('wakeLock'in navigator)){ try{ if(!noSleep) noSleep=new window.NoSleep(); noSleep.enable(); }catch(_){}} },{passive:true});
-
-  /* --- Synk-status helper --- */
-  function setStatus(state, note){
-    const cls = ['state-offline','state-syncing','state-online','state-error'];
-    cls.forEach(c=>syncBadge.classList.remove(c));
-    const map = {offline:'state-offline', syncing:'state-syncing', online:'state-online', error:'state-error'};
-    syncBadge.classList.add(map[state]||'state-offline');
-    syncText.textContent = ({offline:'Offline', syncing:'Synkroniserer…', online:'Online', error:'Fejl'})[state] || 'Offline';
-    syncNote.textContent = note ? `Senest: ${note}` : (state==='online' ? 'Tilsluttet' : '-');
+  var wakeLock=null, noSleep=null;
+  async function requestWakeLock(){
+    if((config.wakeStrategy||'auto')==='off'){ releaseWakeLock(); return; }
+    try{
+      if('wakeLock' in navigator){ wakeLock = await navigator.wakeLock.request('screen'); }
+      else { if(!noSleep && window.NoSleep){ noSleep = new window.NoSleep(); } if(noSleep) noSleep.enable(); }
+    }catch(e){}
   }
-  function nowTime(){ return new Date().toLocaleTimeString('da-DK',{hour:'2-digit',minute:'2-digit'}); }
+  function releaseWakeLock(){ try{ if(wakeLock){ wakeLock.release(); wakeLock=null; } }catch(e){} try{ if(noSleep){ noSleep.disable(); noSleep=null; } }catch(e){} }
+  on(document,'visibilitychange',function(){ if(document.visibilityState==='visible') requestWakeLock(); });
+  on(window,'pageshow',function(){ requestWakeLock(); });
+  on(window,'click',function(){ if(!('wakeLock' in navigator) && window.NoSleep){ try{ if(!noSleep) noSleep=new window.NoSleep(); noSleep.enable(); }catch(e){} } });
 
-  /* Firebase sync */
-  const firebaseConfig={apiKey:"AIzaSyA_gh8y-V6kkl95hRzb0ldBxpKWFY5bAck",authDomain:"webkiosk-e5d32.firebaseapp.com",projectId:"webkiosk-e5d32",storageBucket:"webkiosk-e5d32.firebasestorage.app",messagingSenderId:"920175197353",appId:"1:920175197353:web:c3520e9a3ab8146ec4fdb8"};
-  const fbApp=firebase.initializeApp(firebaseConfig); const fbAuth=firebase.auth(); const fbDb=firebase.firestore();
+  /* Synk-status */
+  function setStatus(state, note){
+    try{
+      var cls=['state-offline','state-syncing','state-online','state-error'];
+      if(syncBadge){ for(var i=0;i<cls.length;i++) syncBadge.classList.remove(cls[i]); }
+      var map={offline:'state-offline', syncing:'state-syncing', online:'state-online', error:'state-error'};
+      if(syncBadge) syncBadge.classList.add(map[state]||'state-offline');
+      if(syncText) syncText.textContent=({offline:'Offline', syncing:'Synkroniserer…', online:'Online', error:'Fejl'})[state]||'Offline';
+      if(syncNote) syncNote.textContent = note ? ('Senest: '+note) : (state==='online'?'Tilsluttet':'-');
+    }catch(e){}
+  }
+  function nowTime(){ try{ return new Date().toLocaleTimeString('da-DK',{hour:'2-digit',minute:'2-digit'}); }catch(e){ return ''; } }
 
-  // Netværk
-  window.addEventListener('online',  ()=>setStatus('online', nowTime()));
-  window.addEventListener('offline', ()=>setStatus('offline'));
+  /* Firebase */
+  var firebaseConfig={apiKey:"AIzaSyA_gh8y-V6kkl95hRzb0ldBxpKWFY5bAck",authDomain:"webkiosk-e5d32.firebaseapp.com",projectId:"webkiosk-e5d32",storageBucket:"webkiosk-e5d32.firebasestorage.app",messagingSenderId:"920175197353",appId:"1:920175197353:web:c3520e9a3ab8146ec4fdb8"};
+  var fbApp=firebase.initializeApp(firebaseConfig), fbAuth=firebase.auth(), fbDb=firebase.firestore();
 
-  fbAuth.signInAnonymously()
-    .then(()=>{ setStatus(navigator.onLine?'online':'offline', nowTime()); })
-    .catch(()=>{ setStatus('error'); });
+  on(window,'online', function(){ setStatus('online', nowTime()); });
+  on(window,'offline',function(){ setStatus('offline'); });
 
-  let unsub=null, writeTimer=null;
-  function docRef(){ return fbDb.collection('webkiosk').doc((config.householdId||'DEFAULT').toUpperCase()) }
+  fbAuth.signInAnonymously().then(function(){ setStatus(navigator.onLine?'online':'offline', nowTime()); }).catch(function(){ setStatus('error'); });
+
+  var unsub=null, writeTimer=null;
+  function docRef(){ var id=(config.householdId||'DEFAULT').toUpperCase(); return fbDb.collection('webkiosk').doc(id); }
 
   function queueWriteFirestore(){
-    clearTimeout(writeTimer);
-    setStatus('syncing'); // vis gul mens vi skriver
-    writeTimer=setTimeout(async()=>{
-      try{
-        config._ts=Date.now(); save(config);
-        await docRef().set(config,{merge:true});
-        setStatus('online', nowTime());
-      }catch(e){
-        setStatus('error');
-      }
-    },250);
+    try{
+      if(writeTimer) clearTimeout(writeTimer);
+      setStatus('syncing');
+      writeTimer=setTimeout(async function(){
+        try{
+          config._ts=Date.now(); save(config);
+          await docRef().set(config,{merge:true});
+          setStatus('online', nowTime());
+        }catch(e){ setStatus('error'); }
+      },250);
+    }catch(e){ setStatus('error'); }
   }
 
   async function startRealtime(){
-    if(unsub)unsub();
-    unsub=docRef().onSnapshot(snap=>{
-      if(!snap.exists){ return; }
-      const remote=snap.data(); const local=load();
-      if(remote._ts && (!local._ts || remote._ts>local._ts)){
-        config=Object.assign({},local,remote);
-        save(config); applyAllFromConfig();
-        setStatus('online', nowTime());
-      }
-    }, ()=> setStatus('error'));
+    try{
+      if(unsub) unsub();
+      unsub = docRef().onSnapshot(function(snap){
+        try{
+          if(!snap || !snap.exists) return;
+          var remote=snap.data()||{};
+          var local=load();
+          if(remote._ts && (!local._ts || remote._ts>local._ts)){
+            config=Object.assign({},local,remote);
+            save(config); applyAllFromConfig();
+            setStatus('online', nowTime());
+          }
+        }catch(e){}
+      }, function(){ setStatus('error'); });
+    }catch(e){ setStatus('error'); }
   }
-  startRealtime().catch(()=> setStatus('error'));
+  startRealtime();
 
-  /* Skjulte overlays må ikke blokere klik */
-  const patch=document.createElement('style'); patch.textContent=`
-    #settingsModal[aria-hidden="true"]{display:none!important;pointer-events:none!important}
-    .calendar-view[aria-hidden="true"], .calendar-view[style*="display: none"]{pointer-events:none!important}
-    #wkPanel:not(.visible){display:none!important;pointer-events:none!important}
-    .tile, .fab button, #openSettings{pointer-events:auto!important;cursor:pointer!important}
-  `; document.head.appendChild(patch);
+  /* Pointer-events guard */
+  (function(){
+    var css=document.createElement('style');
+    css.textContent="#settingsModal[aria-hidden='true']{display:none!important;pointer-events:none!important}.calendar-view[aria-hidden='true'],.calendar-view[style*='display: none']{pointer-events:none!important}#wkPanel:not(.visible){display:none!important;pointer-events:none!important}.tile,.fab button,#openSettings{pointer-events:auto!important;cursor:pointer!important}";
+    document.head.appendChild(css);
+  })();
   </script>
 
-  <!-- Vejr (Open-Meteo) + Ikon -->
+  <!-- Vejr (uden moderne syntaks) -->
   <script>
   (function(){
-    const elTemp=document.getElementById('weatherTemp'), elCond=document.getElementById('weatherCond'), elCity=document.getElementById('weatherCity'), elIcon=document.querySelector('.widget.weather .icon');
+    var elTemp=$('weatherTemp'), elCond=$('weatherCond'), elCity=$('weatherCity'), elIcon=document.querySelector('.widget.weather .icon');
     if(!elTemp||!elCond||!elCity||!elIcon) return;
-    const g=(d)=>`<path d="${d}" />`;
-    const iconSVG=(c)=>{c=String(c);
-      const sun=`${g("M12 4v2 M12 18v2 M4 12H2 M22 12h-2 M5 5l-1.4-1.4 M20.4 20.4L19 19 M5 19l-1.4 1.4 M20.4 3.6L19 5")}${g("M12 8a4 4 0 1 1 0 8a4 4 0 0 1 0-8")}`;
-      const cloud=g("M3 16.5a4.5 4.5 0 0 1 4.5-4.5h.5A6.5 6.5 0 1 1 20 14.5a3.5 3.5 0 0 1-3.5 3.5H8.5A5.5 5.5 0 0 1 3 16.5z");
-      const sunCloud=`${g("M7.5 7.5l-1.2-1.2 M12 5V3.8 M16.5 7.5l1.2-1.2 M5 12H3.8")}${g("M10.5 6.5a3 3 0 1 1 4.5 4.5")}${g("M6 18h9a3 3 0 0 0 0-6h-.3a5.5 5.5 0 0 0-10.6 2")}`;
-      const drizzle=`${cloud}${g("M9 20l-.8 1.2 M12 20l-.8 1.2 M15 20l-.8 1.2")}`;
-      const rain=`${cloud}${g("M9 18l-1.2 2 M12 18l-1.2 2 M15 18l-1.2 2")}`;
-      const snow=`${cloud}${g("M10.5 18l-1.5 2 M10.5 20l-1.5-2 M13.5 18l-1.5 2 M13.5 20l-1.5-2")}`;
-      const fog=`${cloud}${g("M5 20h10 M6 22h8")}`;
-      const thunder=`${cloud}${g("M12 16l-2 4h3l-1.5 3")}`;
-      if(c==="0")return sun; if(c==="1"||c==="2")return sunCloud; if(c==="3")return cloud; if(c==="45"||c==="48")return fog;
-      if("51,53,55,56,57".includes(c))return drizzle; if("61,63,65,66,67,80,81,82".includes(c))return rain;
-      if("71,73,75,77,85,86".includes(c))return snow; if("95,96,99".includes(c))return thunder; return sunCloud;
-    };
-    function setIcon(code){ elIcon.setAttribute("viewBox","0 0 24 24"); elIcon.setAttribute("fill","none"); elIcon.setAttribute("stroke","currentColor"); elIcon.setAttribute("stroke-width","2.2"); elIcon.setAttribute("stroke-linecap","round"); elIcon.setAttribute("stroke-linejoin","round"); elIcon.innerHTML=iconSVG(code); }
-    function getPosition(timeoutMs=7000){ return new Promise((resolve)=>{ let done=false; const fb=()=>{if(done)return;done=true;resolve({coords:{latitude:55.6761,longitude:12.5683},fallback:true})}; if(!navigator.geolocation){fb();return} const to=setTimeout(fb,timeoutMs); navigator.geolocation.getCurrentPosition(p=>{if(done)return;done=true;clearTimeout(to);resolve(p)},()=>fb(),{enableHighAccuracy:false,maximumAge:9e5,timeout:timeoutMs-500}); }); }
-    const WMO_DA={0:"Klart",1:"Mest klart",2:"Delvist skyet",3:"Overskyet",45:"Tåge",48:"Rimtåge",51:"Finregn let",53:"Finregn",55:"Finregn kraftig",56:"Isfinregn let",57:"Isfinregn",61:"Regn let",63:"Regn",65:"Regn kraftig",66:"Isregn let",67:"Isregn",71:"Sne let",73:"Sne",75:"Sne kraftig",77:"Sneslud",80:"Byger let",81:"Byger",82:"Byger kraftig",85:"Snebyger let",86:"Snebyger kraftig",95:"Torden",96:"Torden m. hagl",99:"Kraftig torden m. hagl"};
-    const codeToDa=(c)=>WMO_DA[c]??"Ukendt";
-    async function loadWeather(){ try{
-      const pos=await getPosition(); const lat=+pos.coords.latitude.toFixed(4); const lon=+pos.coords.longitude.toFixed(4);
-      const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&timezone=auto`,{cache:"no-store"}); const j=await r.json();
-      const t=Math.round(j?.current?.temperature_2m ?? NaN), c=j?.current?.weather_code;
-      if(Number.isFinite(t)) elTemp.textContent=`${t}°`;
-      if(typeof c==="number"){ elCond.textContent=codeToDa(c); setIcon(c); }
-      try{ const rg=await fetch(`https://geocoding-api.open-meteo.com/v1/reverse?latitude=${lat}&longitude=${lon}&language=da&format=json`,{cache:"no-store"}); const gj=await rg.json(); const hit=gj?.results?.[0]; const city=hit?.name||hit?.admin2||hit?.admin1||(pos.fallback?"København":""); if(city) elCity.textContent=city; }catch(_){ if(pos.fallback) elCity.textContent="København"; }
-    }catch(_){ if(!elTemp.textContent.trim()) elTemp.textContent="18°"; if(!elCond.textContent.trim()) elCond.textContent="Klart"; if(!elCity.textContent.trim()) elCity.textContent="Farum"; setIcon(2); } }
+    function g(d){ return "<path d='"+d+"' />"; }
+    function iconSVG(c){ c=String(c);
+      var sun=g("M12 4v2 M12 18v2 M4 12H2 M22 12h-2 M5 5l-1.4-1.4 M20.4 20.4L19 19 M5 19l-1.4 1.4 M20.4 3.6L19 5")+g("M12 8a4 4 0 1 1 0 8a4 4 0 0 1 0-8");
+      var cloud=g("M3 16.5a4.5 4.5 0 0 1 4.5-4.5h.5A6.5 6.5 0 1 1 20 14.5a3.5 3.5 0 0 1-3.5 3.5H8.5A5.5 5.5 0 0 1 3 16.5z");
+      var sunCloud=g("M7.5 7.5l-1.2-1.2 M12 5V3.8 M16.5 7.5l1.2-1.2 M5 12H3.8")+g("M10.5 6.5a3 3 0 1 1 4.5 4.5")+g("M6 18h9a3 3 0 0 0 0-6h-.3a5.5 5.5 0 0 0-10.6 2");
+      var drizzle=cloud+g("M9 20l-.8 1.2 M12 20l-.8 1.2 M15 20l-.8 1.2");
+      var rain=cloud+g("M9 18l-1.2 2 M12 18l-1.2 2 M15 18l-1.2 2");
+      var snow=cloud+g("M10.5 18l-1.5 2 M10.5 20l-1.5-2 M13.5 18l-1.5 2 M13.5 20l-1.5-2");
+      var fog=cloud+g("M5 20h10 M6 22h8");
+      var thunder=cloud+g("M12 16l-2 4h3l-1.5 3");
+      if(c==="0")return sun;
+      if(c==="1"||c==="2")return sunCloud;
+      if(c==="3")return cloud;
+      if(c==="45"||c==="48")return fog;
+      if("51,53,55,56,57".indexOf(c)>-1)return drizzle;
+      if("61,63,65,66,67,80,81,82".indexOf(c)>-1)return rain;
+      if("71,73,75,77,85,86".indexOf(c)>-1)return snow;
+      if("95,96,99".indexOf(c)>-1)return thunder;
+      return sunCloud;
+    }
+    function setIcon(code){
+      elIcon.setAttribute("viewBox","0 0 24 24");
+      elIcon.setAttribute("fill","none");
+      elIcon.setAttribute("stroke","currentColor");
+      elIcon.setAttribute("stroke-width","2.2");
+      elIcon.setAttribute("stroke-linecap","round");
+      elIcon.setAttribute("stroke-linejoin","round");
+      elIcon.innerHTML=iconSVG(code);
+    }
+    function getPosition(timeoutMs){
+      timeoutMs = timeoutMs||7000;
+      return new Promise(function(resolve){
+        var done=false;
+        function fb(){ if(done) return; done=true; resolve({coords:{latitude:55.6761,longitude:12.5683},fallback:true}); }
+        if(!navigator.geolocation){ fb(); return; }
+        var to=setTimeout(fb,timeoutMs);
+        navigator.geolocation.getCurrentPosition(function(pos){ if(done) return; done=true; clearTimeout(to); resolve(pos); }, function(){ fb(); }, { enableHighAccuracy:false, maximumAge:15*60*1000, timeout:timeoutMs-500 });
+      });
+    }
+    var WMO_DA={0:"Klart",1:"Mest klart",2:"Delvist skyet",3:"Overskyet",45:"Tåge",48:"Rimtåge",51:"Finregn let",53:"Finregn",55:"Finregn kraftig",56:"Isfinregn let",57:"Isfinregn",61:"Regn let",63:"Regn",65:"Regn kraftig",66:"Isregn let",67:"Isregn",71:"Sne let",73:"Sne",75:"Sne kraftig",77:"Sneslud",80:"Byger let",81:"Byger",82:"Byger kraftig",85:"Snebyger let",86:"Snebyger kraftig",95:"Torden",96:"Torden m. hagl",99:"Kraftig torden m. hagl"};
+    function codeToDa(c){ return WMO_DA[c]||"Ukendt"; }
+    async function loadWeather(){
+      try{
+        var pos=await getPosition(); var lat=+pos.coords.latitude.toFixed(4); var lon=+pos.coords.longitude.toFixed(4);
+        var r=await fetch("https://api.open-meteo.com/v1/forecast?latitude="+lat+"&longitude="+lon+"&current=temperature_2m,weather_code&timezone=auto",{cache:"no-store"});
+        var j=await r.json();
+        var t=Math.round(((j&&j.current)?j.current.temperature_2m:NaN));
+        var c=(j&&j.current)?j.current.weather_code:undefined;
+        if(isFinite(t)) elTemp.textContent=t+"°";
+        if(typeof c==="number"){ elCond.textContent=codeToDa(c); setIcon(c); }
+        try{
+          var rg=await fetch("https://geocoding-api.open-meteo.com/v1/reverse?latitude="+lat+"&longitude="+lon+"&language=da&format=json",{cache:"no-store"});
+          var gj=await rg.json(); var hit=(gj&&gj.results&&gj.results[0])||null;
+          var city=(hit&&hit.name)|| (hit&&hit.admin2) || (hit&&hit.admin1) || (pos.fallback?"København":"");
+          if(city) elCity.textContent=city;
+        }catch(e){ if(pos.fallback) elCity.textContent="København"; }
+      }catch(e){
+        if(!elTemp.textContent.trim()) elTemp.textContent="18°";
+        if(!elCond.textContent.trim()) elCond.textContent="Klart";
+        if(!elCity.textContent.trim()) elCity.textContent="Farum";
+        setIcon(2);
+      }
+    }
     loadWeather(); setInterval(loadWeather, 20*60*1000);
   })();
   </script>
