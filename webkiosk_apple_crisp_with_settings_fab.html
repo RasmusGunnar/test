@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Webkiosk v2025-10-28m</title>
+<title>Webkiosk v2025-10-28n</title>
 <meta name="theme-color" content="#0f172a" />
 <link rel="manifest" href="./manifest.webmanifest" />
 <style>
@@ -18,12 +18,15 @@
   .panel{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
   .widget{padding:clamp(16px,2.2vw,24px)}
   .widget h2{margin:0 0 6px;font-size:clamp(15px,1.6vw,18px);color:var(--muted);font-weight:600;letter-spacing:.2px}
+
   .clock-time{font-size:clamp(40px,6vw,56px);line-height:1;font-weight:750}
   .clock-date{margin-top:6px;font-size:clamp(14px,1.8vw,18px);color:var(--muted)}
+
   .weather-main{display:flex;align-items:center;gap:14px}
   .weather-temp{font-size:clamp(40px,6vw,56px);font-weight:750}
   .weather-line{font-size:clamp(14px,1.8vw,18px);color:var(--muted)}
   .widget .icon{width:clamp(34px,4.5vw,48px);height:clamp(34px,4.5vw,48px);color:var(--accent)}
+
   .tiles{grid-column:1/-1;display:grid;gap:clamp(12px,2vw,18px);grid-template-columns:repeat(3,1fr)}
   .tile{min-height:140px;padding:clamp(16px,2.4vw,24px);display:grid;grid-template-columns:1fr minmax(160px,min(var(--logoMaxW),var(--logoBoxW)));align-items:center;gap:clamp(12px,2vw,20px);cursor:pointer;user-select:none;transition:transform .12s ease,box-shadow .12s ease,border-color .12s ease}
   .tile:hover{transform:translateY(-1px);box-shadow:0 14px 30px rgba(2,6,23,.10)}
@@ -31,10 +34,12 @@
   .meta .sub{color:var(--muted);font-size:clamp(12px,1.8vw,15px);margin-top:6px}
   .logo-box{height:var(--logoH);display:flex;align-items:center;justify-content:flex-end}
   .logo-box img{max-height:100%;max-width:100%;object-fit:contain;display:block}
+
   .widget.weather{grid-column:span 6}
   .widget.clock{grid-column:span 6}
   @media (max-width:900px){.widget.weather,.widget.clock{grid-column:span 12}.tiles{grid-template-columns:1fr}}
 
+  /* Kalender overlay */
   .calendar-view{position:fixed;inset:0;padding:clamp(12px,2vw,20px);background:rgba(246,247,249,.85);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:none;z-index:60}
   .calendar-inner{height:100%;display:flex;flex-direction:column;gap:12px}
   .topbar{display:flex;align-items:center;gap:12px}
@@ -42,10 +47,12 @@
   .calframe.panel{flex:1;min-height:0;overflow:hidden;display:flex}
   iframe{width:100%;height:100%;border:0;display:block}
 
+  /* Tandhjul (din) */
   .fab{position:fixed;right:20px;bottom:20px;z-index:70}
   .fab button{width:56px;height:56px;border-radius:50%;border:1px solid var(--border);background:#fff;color:var(--fg);display:inline-flex;align-items:center;justify-content:center;box-shadow:var(--shadow);cursor:pointer}
   .fab button:hover{transform:translateY(-1px);box-shadow:0 14px 30px rgba(2,6,23,.10)}
 
+  /* Indstillinger (din) */
   .modal{position:fixed;inset:0;background:rgba(15,23,42,.28);display:none;align-items:center;justify-content:center;padding:20px;z-index:80}
   .modal[aria-hidden="false"]{display:flex}
   .dialog{width:min(920px,96vw);max-height:92vh;overflow:auto;background:#fff;border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);padding:20px}
@@ -64,6 +71,7 @@
   .logoPreview{width:140px;height:64px;display:flex;align-items:center;justify-content:center;border:1px dashed var(--border);border-radius:12px;background:#fafafa}
   .logoPreview img{max-width:100%;max-height:100%;object-fit:contain;display:block}
 
+  /* Webpanel overlay */
   .wk-panel{position:fixed;inset:0;background:#00000010;backdrop-filter:saturate(1.1) blur(4px);display:none;z-index:75}
   .wk-panel.visible{display:block}
   .wk-shell{position:absolute;inset:0;background:#fff;box-shadow:0 12px 60px rgba(2,6,23,.25)}
@@ -73,6 +81,15 @@
   .wk-iframe{position:absolute;top:52px;left:0;right:0;bottom:0;width:100%;height:calc(100% - 52px);border:0}
   .wk-fallback{position:absolute;inset:52px 0 0 0;display:none;align-items:center;justify-content:center}
   .wk-fallback .card{max-width:560px;margin:0 14px;background:#fff;border:1px solid var(--border);border-radius:12px;padding:16px;box-shadow:0 10px 30px rgba(2,6,23,.08);text-align:center}
+
+  /* --- Synk-status badge (kun i pop-up) --- */
+  .status-badge{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600}
+  .status-dot{width:10px;height:10px;border-radius:50%;display:inline-block;border:1px solid rgba(0,0,0,.08)}
+  .state-offline .status-dot{background:#9ca3af}
+  .state-syncing .status-dot{background:#f59e0b}
+  .state-online  .status-dot{background:#10b981}
+  .state-error   .status-dot{background:#ef4444}
+  .status-note{margin-left:8px;color:var(--muted);font-size:12px}
 </style>
 </head>
 <body>
@@ -130,7 +147,7 @@
     <button id="openSettings" title="Indstillinger" aria-label="Indstillinger">
       <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <circle cx="12" cy="12" r="3"/>
-        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c0 .66.26 1.3.73 1.77.47.47 1.11.73 1.77.73h.09a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c0 .66.26 1.3.73 1.77.47.47 1.11.73 1.77.73h.09a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/>
       </svg>
     </button>
   </div>
@@ -158,15 +175,26 @@
         <div class="field"><label for="sonosPkg">Android package (ved Type=App)</label><input type="text" id="sonosPkg" placeholder="fx com.sonos.acr2"/></div>
         <div class="field"><label for="sonosScheme">Custom scheme (iOS/Android – valgfri)</label><input type="text" id="sonosScheme" placeholder="fx sonos://"/></div>
 
-        <div class="field"><label>Kalender-logo</label><div class="row"><div class="logoPreview"><img id="prevCalendar"></div><input type="file" id="logoInputCalendar" accept="image/*"/></div></div>
-        <div class="field"><label>Homey-logo</label><div class="row"><div class="logoPreview"><img id="prevHomey"></div><input type="file" id="logoInputHomey" accept="image/*"/></div></div>
-        <div class="field"><label>Sonos-logo</label><div class="row"><div class="logoPreview"><img id="prevSonos"></div><input type="file" id="logoInputSonos" accept="image/*"/></div></div>
+        <div class="field"><label>Kalender-logo</label><div class="row"><div class="logoPreview"><img id="prevCalendar" alt=""></div><input type="file" id="logoInputCalendar" accept="image/*"/></div></div>
+        <div class="field"><label>Homey-logo</label><div class="row"><div class="logoPreview"><img id="prevHomey" alt=""></div><input type="file" id="logoInputHomey" accept="image/*"/></div></div>
+        <div class="field"><label>Sonos-logo</label><div class="row"><div class="logoPreview"><img id="prevSonos" alt=""></div><input type="file" id="logoInputSonos" accept="image/*"/></div></div>
 
         <div class="field"><label for="themeColor">Primærfarve</label><input type="color" id="themeColor"/></div>
         <div class="field"><label for="bgColor">Baggrundsfarve</label><input type="color" id="bgColor"/></div>
 
         <div class="field"><label for="householdId">Husstands-ID</label><input id="householdId" placeholder="auto-genereres"/><div class="hint">Brug samme ID på alle enheder.</div></div>
-        <div class="field"><label>Status</label><div class="row"><span id="syncStatus" class="hint">Offline</span></div></div>
+
+        <!-- Synk-status badge -->
+        <div class="field">
+          <label>Status</label>
+          <div class="row">
+            <div id="syncStatus" class="status-badge state-offline">
+              <span class="status-dot" aria-hidden="true"></span>
+              <span id="syncText">Offline</span>
+              <span id="syncNote" class="status-note">-</span>
+            </div>
+          </div>
+        </div>
 
         <div class="field"><label for="wakeStrategy">Hold skærmen vågen</label><select id="wakeStrategy"><option value="auto" selected>Auto (Wake Lock → NoSleep)</option><option value="off">Fra</option></select></div>
         <div class="field"><label>Note</label><div class="hint">Installer som PWA for fuldskærm & bedre navigation.</div></div>
@@ -209,7 +237,7 @@
 
   <!-- App logic -->
   <script>
-  const VERSION="2025-10-28m";
+  const VERSION="2025-10-28n";
   if('serviceWorker' in navigator){ navigator.serviceWorker.register(`./service-worker.js?vv=${encodeURIComponent(VERSION)}`).catch(()=>{}); }
 
   /* Ur */
@@ -227,6 +255,7 @@
   function load(){try{return Object.assign({},defaults,JSON.parse(localStorage.getItem(LS_KEY)||'{}'))}catch{return {...defaults}}}
   function save(c){localStorage.setItem(LS_KEY,JSON.stringify(c))}
   let config=load(); if(!config.householdId){config.householdId=Math.random().toString(36).slice(2,10).toUpperCase(); save(config)}
+
   function applyTheme(){document.documentElement.style.setProperty('--accent',config.theme.color||'#0f172a'); document.documentElement.style.setProperty('--bg',config.theme.background||'#f6f7f9');}
   function applyLogos(){ const m=config.logos||{}; if(m.calendar) document.getElementById('logoCalendar').src=m.calendar; if(m.homey) document.getElementById('logoHomey').src=m.homey; if(m.sonos) document.getElementById('logoSonos').src=m.sonos; const pc=document.getElementById('prevCalendar'); if(pc&&m.calendar) pc.src=m.calendar; const ph=document.getElementById('prevHomey'); if(ph&&m.homey) ph.src=m.homey; const ps=document.getElementById('prevSonos'); if(ps&&m.sonos) ps.src=m.sonos; }
   function applyAllFromConfig(){ applyTheme(); applyForm(); applyLogos(); }
@@ -236,8 +265,12 @@
   const modal=document.getElementById('settingsModal'); const openSettings=document.getElementById('openSettings'); const closeSettings=document.getElementById('closeSettings'); const saveSettings=document.getElementById('saveSettings'); const resetConfig=document.getElementById('resetConfig');
   const calendarUrl=document.getElementById('calendarUrl'); const calendarFile=document.getElementById('calendarFile'); const calendarUploadRow=document.getElementById('calendarUploadRow'); const modeRadios=[...document.querySelectorAll('input[name="calendarMode"]')];
   const homeyUrl=document.getElementById('homeyUrl'); const sonosUrl=document.getElementById('sonosUrl'); const sonosPkg=document.getElementById('sonosPkg'); const sonosScheme=document.getElementById('sonosScheme');
-  const themeColor=document.getElementById('themeColor'); const bgColor=document.getElementById('bgColor'); const wakeStrategy=document.getElementById('wakeStrategy'); const householdId=document.getElementById('householdId'); const syncStatus=document.getElementById('syncStatus');
-  const logoInputs={calendar:document.getElementById('logoInputCalendar'),homey:document.getElementById('logoInputHomey'),sonos:document.getElementById('logoInputSonos')};
+  const themeColor=document.getElementById('themeColor'); const bgColor=document.getElementById('bgColor'); const wakeStrategy=document.getElementById('wakeStrategy'); const householdId=document.getElementById('householdId');
+
+  /* Synk UI-refs */
+  const syncBadge=document.getElementById('syncStatus');
+  const syncText=document.getElementById('syncText');
+  const syncNote=document.getElementById('syncNote');
 
   /* Modal open/close */
   function openModal(){ modal.setAttribute('aria-hidden','false'); applyForm(); applyLogos(); }
@@ -247,7 +280,7 @@
   /* Form apply */
   function applyForm(){
     calendarUrl.value=config.calendar.url||''; homeyUrl.value=config.homeyUrl||''; sonosUrl.value=config.sonosUrl||''; sonosPkg.value=config.sonosPkg||''; sonosScheme.value=config.sonosScheme||'';
-    themeColor.value=config.theme.color||'#0f172a'; bgColor.value=config.theme.background||'#f6f7f9'; wakeStrategy.value=config.wakeStrategy||'auto'; householdId.value=config.householdId||'';
+    themeColor.value=config.theme.color||'#0f172a'; bgColor.value=config.theme.background||'#f6f7f9'; wakeStrategy.value=config.wakeStrategy||'auto'; householdId.value=(config.householdId||'').toUpperCase();
     modeRadios.forEach(r=>r.checked=(r.value===(config.calendar.mode||'url'))); calendarUploadRow.style.display=(config.calendar.mode==='upload')?'':'none';
   }
 
@@ -255,6 +288,7 @@
 
   /* Logo upload → vis nu + auto-save + sync */
   async function toB64(file){return new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>res(fr.result);fr.onerror=rej;fr.readAsDataURL(file)})}
+  const logoInputs={calendar:document.getElementById('logoInputCalendar'),homey:document.getElementById('logoInputHomey'),sonos:document.getElementById('logoInputSonos')};
   Object.entries(logoInputs).forEach(([k,input])=>{
     input.addEventListener('change',async()=>{
       const f=input.files?.[0]; if(!f) return;
@@ -267,7 +301,7 @@
   /* Kalenderfil upload */
   calendarFile.addEventListener('change',async()=>{const f=calendarFile.files?.[0];if(!f)return;config.calendar.fileName=f.name;config.calendar.fileData=await toB64(f);config._ts=Date.now();save(config);queueWriteFirestore();});
 
-  /* Gem (resten af felter) */
+  /* Gem (felter) */
   saveSettings.addEventListener('click',()=>{
     config.calendar.url=calendarUrl.value.trim(); config.homeyUrl=homeyUrl.value.trim(); config.sonosUrl=sonosUrl.value.trim(); config.sonosPkg=sonosPkg.value.trim(); config.sonosScheme=sonosScheme.value.trim();
     config.theme.color=themeColor.value||config.theme.color; config.theme.background=bgColor.value||config.theme.background; config.wakeStrategy=wakeStrategy.value||'auto';
@@ -319,7 +353,7 @@
     if(/^https?:\/\//i.test(url)) showPanel(url,'Homey'); else location.href=url;
   });
 
-  // Sonos: **Native først**, web (overlay) som fallback, og helt uden “åbn i ny fane”
+  // Sonos: Native først, web (overlay) fallback, ingen “åbn i ny fane”
   const isAndroid=/Android/i.test(navigator.userAgent), isiOS=/iPhone|iPad|iPod/i.test(navigator.userAgent);
   function openSonosNative(){
     const pkg=(config.sonosPkg||'').trim() || 'com.sonos.acr2';
@@ -334,18 +368,15 @@
     return false;
   }
   document.getElementById('tileSonos').addEventListener('click',()=>{
-    // 1) Native først
     if(openSonosNative()) return;
-    // 2) Web som fallback, men bliv i overlay og skjul “åbn i ny fane”
     const link=(config.sonosUrl||'').trim() || 'https://play.sonos.com';
     showPanel(link,'Sonos',{hideOpenNew:true});
-    // Tilpas fallback-kort til “Åbn i Sonos-app”
-    const cardBtn = document.querySelector('#wkFallback .card button');
-    const cardH3  = document.querySelector('#wkFallback .card h3');
-    const cardP   = document.querySelector('#wkFallback .card p');
-    if(cardH3) cardH3.textContent='Kan ikke vise Sonos her';
-    if(cardP && cardP.firstChild) cardP.firstChild.textContent='Sonos Web App blokerer ofte for indlejring. Åbn Sonos-appen i stedet.';
-    if(cardBtn){ cardBtn.textContent='Åbn i Sonos-app'; cardBtn.onclick=()=>{ openSonosNative() || window.open('https://play.sonos.com','_blank','noopener,noreferrer'); }; }
+    const btn=document.querySelector('#wkFallback .card button');
+    const h3=document.querySelector('#wkFallback .card h3');
+    const p=document.querySelector('#wkFallback .card p');
+    if(h3) h3.textContent='Kan ikke vise Sonos her';
+    if(p && p.firstChild) p.firstChild.textContent='Sonos Web App blokerer ofte for indlejring. Åbn Sonos-appen i stedet.';
+    if(btn){ btn.textContent='Åbn i Sonos-app'; btn.onclick=()=>{ openSonosNative() || window.open('https://play.sonos.com','_blank','noopener,noreferrer'); }; }
   });
 
   /* Wake Lock */
@@ -356,15 +387,59 @@
   window.addEventListener('pageshow',()=>{ requestWakeLock(); },{passive:true});
   window.addEventListener('click',()=>{ if(!('wakeLock'in navigator)){ try{ if(!noSleep) noSleep=new window.NoSleep(); noSleep.enable(); }catch(_){}} },{passive:true});
 
+  /* --- Synk-status helper --- */
+  function setStatus(state, note){
+    const cls = ['state-offline','state-syncing','state-online','state-error'];
+    cls.forEach(c=>syncBadge.classList.remove(c));
+    const map = {offline:'state-offline', syncing:'state-syncing', online:'state-online', error:'state-error'};
+    syncBadge.classList.add(map[state]||'state-offline');
+    syncText.textContent = ({offline:'Offline', syncing:'Synkroniserer…', online:'Online', error:'Fejl'})[state] || 'Offline';
+    syncNote.textContent = note ? `Senest: ${note}` : (state==='online' ? 'Tilsluttet' : '-');
+  }
+  function nowTime(){ return new Date().toLocaleTimeString('da-DK',{hour:'2-digit',minute:'2-digit'}); }
+
   /* Firebase sync */
   const firebaseConfig={apiKey:"AIzaSyA_gh8y-V6kkl95hRzb0ldBxpKWFY5bAck",authDomain:"webkiosk-e5d32.firebaseapp.com",projectId:"webkiosk-e5d32",storageBucket:"webkiosk-e5d32.firebasestorage.app",messagingSenderId:"920175197353",appId:"1:920175197353:web:c3520e9a3ab8146ec4fdb8"};
   const fbApp=firebase.initializeApp(firebaseConfig); const fbAuth=firebase.auth(); const fbDb=firebase.firestore();
-  fbAuth.signInAnonymously().then(()=>{ syncStatus.textContent='Online' }).catch(()=>{ syncStatus.textContent='Auth fejl' });
+
+  // Netværk
+  window.addEventListener('online',  ()=>setStatus('online', nowTime()));
+  window.addEventListener('offline', ()=>setStatus('offline'));
+
+  fbAuth.signInAnonymously()
+    .then(()=>{ setStatus(navigator.onLine?'online':'offline', nowTime()); })
+    .catch(()=>{ setStatus('error'); });
+
   let unsub=null, writeTimer=null;
   function docRef(){ return fbDb.collection('webkiosk').doc((config.householdId||'DEFAULT').toUpperCase()) }
-  function queueWriteFirestore(){ clearTimeout(writeTimer); writeTimer=setTimeout(async()=>{ try{ config._ts=Date.now(); save(config); await docRef().set(config,{merge:true}); syncStatus.textContent='Synkroniseret'; }catch(e){ syncStatus.textContent='Sync fejl'; } },250); }
-  async function startRealtime(){ if(unsub)unsub(); unsub=docRef().onSnapshot(snap=>{ if(!snap.exists)return; const remote=snap.data(); const local=load(); if(remote._ts && (!local._ts || remote._ts>local._ts)){ config=Object.assign({},local,remote); save(config); applyAllFromConfig(); } }); }
-  startRealtime().catch(()=>{});
+
+  function queueWriteFirestore(){
+    clearTimeout(writeTimer);
+    setStatus('syncing'); // vis gul mens vi skriver
+    writeTimer=setTimeout(async()=>{
+      try{
+        config._ts=Date.now(); save(config);
+        await docRef().set(config,{merge:true});
+        setStatus('online', nowTime());
+      }catch(e){
+        setStatus('error');
+      }
+    },250);
+  }
+
+  async function startRealtime(){
+    if(unsub)unsub();
+    unsub=docRef().onSnapshot(snap=>{
+      if(!snap.exists){ return; }
+      const remote=snap.data(); const local=load();
+      if(remote._ts && (!local._ts || remote._ts>local._ts)){
+        config=Object.assign({},local,remote);
+        save(config); applyAllFromConfig();
+        setStatus('online', nowTime());
+      }
+    }, ()=> setStatus('error'));
+  }
+  startRealtime().catch(()=> setStatus('error'));
 
   /* Skjulte overlays må ikke blokere klik */
   const patch=document.createElement('style'); patch.textContent=`
