@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Webkiosk v2025-10-28Z</title>
 <meta name="theme-color" content="#0f172a" />
-<link rel="manifest" href="./manifest.webmanifest" />
+<!-- manifest link disabled by hotfix -->
 <style>
   /* === ABSOLUT KLIK-RO === */
   #settingsModal[aria-hidden="true"],
@@ -136,6 +136,23 @@
   } catch(e){}
 })();
 </script>
+
+<style id="overlay-hotfix">
+/* HOTFIX: Skjul & deaktiver klik for skjulte overlays */
+dialog:not([open]){ display:none !important; pointer-events:none !important; }
+#calendarView[aria-hidden="true"],
+#wkPanel[aria-hidden="true"],
+#settingsModal[aria-hidden="true"],
+.modal[hidden],
+.overlay[hidden]{
+  display:none !important;
+  pointer-events:none !important;
+}
+/* Hvis noget alligevel er synligt uden vi ønsker det, så sørg for at body får klik */
+body{ position:relative; }
+/* Sikrer at .fab (tandhjul) altid ligger øverst */
+.fab{ position:fixed; z-index:2147483647 !important; }
+</style>
 </head>
 <body>
   <div class="wrap">
@@ -617,7 +634,7 @@
     return id;
   }
   function ensureFirebase(cb){
-    var ok = !!(window.firebase && firebase.apps);
+    var ok = !!(window.firebase && firebase.apps && typeof firebase.initializeApp==='function');
     if(ok && firebase.apps.length) return cb();
     var s1=document.createElement('script'); s1.src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js";
     var s2=document.createElement('script'); s2.src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js";
@@ -646,6 +663,28 @@
   }
   ensureFirebase(boot);
 })();
+</script>
+
+<script id="overlay-hotfix-js">
+document.addEventListener('DOMContentLoaded', function(){
+  try{
+    ['calendarView','wkPanel','settingsModal'].forEach(function(id){
+      var el=document.getElementById(id);
+      if(el){
+        var ah=el.getAttribute('aria-hidden');
+        if(ah===null || ah==='true'){
+          el.setAttribute('aria-hidden','true');
+          el.style.display='none';
+          el.style.pointerEvents='none';
+        }
+      }
+    });
+    // Close any dialog accidentally left open
+    document.querySelectorAll('dialog').forEach(function(d){
+      try{ if(!d.hasAttribute('open')){ d.removeAttribute('open'); } }catch(_){}
+    });
+  }catch(_){}
+});
 </script>
 </body>
 </html>
