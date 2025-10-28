@@ -129,7 +129,7 @@
   <div class="fab">
     <button id="openSettings" title="Indstillinger" aria-label="Indstillinger" type="button"
       onclick="document.getElementById('settingsModal').classList.add('visible');document.getElementById('settingsModal').setAttribute('aria-hidden','false');">
-      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0  1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0  1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06.06a2 2 0  1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c0 .66.26 1.3.73 1.77.47.47 1.11.73 1.77.73h.09a2 2 0  1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0  0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0  1 1-4 0v-.09a1.65 1.65 0  0 0-1-1.51 1.65 1.65 0  0 0-1.82.33l-.06.06a2 2 0  1 1-2.83-2.83l.06-.06a1.65 1.65 0  0 0 .33-1.82 1.65 1.65 0  0 0-1.51-1H3a2 2 0  1 1 0-4h.09a1.65 1.65 0  0 0 1.51-1 1.65 1.65 0  0 0-.33-1.82l-.06-.06a2 2 0  1 1 2.83-2.83l.06.06a1.65 1.65 0  0 0 1.82.33H9a1.65 1.65 0  0  0 1-1.51V3a2 2 0  1  1 4 0v.09a1.65 1.65 0  0 0 1 1.51 1.65 1.65 0  0 0 1.82-.33l.06.06a2 2 0  1 1 2.83 2.83l-.06.06a1.65 1.65 0  0 0-.33 1.82V9c0 .66.26 1.3.73 1.77.47.47 1.11.73 1.77.73h.09a2 2 0  1 1 0 4h-.09a1.65 1.65 0  0 0-1.51 1Z"/></svg>
     </button>
   </div>
 
@@ -167,6 +167,14 @@
               <div class="row"><div class="logoPreview"><img id="prevSonos" alt=""></div><input type="file" id="logoInputSonos" accept="image/*"/></div>
             </div>
             <div class="field"><label for="logoUrlSonos">Sonos – Logo URL (GitHub)</label><input type="url" id="logoUrlSonos" placeholder="https://raw.githubusercontent.com/.../sonos.png"/></div>
+
+            <div class="field full">
+              <div class="row">
+                <button class="btn" type="button" id="testLogoCalendar">Test Kalender-logo</button>
+                <button class="btn" type="button" id="testLogoHomey">Test Homey-logo</button>
+                <button class="btn" type="button" id="testLogoSonos">Test Sonos-logo</button>
+              </div>
+            </div>
           </div>
           <p class="hint">Tip: Læg filer i dit repo (fx <code>/assets/</code>) og brug GitHub “Raw” URL her.</p>
         </section>
@@ -191,6 +199,14 @@
             <div class="field"><label for="sonosUrl">Sonos link (app/web/custom scheme)</label><input type="text" id="sonosUrl" placeholder="sonos:// eller https://"/></div>
             <div class="field"><label for="sonosPkg">Android package (app)</label><input type="text" id="sonosPkg" placeholder="com.sonos.acr2"/></div>
             <div class="field"><label for="sonosScheme">Custom scheme (iOS/Android)</label><input type="text" id="sonosScheme" placeholder="sonos://"/></div>
+
+            <div class="field full">
+              <div class="row">
+                <button class="btn" type="button" id="testCalendarLink">Test Kalender</button>
+                <button class="btn" type="button" id="testHomeyLink">Test Homey</button>
+                <button class="btn" type="button" id="testSonosLink">Test Sonos</button>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -230,7 +246,7 @@
     </div>
   </div>
 
-  <!-- Webpanel (Homey/Sonos) -->
+  <!-- Webpanel (Homey/Sonos/Test) -->
   <div id="wkPanel" class="wk-panel" aria-hidden="true">
     <div class="wk-shell">
       <div class="wk-topbar">
@@ -254,7 +270,7 @@
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/nosleep/0.12.0/NoSleep.min.js"></script>
 
   <script>
-  /* ===== Helpers ===== */
+  /* Helpers */
   const $=id=>document.getElementById(id);
   const on=(el,ev,fn)=>el&&el.addEventListener(ev,fn,false);
   const nowStr=()=>new Date().toLocaleTimeString('da-DK',{hour:'2-digit',minute:'2-digit'});
@@ -262,7 +278,7 @@
   const dl=(n,txt)=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type:'application/json'}));a.download=n;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},0);};
   const toB64=f=>new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>res(fr.result);fr.onerror=rej;fr.readAsDataURL(f);});
 
-  /* ===== Ur & Vejr ===== */
+  /* Ur & Vejr */
   function updateClock(){const t=$('clockTime'),d=$('clockDate');const n=new Date();t.textContent=n.toLocaleTimeString('da-DK',{hour:'2-digit',minute:'2-digit'});const s=n.toLocaleDateString('da-DK',{weekday:'long',day:'2-digit',month:'long'});d.textContent=s.charAt(0).toUpperCase()+s.slice(1);}
   setInterval(updateClock,1000);updateClock();
   (function(){const T=$('weatherTemp'),C=$('weatherCity');if(!T||!C)return;
@@ -271,13 +287,13 @@
     wx();setInterval(wx,20*60*1000);
   })();
 
-  /* ===== Config ===== */
+  /* Config */
   const LS_KEY='webkioskConfigV2';
   const defaults={
     calendar:{mode:'url',url:'',fileName:'',fileData:''},
     homeyUrl:'',sonosUrl:'',sonosPkg:'',sonosScheme:'',
-    logos:{calendar:'',homey:'',sonos:''},           // lokale previews
-    logoUrls:{calendar:'',homey:'',sonos:''},        // GitHub/HTTP-URLs
+    logos:{calendar:'',homey:'',sonos:''},
+    logoUrls:{calendar:'',homey:'',sonos:''},
     theme:{color:'#0f172a',background:'#f6f7f9'},
     keepAwake:true,householdId:'',_ts:0
   };
@@ -318,14 +334,14 @@
   function applyAll(){applyTheme();applyForm();applyLogos();}
   applyAll();
 
-  /* ===== Tabs & modal ===== */
+  /* Tabs & modal */
   (function(){const tabs=[...document.querySelectorAll('.tab')],secs=[...document.querySelectorAll('.section')];
     tabs.forEach(tb=>on(tb,'click',()=>{tabs.forEach(t=>t.classList.remove('active'));secs.forEach(s=>s.classList.remove('active'));tb.classList.add('active');$(tb.dataset.tab).classList.add('active');}));
   })();
   const modal=$('settingsModal'); const closeModal=()=>{modal.classList.remove('visible');modal.setAttribute('aria-hidden','true');};
   on($('closeSettings'),'click',closeModal);
 
-  /* ===== Live binding ===== */
+  /* Live binding */
   const writeSoon=debounced(300,queueWriteFirestore);
   function bind(){
     on($('themeColor'),'input',function(){config.theme.color=this.value;save(config);applyTheme();writeSoon();});
@@ -349,25 +365,31 @@
     on($('sonosPkg'),'input',function(){config.sonosPkg=this.value.trim();save(config);writeSoon();});
     on($('sonosScheme'),'input',function(){config.sonosScheme=this.value.trim();save(config);writeSoon();});
     on($('householdId'),'input',function(){const v=this.value.trim().toUpperCase();if(v){config.householdId=v;save(config);startRealtime();writeSoon();}});
-    on($('exportBtn'),'click',()=>dl('webkiosk-settings-'+(config.householdId||'DEFAULT')+'.json',JSON.stringify(config,null,2)));
-    on($('importBtn'),'click',function(){const t=$('importArea').value.trim();if(!t){alert('Indsæt JSON');return;}try{const o=JSON.parse(t);if(!o.householdId)o.householdId=config.householdId||o.householdId;config=Object.assign({},config,o);save(config);applyAll();startRealtime();queueWriteFirestore();alert('Import OK.');}catch(e){alert('Ugyldig JSON: '+e.message);}});
-    on($('importFile'),'change',async function(){const f=this.files&&this.files[0];if(!f)return;const t=await f.text();try{const o=JSON.parse(t);if(!o.householdId)o.householdId=config.householdId||o.householdId;config=Object.assign({},config,o);save(config);applyAll();startRealtime();queueWriteFirestore();alert('Import fra fil OK.');}catch(e){alert('Ugyldig JSON i fil: '+e.message);}});
+
+    // Test-knapper
+    on($('testCalendarLink'),'click',()=>{const hid=(config.householdId||'DEFAULT').toUpperCase();const u=$('calendarUrl').value.trim();if(!u){alert('Sæt Kalender URL først.');return;}const url=new URL(u,location.href);url.searchParams.set('hid',hid);showPanel(url.toString(),'Test: Kalender');});
+    on($('testHomeyLink'),'click',()=>{const u=$('homeyUrl').value.trim();if(!u){alert('Sæt Homey URL først.');return;}showPanel(u,'Test: Homey');});
+    on($('testSonosLink'),'click',()=>{const u=$('sonosUrl').value.trim();if(!u){alert('Sæt Sonos URL først.');return;} if(/^https?:\/\//i.test(u))showPanel(u,'Test: Sonos'); else alert('App/intent links kan ikke testes i iframe; prøv fra forsiden.');});
+    const previewImg=(u,t)=>{if(!u){alert('Sæt URL først.');return;}const w=window.open('','_blank','width=600,height=400'); if(!w){alert('Popups blokeret.');return;} w.document.write(`<title>${t}</title><img src="${u}" style="max-width:100%;height:auto;display:block;margin:0 auto"/>`);};
+    on($('testLogoCalendar'),'click',()=>previewImg($('logoUrlCalendar').value.trim(),'Logo: Kalender'));
+    on($('testLogoHomey'),'click',()=>previewImg($('logoUrlHomey').value.trim(),'Logo: Homey'));
+    on($('testLogoSonos'),'click',()=>previewImg($('logoUrlSonos').value.trim(),'Logo: Sonos'));
   }
   bind();
 
   on($('saveSettings'),'click',()=>{config._ts=Date.now();save(config);queueWriteFirestore();closeModal();});
   on($('resetConfig'),'click',()=>{if(confirm('Nulstil alle indstillinger?')){localStorage.removeItem(LS_KEY);config=load();if(!config.householdId){config.householdId=Math.random().toString(36).slice(2,10).toUpperCase()}save(config);applyAll();startRealtime();queueWriteFirestore();}});
 
-  /* ===== Tiles / overlays ===== */
+  /* Tiles / overlays */
   window.__handlers={};
   function openCalendar(){
     const hid=(config.householdId||'DEFAULT').toUpperCase();
     let src='';
     if(config.calendar?.mode==='upload' && config.calendar?.fileData){
-      src=config.calendar.fileData; // data:URL (kan ikke få ?hid – lokal brug)
+      src=config.calendar.fileData;
     }else if(config.calendar?.url){
       const u=new URL(config.calendar.url, location.href);
-      u.searchParams.set('hid', hid); // <- vigtigt: sender husstand til kalender-siden
+      u.searchParams.set('hid', hid);
       src=u.toString();
     }
     if(!src){alert('Ingen kalenderkilde valgt.');return;}
@@ -393,10 +415,10 @@
   function openSonos(){if(openSonosNative())return;const link=(config.sonosUrl||'').trim()||'https://play.sonos.com';if(/^https?:\/\//i.test(link))showPanel(link,'Sonos');else window.open(link,'_self');}
   __handlers.openSonos=openSonos;
 
-  /* ===== NoSleep (skærm vågen) ===== */
+  /* NoSleep */
   let noSleep=null; window.addEventListener('click',()=>{try{if(config.keepAwake&&!noSleep&&window.NoSleep){noSleep=new NoSleep();noSleep.enable();}}catch{}});
 
-  /* ===== Firebase (Auth + Firestore sync) ===== */
+  /* Firebase (Auth + Firestore sync) */
   const firebaseConfig={apiKey:"AIzaSyA_gh8y-V6kkI9shRzb0ldBxpKWFY5bAck",authDomain:"webkiosk-e5d32.firebaseapp.com",projectId:"webkiosk-e5d32",storageBucket:"webkiosk-e5d32.firebasestorage.app",messagingSenderId:"920175197353",appId:"1:920175197353:web:c3520e9a3ab8146ec4fdb8"};
   const fb=firebase.initializeApp(firebaseConfig), auth=firebase.auth(), db=firebase.firestore();
 
@@ -409,8 +431,8 @@
   async function writeFirestore(){
     try{
       const toSave=JSON.parse(JSON.stringify(config));
-      toSave.logos={}; // base64 previews sync'es ikke (småt)
-      if(toSave.calendar) toSave.calendar.fileData=''; // ikke sync af lokal upload
+      toSave.logos={};
+      if(toSave.calendar) toSave.calendar.fileData='';
       toSave._ts=Date.now();
       save(Object.assign(config,{_ts:toSave._ts}));
       await docRef().set(toSave,{merge:true});
@@ -430,7 +452,6 @@
   }
   startRealtime();
 
-  // sikker reset af overlays ved load
   document.addEventListener('DOMContentLoaded',()=>['calendarView','wkPanel','settingsModal'].forEach(id=>{const el=$(id);if(el){el.classList.remove('visible');el.setAttribute('aria-hidden','true');el.style.display='none';el.offsetHeight;el.style.display='';}}));
   </script>
 </body>
