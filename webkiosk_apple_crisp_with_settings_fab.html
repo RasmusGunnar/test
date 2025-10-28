@@ -104,6 +104,216 @@
 <script defer src="./firebase-setup.js"></script>
 
 </head>
+<!-- Drop-in: Sync + Sonos panel. Indsæt lige før </body> -->
+<script>
+(function(){
+  // -- Minimal styles (kun til dette panel)
+  const style = document.createElement('style');
+  style.textContent = `
+  .wk-sync-fab{position:fixed;right:18px;bottom:86px;height:46px;border-radius:999px;background:#0f172a;color:#fff;padding:0 12px;display:flex;align-items:center;gap:8px;box-shadow:0 14px 40px rgba(2,6,23,.2);cursor:pointer;z-index:99999}
+  .wk-sync-fab:active{transform:scale(.98)}
+  .wk-sync-modal{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;z-index:100000}
+  .wk-sync-card{width:min(560px, calc(100% - 28px));background:#fff;border-radius:14px;border:1px solid #e6e8ec;box-shadow:0 20px 60px rgba(2,6,23,.28);padding:16px}
+  .wk-row{display:grid;grid-template-columns:140px 1fr;gap:10px;align-items:center;margin:8px 0}
+  .wk-row input, .wk-row select{width:100%;padding:10px 12px;border:1px solid #e6e8ec;border-radius:10px}
+  .wk-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+  .wk-btn{background:#0f172a;color:#fff;border:none;border-radius:10px;padding:10px 12px;cursor:pointer}
+  .wk-ghost{background:#fff;color:#0f172a;border:1px solid #e6e8ec;border-radius:10px;padding:10px 12px;cursor:pointer}
+  .wk-badge{font-size:12px;background:#eef2ff;border:1px solid #c7d2fe;padding:2px 8px;border-radius:999px}
+  `;
+  document.head.appendChild(style);
+
+  // -- Ensure Firebase compat SDKs + our setup
+  function ensureScript(src, defer=false){ return new Promise(r=>{ 
+    if([...document.scripts].some(s=>s.src.includes(src))) return r();
+    const s=document.createElement('script'); s.src=src; if(defer) s.defer=true; s.onload=r; document.head.appendChild(s);
+  });}
+  const loadFirebase = async ()=>{
+    await ensureScript("https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js");
+    await ensureScript("https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js");
+    await ensureScript("https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js");
+    // vores setup (indsat af mig tidligere – hvis ikke findes, embed fallback)
+    if(!window.WebKioskFirebase){
+      const setup = document.createElement('script');
+      setup.textContent = `(function(){ const cfg={
+        apiKey:"AIzaSyA_gh8y-V6kkl95hRzb0ldBxpKWFY5bAck",
+        authDomain:"webkiosk-e5d32.firebaseapp.com",
+        projectId:"webkiosk-e5d32",
+        storageBucket:"webkiosk-e5d32.firebasestorage.app",
+        messagingSenderId:"920175197353",
+        appId:"1:920175197353:web:c3520e9a3ab8146ec4fdb8"
+      }; const app=firebase.initializeApp(cfg); const auth=firebase.auth(); const db=firebase.firestore();
+      const ready=auth.signInAnonymously().then(()=>true).catch(()=>false); window.WebKioskFirebase={app,auth,db,ready};})();`;
+      document.head.appendChild(setup);
+    }
+  };
+
+  // -- Wake Lock basic (så skærmen ikke slukker)
+  let wl=null,noSleep=null;
+  async function keepAwake(){
+    try{
+      if('wakeLock' in navigator){ wl = await navigator.wakeLock.request('screen'); }
+      else{
+        if(!noSleep){
+          await ensureScript("https://cdnjs.cloudflare.com/ajax/libs/nosleep/0.12.0/NoSleep.min.js", true);
+          noSleep = new window.NoSleep();
+        }
+        noSleep.enable();
+      }
+    }catch(_){}
+  }
+  document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') keepAwake(); }, {passive:true});
+  window.addEventListener('pageshow', keepAwake, {passive:true});
+  window.addEventListener('click', ()=>{ if(!('wakeLock' in navigator) && noSleep){ try{ noSleep.enable(); }catch(_){}} }, {passive:true});
+
+  // -- Helpers (storage + device)
+  const LS_KEY_CFG = 'webkioskConfigV2';
+  const LS_KEY_ID  = 'webkioskHouseholdId';
+  const isAndroid = /Android/i.test(navigator.userAgent);
+  const isiOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  function readCfg(){ try{ return JSON.parse(localStorage.getItem(LS_KEY_CFG)||'{}')||{}; }catch(_){ return {}; } }
+  function writeCfg(o){ localStorage.setItem(LS_KEY_CFG, JSON.stringify(o)); }
+  function ensureHouseholdId(){
+    let id = localStorage.getItem(LS_KEY_ID)||"";
+    if(!id){ id = Math.random().toString(36).slice(2,10).toUpperCase(); localStorage.setItem(LS_KEY_ID, id); }
+    return id;
+  }
+
+  // -- UI: FAB + Modal
+  const fab = document.createElement('button');
+  fab.className = 'wk-sync-fab';
+  fab.innerHTML = '☁️ Sync';
+  const modal = document.createElement('div');
+  modal.className = 'wk-sync-modal';
+  modal.innerHTML = `
+    <div class="wk-sync-card">
+      <div class="wk-head">
+        <strong>Cloud sync & Sonos</strong>
+        <div><span id="wkStatus" class="wk-badge">Offline</span></div>
+      </div>
+      <div class="wk-row">
+        <label>Husstands-ID</label>
+        <input id="wkId" placeholder="DEL DETTE ID" />
+      </div>
+      <div class="wk-row">
+        <label>Sonos package</label>
+        <input id="wkPkg" placeholder="com.sonos.acr2 (Android)" />
+      </div>
+      <div class="wk-row">
+        <label>App-scheme</label>
+        <input id="wkScheme" placeholder="sonos:// (iOS/Android)" />
+      </div>
+      <div class="wk-row">
+        <label>Test app</label>
+        <div style="display:flex;gap:8px">
+          <button class="wk-ghost" id="wkOpenSonos">Åbn Sonos</button>
+          <button class="wk-ghost" id="wkCopyId">Kopiér ID</button>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px">
+        <button class="wk-ghost" id="wkClose">Luk</button>
+        <button class="wk-btn" id="wkSave">Gem</button>
+      </div>
+    </div>`;
+  document.body.appendChild(fab);
+  document.body.appendChild(modal);
+
+  fab.addEventListener('click', ()=>{ modal.style.display='flex'; });
+  modal.addEventListener('click', (e)=>{ if(e.target===modal) modal.style.display='none'; });
+
+  const wkId     = modal.querySelector('#wkId');
+  const wkPkg    = modal.querySelector('#wkPkg');
+  const wkScheme = modal.querySelector('#wkScheme');
+  const wkStatus = modal.querySelector('#wkStatus');
+
+  modal.querySelector('#wkClose').onclick = ()=> modal.style.display='none';
+  modal.querySelector('#wkCopyId').onclick = async ()=>{
+    try{ await navigator.clipboard.writeText(wkId.value.trim()); fab.innerHTML='☁️ ID kopieret'; setTimeout(()=>fab.innerHTML='☁️ Sync',1200);}catch(_){}
+  };
+
+  // -- Sonos open test
+  modal.querySelector('#wkOpenSonos').onclick = ()=>{
+    const pkg = wkPkg.value.trim();
+    const scheme = wkScheme.value.trim();
+    if(isiOS && scheme){ location.href = scheme; return; }
+    if(isAndroid && pkg){
+      const fallback = encodeURIComponent(location.href);
+      const intentUrl = `intent://open/#Intent;package=${pkg};S.browser_fallback_url=${fallback};end;`;
+      location.href = intentUrl;
+      setTimeout(()=>{ location.href = `market://details?id=${pkg}`; }, 1200);
+      return;
+    }
+    alert('Udfyld mindst “package” (Android) eller “app-scheme”.');
+  };
+
+  // -- Firebase + Firestore sync
+  let householdId = ensureHouseholdId();
+  wkId.value = householdId;
+
+  const sonosLSKey = 'webkiosk.sonos';
+  try{
+    const sonos = JSON.parse(localStorage.getItem(sonosLSKey)||'{}');
+    if(sonos.pkg) wkPkg.value = sonos.pkg;
+    if(sonos.scheme) wkScheme.value = sonos.scheme;
+  }catch(_){}
+
+  function saveLocalSonos(){
+    const s = { pkg: wkPkg.value.trim(), scheme: wkScheme.value.trim() };
+    localStorage.setItem(sonosLSKey, JSON.stringify(s));
+  }
+
+  // Bind save
+  modal.querySelector('#wkSave').onclick = ()=>{
+    householdId = (wkId.value||'').trim().toUpperCase() || householdId;
+    localStorage.setItem(LS_KEY_ID, householdId);
+    saveLocalSonos();
+    // Push en minimal konfig til Firestore (så vi kan se sync)
+    const cfg = readCfg();
+    cfg._ts = Date.now();
+    cfg._ping = (cfg._ping||0)+1;
+    writeCfg(cfg);
+    if(window.WebKioskFirebase && window.WebKioskFirebase.db){
+      window.WebKioskFirebase.db.collection('webkiosk').doc(householdId).set(cfg, {merge:true})
+        .then(()=> wkStatus.textContent='Synkroniseret')
+        .catch(()=> wkStatus.textContent='Sync fejl');
+    }
+    modal.style.display='none';
+  };
+
+  // Realtime lytter
+  async function wireRealtime(){
+    await loadFirebase();
+    const { db, ready } = window.WebKioskFirebase || {};
+    if(!db || !ready) return;
+    const ok = await ready;
+    if(!ok){ wkStatus.textContent='Offline'; return; }
+    wkStatus.textContent='Online';
+    db.collection('webkiosk').doc(householdId).onSnapshot(snap=>{
+      if(!snap.exists) return;
+      const remote = snap.data();
+      const local = readCfg();
+      if(remote._ts && (!local._ts || remote._ts > local._ts)){
+        writeCfg(remote);
+      }
+    });
+  }
+  wireRealtime();
+
+  // Service worker for PWA (hvis ikke allerede)
+  if('serviceWorker' in navigator){ navigator.serviceWorker.register('./service-worker.js').catch(()=>{}); }
+
+  // Default: hvis kalender-URL ikke sat -> peg på lokale familieoversigt
+  try{
+    const cfg = readCfg();
+    if(!cfg.calendar) cfg.calendar = {mode:'url', url:'', fileName:'', fileData:''};
+    if(!cfg.calendar.url && !cfg.calendar.fileData){
+      cfg.calendar.mode='url';
+      cfg.calendar.url='./familieoversigt_index_v11_autosync_READY_UPDATED.html';
+      writeCfg(cfg);
+    }
+  }catch(_){}
+})();
+</script>
 <body>
   <div class="wrap">
     <div class="grid">
