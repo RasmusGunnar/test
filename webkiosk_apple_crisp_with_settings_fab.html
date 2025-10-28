@@ -1,18 +1,18 @@
+<!-- /webkiosk_apple_crisp_with_settings_fab.html -->
 <!DOCTYPE html>
 <html lang="da">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Webkiosk v2025-10-28s</title>
+<title>Webkiosk v2025-10-28t</title>
 <meta name="theme-color" content="#0f172a" />
 <link rel="manifest" href="./manifest.webmanifest" />
 <style>
-  /* CLICK GUARD – skjul overlays, medmindre de er synlige */
+  /* Klik-sikkerhed: overlays er helt væk når skjulte */
   #settingsModal[aria-hidden="true"],
   #wkPanel[aria-hidden="true"],
   #calendarView[aria-hidden="true"]{display:none!important;pointer-events:none!important}
   #wkPanel:not(.visible){display:none!important;pointer-events:none!important}
-  .tile,.fab button,#openSettings{pointer-events:auto!important;cursor:pointer!important}
 
   :root{ --bg:#f6f7f9; --panel:#ffffff; --fg:#0f172a; --muted:#6b7280; --border:#e6e8ec; --accent:#0f172a; --radius:20px; --shadow:0 10px 30px rgba(2,6,23,.06); --logoH:64px; --logoBoxW:42%; --logoMaxW:280px; }
   @media (max-width:1100px){ :root{ --logoBoxW:45%; --logoH:60px } }
@@ -45,7 +45,7 @@
   @media (max-width:900px){.widget.weather,.widget.clock{grid-column:span 12}.tiles{grid-template-columns:1fr}}
 
   /* Kalender overlay */
-  .calendar-view{position:fixed;inset:0;padding:clamp(12px,2vw,20px);background:rgba(246,247,249,.85);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:none;z-index:60}
+  .calendar-view{position:fixed;inset:0;padding:clamp(12px,2vw,20px);background:rgba(246,247,249,.85);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:60}
   .calendar-inner{height:100%;display:flex;flex-direction:column;gap:12px}
   .topbar{display:flex;align-items:center;gap:12px}
   .back-btn{display:inline-flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;background:#fff;border:1px solid var(--border);color:var(--fg);cursor:pointer;font-weight:650;box-shadow:var(--shadow)}
@@ -53,12 +53,11 @@
   iframe{width:100%;height:100%;border:0;display:block}
 
   /* Tandhjul */
-  .fab{position:fixed;right:20px;bottom:20px;z-index:70}
+  .fab{position:fixed;right:20px;bottom:20px;z-index:80}
   .fab button{width:56px;height:56px;border-radius:50%;border:1px solid var(--border);background:#fff;color:#0f172a;display:inline-flex;align-items:center;justify-content:center;box-shadow:var(--shadow);cursor:pointer}
-  .fab button:hover{transform:translateY(-1px);box-shadow:0 14px 30px rgba(2,6,23,.10)}
 
   /* Modal (indstillinger) */
-  .modal{position:fixed;inset:0;background:rgba(15,23,42,.28);display:none;align-items:center;justify-content:center;padding:20px;z-index:80}
+  .modal{position:fixed;inset:0;background:rgba(15,23,42,.28);display:none;align-items:center;justify-content:center;padding:20px;z-index:100}
   .modal[aria-hidden="false"]{display:flex}
   .dialog{width:min(920px,96vw);max-height:92vh;overflow:auto;background:#fff;border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);padding:20px}
   .dialog h3{margin:0 0 10px;font-size:20px}
@@ -78,7 +77,7 @@
   .logoPreview img{max-width:100%;max-height:100%;object-fit:contain;display:block}
 
   /* Webpanel overlay */
-  .wk-panel{position:fixed;inset:0;background:#00000010;backdrop-filter:saturate(1.1) blur(4px);display:none;z-index:75}
+  .wk-panel{position:fixed;inset:0;background:#00000010;backdrop-filter:saturate(1.1) blur(4px);display:none;z-index:90}
   .wk-panel.visible{display:block}
   .wk-shell{position:absolute;inset:0;background:#fff;box-shadow:0 12px 60px rgba(2,6,23,.25)}
   .wk-topbar{position:absolute;left:0;right:0;top:0;height:52px;display:flex;align-items:center;gap:10px;padding:0 12px;border-bottom:1px solid var(--border);background:linear-gradient(#fff,#fafafa);z-index:2}
@@ -138,11 +137,11 @@
     </div>
   </div>
 
-  <!-- Kalender overlay (start skjult) -->
-  <section class="calendar-view" id="calendarView" aria-hidden="true" style="display:none">
+  <!-- Kalender overlay (skjult indtil åbnet) -->
+  <section class="calendar-view" id="calendarView" aria-hidden="true">
     <div class="calendar-inner">
       <div class="topbar">
-        <button class="back-btn" id="closeCalendar" type="button" aria-label="Luk">⬅ Luk</button>
+        <button class="back-btn" id="closeCalendar" type="button" aria-label="Luk">⬅ Tilbage</button>
       </div>
       <div class="calframe panel"><iframe id="calendarFrame" title="Kalender"></iframe></div>
     </div>
@@ -153,7 +152,7 @@
     <button id="openSettings" title="Indstillinger" aria-label="Indstillinger" type="button">
       <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <circle cx="12" cy="12" r="3"/>
-        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0  0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c0 .66.26 1.3.73 1.77.47.47 1.11.73 1.77.73h.09a2 2 0  1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0  1 1-2.83-2.83l.06-.06a1.65 1.65 0  0 0 .33-1.82 1.65 1.65 0  0 0-1.51-1H3a2 2 0  1 1 0-4h.09a1.65 1.65 0  0 0 1.51-1 1.65 1.65 0  0 0-.33-1.82l-.06-.06a2 2 0  1 1 2.83-2.83l.06.06a1.65 1.65 0  0 0 1.82.33H9a1.65 1.65 0  0 0 1-1.51V3a2 2 0  1 1 4 0v.09a1.65 1.65 0  0 0 1 1.51 1.65 1.65 0  0 0 1.82-.33l.06.06a2 2 0  1 1 2.83 2.83l-.06.06a1.65 1.65 0  0 0-.33 1.82V9c0 .66.26 1.3.73 1.77.47.47 1.11.73 1.77.73h.09a2 2 0  1 1 0 4h-.09a1.65 1.65 0  0 0-1.51 1Z"/>
       </svg>
     </button>
   </div>
@@ -164,7 +163,7 @@
       <h3 id="settingsTitle">Indstillinger</h3>
       <div class="form-grid">
         <div class="field full">
-          <label for="calendarMode">Kalenderkilde</label>
+          <label>Kalenderkilde</label>
           <div class="row">
             <label class="row"><input type="radio" name="calendarMode" value="url" checked> URL</label>
             <label class="row"><input type="radio" name="calendarMode" value="upload"> Upload HTML</label>
@@ -178,19 +177,14 @@
 
         <div class="field"><label for="homeyUrl">Homey dashboard URL</label><input type="url" id="homeyUrl" placeholder="https://my.homey.app/…"/></div>
         <div class="field"><label for="sonosUrl">Sonos link (app eller web)</label><input type="text" id="sonosUrl" placeholder="sonos:// eller https://"/></div>
-        <div class="field"><label for="sonosPkg">Android package (ved Type=App)</label><input type="text" id="sonosPkg" placeholder="fx com.sonos.acr2"/></div>
-        <div class="field"><label for="sonosScheme">Custom scheme (iOS/Android – valgfri)</label><input type="text" id="sonosScheme" placeholder="fx sonos://"/></div>
 
         <div class="field"><label>Kalender-logo</label><div class="row"><div class="logoPreview"><img id="prevCalendar" alt=""></div><input type="file" id="logoInputCalendar" accept="image/*"/></div></div>
         <div class="field"><label>Homey-logo</label><div class="row"><div class="logoPreview"><img id="prevHomey" alt=""></div><input type="file" id="logoInputHomey" accept="image/*"/></div></div>
         <div class="field"><label>Sonos-logo</label><div class="row"><div class="logoPreview"><img id="prevSonos" alt=""></div><input type="file" id="logoInputSonos" accept="image/*"/></div></div>
 
         <div class="field"><label for="themeColor">Primærfarve</label><input type="color" id="themeColor"/></div>
-        <div class="field"><label for="bgColor">Baggrundsfarve</label><input type="color" id="bgColor"/></div>
 
-        <div class="field"><label for="householdId">Husstands-ID</label><input id="householdId" placeholder="auto-genereres"/><div class="hint">Brug samme ID på alle enheder.</div></div>
-
-        <div class="field">
+        <div class="field full">
           <label>Status</label>
           <div class="row" style="gap:12px;align-items:center">
             <div id="syncStatus" class="status-badge state-offline">
@@ -198,12 +192,21 @@
               <span id="syncText">Offline</span>
               <span id="syncNote" class="status-note">-</span>
             </div>
-            <button id="btnTestSync" class="btn ghost" type="button" title="Skriv ping til Firestore">Test synk nu</button>
+            <a id="btnTestSync" href="#" style="font-size:13px;color:#2563eb;text-decoration:none">Test synk nu</a>
           </div>
         </div>
 
-        <div class="field"><label for="wakeStrategy">Hold skærmen vågen</label><select id="wakeStrategy"><option value="auto" selected>Auto (Wake Lock → NoSleep)</option><option value="off">Fra</option></select></div>
-        <div class="field"><label>Note</label><div class="hint">Installer som PWA for fuldskærm & bedre navigation.</div></div>
+        <div class="field full">
+          <button id="toggleAdvanced" class="btn ghost" type="button" style="padding:6px 10px;font-size:13px">Vis avanceret</button>
+        </div>
+        <div id="advancedGroup" style="display:none">
+          <div class="field"><label for="bgColor">Baggrundsfarve</label><input type="color" id="bgColor"/></div>
+          <div class="field"><label for="sonosPkg">Android package</label><input type="text" id="sonosPkg" placeholder="fx com.sonos.acr2"/></div>
+          <div class="field"><label for="sonosScheme">Custom scheme (iOS/Android)</label><input type="text" id="sonosScheme" placeholder="fx sonos://"/></div>
+          <div class="field"><label for="wakeStrategy">Hold skærmen vågen</label><select id="wakeStrategy"><option value="auto" selected>Auto (Wake Lock → NoSleep)</option><option value="off">Fra</option></select></div>
+        </div>
+
+        <div class="field"><label for="householdId">Husstands-ID</label><input id="householdId" placeholder="auto-genereres"/><div class="hint">Brug samme ID på alle enheder.</div></div>
       </div>
 
       <div class="actions">
@@ -214,22 +217,19 @@
     </div>
   </div>
 
-  <!-- Webpanel overlay (start skjult) -->
-  <div id="wkPanel" class="wk-panel" aria-hidden="true" style="display:none">
+  <!-- Webpanel overlay (skjult indtil brug) -->
+  <div id="wkPanel" class="wk-panel" aria-hidden="true">
     <div class="wk-shell">
       <div class="wk-topbar">
         <button id="wkBack" class="btn" type="button">← Tilbage</button>
         <div id="wkTitle" class="title">Indlæser…</div>
-        <div id="wkTopbarRight" style="margin-left:auto;display:flex;gap:8px">
-          <button id="wkOpenNew" class="btn" type="button" title="Åbn i ny fane">↗ Åbn i ny fane</button>
-        </div>
+        <div id="wkTopbarRight" style="display:none"></div>
       </div>
       <iframe id="wkFrame" class="wk-iframe" sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox" referrerpolicy="no-referrer"></iframe>
       <div id="wkFallback" class="wk-fallback">
         <div class="card">
           <h3>Kan ikke vise siden her</h3>
-          <p>Siden tillader ikke indlejring. Du kan åbne den i ny fane.</p>
-          <p><button id="wkOpenNew2" class="btn" type="button">↗ Åbn i ny fane</button></p>
+          <p>Siden tillader ikke indlejring.</p>
         </div>
       </div>
     </div>
@@ -243,29 +243,25 @@
 
   <!-- App logic -->
   <script>
-  const VERSION="2025-10-28s";
+  const VERSION="2025-10-28t";
   if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('./service-worker.js?vv='+encodeURIComponent(VERSION)); }catch(e){} }
-
-  /* Failsafe: tving overlays væk ved load */
-  (function(){ try{
-    function kill(id){ var el=document.getElementById(id); if(!el) return; el.setAttribute('aria-hidden','true'); el.style.display='none'; el.style.pointerEvents='none'; }
-    kill('settingsModal'); kill('calendarView'); kill('wkPanel');
-    setTimeout(function(){ kill('settingsModal'); kill('calendarView'); kill('wkPanel'); }, 250);
-  }catch(e){} })();
 
   function $(id){ return document.getElementById(id); }
   function on(el,ev,fn){ if(el && el.addEventListener) el.addEventListener(ev,fn,false); }
 
   /* Ur */
-  function updateClock(){ try{
-    var t=$('clockTime'), d=$('clockDate'); if(!t||!d) return;
-    var now=new Date();
-    t.textContent=now.toLocaleTimeString('da-DK',{hour:'2-digit',minute:'2-digit'});
-    var dd=now.toLocaleDateString('da-DK',{weekday:'long',day:'2-digit',month:'long'});
-    d.textContent=dd.charAt(0).toUpperCase()+dd.slice(1);
-  }catch(e){} } setInterval(updateClock,1000); updateClock();
+  function updateClock(){
+    try{
+      var t=$('clockTime'), d=$('clockDate'); if(!t||!d) return;
+      var now=new Date();
+      t.textContent=now.toLocaleTimeString('da-DK',{hour:'2-digit',minute:'2-digit'});
+      var dd=now.toLocaleDateString('da-DK',{weekday:'long',day:'2-digit',month:'long'});
+      d.textContent=dd.charAt(0).toUpperCase()+dd.slice(1);
+    }catch(e){}
+  }
+  setInterval(updateClock,1000); updateClock();
 
-  /* Local state */
+  /* State */
   var LS_KEY='webkioskConfigV2';
   var defaults={calendar:{mode:'url',url:'',fileName:'',fileData:''},homeyUrl:'',sonosUrl:'',sonosPkg:'',sonosScheme:'',logos:{calendar:'',homey:'',sonos:''},theme:{color:'#0f172a',background:'#f6f7f9'},householdId:'',wakeStrategy:'auto',_ts:0};
   function load(){ try{ var o=JSON.parse(localStorage.getItem(LS_KEY)||'{}'); var r={}; for(var k in defaults){ r[k]=defaults[k]; if(typeof defaults[k]==='object' && defaults[k] && !Array.isArray(defaults[k])){ r[k]=Object.assign({},defaults[k],o[k]||{});} else if(o[k]!==undefined){ r[k]=o[k]; } } return r; }catch(e){ return JSON.parse(JSON.stringify(defaults)); } }
@@ -273,17 +269,19 @@
   var config=load(); if(!config.householdId){ config.householdId=Math.random().toString(36).slice(2,10).toUpperCase(); save(config); }
 
   function applyTheme(){ document.documentElement.style.setProperty('--accent',config.theme&&config.theme.color?config.theme.color:'#0f172a'); document.documentElement.style.setProperty('--bg',config.theme&&config.theme.background?config.theme.background:'#f6f7f9'); }
-  function applyLogos(){ try{
-    var m=config.logos||{};
-    var lc=$('logoCalendar'), lh=$('logoHomey'), ls=$('logoSonos');
-    if(lc && m.calendar) lc.src=m.calendar;
-    if(lh && m.homey)    lh.src=m.homey;
-    if(ls && m.sonos)    ls.src=m.sonos;
-    var pc=$('prevCalendar'), ph=$('prevHomey'), ps=$('prevSonos');
-    if(pc && m.calendar) pc.src=m.calendar;
-    if(ph && m.homey)    ph.src=m.homey;
-    if(ps && m.sonos)    ps.src=m.sonos;
-  }catch(e){} }
+  function applyLogos(){
+    try{
+      var m=config.logos||{};
+      var lc=$('logoCalendar'), lh=$('logoHomey'), ls=$('logoSonos');
+      if(lc && m.calendar) lc.src=m.calendar;
+      if(lh && m.homey)    lh.src=m.homey;
+      if(ls && m.sonos)    ls.src=m.sonos;
+      var pc=$('prevCalendar'), ph=$('prevHomey'), ps=$('prevSonos');
+      if(pc && m.calendar) pc.src=m.calendar;
+      if(ph && m.homey)    ph.src=m.homey;
+      if(ps && m.sonos)    ps.src=m.sonos;
+    }catch(e){}
+  }
   function applyAllFromConfig(){ applyTheme(); applyForm(); applyLogos(); }
   applyAllFromConfig();
 
@@ -298,8 +296,21 @@
 
   function openModal(){ if(modal){ modal.setAttribute('aria-hidden','false'); modal.style.display='flex'; } applyForm(); applyLogos(); }
   function closeModal(){ if(modal){ modal.setAttribute('aria-hidden','true'); modal.style.display='none'; } }
-  on(openSettings,'click',openModal); on(closeSettings,'click',closeModal);
+  on(openSettings,'click',openModal);
+  on(closeSettings,'click',closeModal);
   on(modal,'click',function(e){ if(e && e.target===modal) closeModal(); });
+
+  /* Avanceret toggle */
+  (function(){
+    var btn=$('toggleAdvanced'), box=$('advancedGroup');
+    if(btn && box){
+      on(btn,'click',function(){
+        var shown = box.style.display !== 'none';
+        box.style.display = shown ? 'none' : '';
+        btn.textContent = shown ? 'Vis avanceret' : 'Skjul avanceret';
+      });
+    }
+  })();
 
   function applyForm(){
     if(calendarUrl) calendarUrl.value=(config.calendar&&config.calendar.url)||'';
@@ -348,25 +359,16 @@
       } else { src=(config.calendar&&config.calendar.url)||''; }
       if(!src){ alert('Ingen kalenderkilde valgt.'); return; }
       if(calendarFrame) calendarFrame.src=src;
-      if(calendarView){ calendarView.style.display='block'; calendarView.setAttribute('aria-hidden','false'); }
+      if(calendarView){ calendarView.setAttribute('aria-hidden','false'); calendarView.style.display='block'; }
     }catch(e){} }
-  function closeCalendarFn(){ if(calendarView){ calendarView.style.display='none'; calendarView.setAttribute('aria-hidden','true'); } if(calendarFrame) try{ calendarFrame.src='about:blank'; }catch(e){} }
-  on(tileCalendar,'click',openCalendar); on(closeCalendar,'click',closeCalendarFn);
+  function closeCalendarFn(){ if(calendarView){ calendarView.setAttribute('aria-hidden','true'); calendarView.style.display='none'; } if(calendarFrame) try{ calendarFrame.src='about:blank'; }catch(e){} }
+  on(tileCalendar,'click',openCalendar);
+  on(closeCalendar,'click',closeCalendarFn);
 
-  /* Webpanel overlay */
-  var wkPanel=$('wkPanel'), wkFrame=$('wkFrame'), wkTitle=$('wkTitle'), wkBack=$('wkBack'), wkOpenNew=$('wkOpenNew'), wkOpenNew2=$('wkOpenNew2'), wkTopbarRight=$('wkTopbarRight'), wkFallback=$('wkFallback');
-  var currentUrl='';
-  function showPanel(url,title,opts){ opts=opts||{}; currentUrl=url;
-    if(wkTitle) wkTitle.textContent=title||url;
-    if(wkOpenNew) wkOpenNew.onclick=function(){ window.open(currentUrl,'_blank','noopener,noreferrer'); };
-    if(wkOpenNew2) wkOpenNew2.onclick=function(){ window.open(currentUrl,'_blank','noopener,noreferrer'); };
-    if(wkFallback) wkFallback.style.display='none';
-    if(wkFrame) wkFrame.src=url;
-    if(wkPanel){ wkPanel.classList.add('visible'); wkPanel.setAttribute('aria-hidden','false'); wkPanel.style.display='block'; }
-    if(wkTopbarRight){ wkTopbarRight.style.display = (opts.hideOpenNew?'none':'flex'); }
-    setTimeout(function(){ try{ if(!wkFrame || !wkFrame.contentWindow || wkFrame.contentWindow.location.href==='about:blank'){ if(wkFallback) wkFallback.style.display='flex'; } }catch(e){} },1200);
-  }
-  function hidePanel(){ if(wkPanel){ wkPanel.classList.remove('visible'); wkPanel.setAttribute('aria-hidden','true'); wkPanel.style.display='none'; } try{ if(wkFrame) wkFrame.src='about:blank'; }catch(e){} if(wkTopbarRight) wkTopbarRight.style.display='flex'; }
+  /* Webpanel overlay (Homey/Sonos) */
+  var wkPanel=$('wkPanel'), wkFrame=$('wkFrame'), wkTitle=$('wkTitle'), wkBack=$('wkBack'), wkFallback=$('wkFallback');
+  function showPanel(url,title){ if(wkTitle) wkTitle.textContent=title||url; if(wkFallback) wkFallback.style.display='none'; if(wkFrame) wkFrame.src=url; if(wkPanel){ wkPanel.classList.add('visible'); wkPanel.setAttribute('aria-hidden','false'); wkPanel.style.display='block'; } }
+  function hidePanel(){ if(wkPanel){ wkPanel.classList.remove('visible'); wkPanel.setAttribute('aria-hidden','true'); wkPanel.style.display='none'; } try{ if(wkFrame) wkFrame.src='about:blank'; }catch(e){} }
   on(wkBack,'click',hidePanel);
 
   /* Homey */
@@ -376,7 +378,7 @@
     if(/^https?:\/\//i.test(url)) showPanel(url,'Homey'); else location.href=url;
   });
 
-  /* Sonos: Native først, web fallback i overlay */
+  /* Sonos: Native → web fallback */
   var tileSonos=$('tileSonos');
   var isAndroid=/Android/i.test(navigator.userAgent), isiOS=/iPhone|iPad|iPod/i.test(navigator.userAgent);
   function openSonosNative(){
@@ -394,13 +396,7 @@
   on(tileSonos,'click',function(){
     if(openSonosNative()) return;
     var link=(config.sonosUrl||'').trim() || 'https://play.sonos.com';
-    showPanel(link,'Sonos',{hideOpenNew:true});
-    var btn=document.querySelector('#wkFallback .card button');
-    var h3=document.querySelector('#wkFallback .card h3');
-    var p=document.querySelector('#wkFallback .card p');
-    if(h3) h3.textContent='Kan ikke vise Sonos her';
-    if(p)  p.textContent='Sonos Web App blokerer ofte for indlejring. Åbn Sonos-appen i stedet.';
-    if(btn){ btn.textContent='Åbn i Sonos-app'; btn.onclick=function(){ openSonosNative() || window.open('https://play.sonos.com','_blank','noopener,noreferrer'); }; }
+    showPanel(link,'Sonos');
   });
 
   /* Wake Lock */
@@ -408,23 +404,23 @@
   async function requestWakeLock(){
     if((config.wakeStrategy||'auto')==='off'){ releaseWakeLock(); return; }
     try{ if('wakeLock' in navigator){ wakeLock = await navigator.wakeLock.request('screen'); }
-      else { if(!noSleep && window.NoSleep){ noSleep = new window.NoSleep(); } if(noSleep) noSleep.enable(); }
-    }catch(e){}
+         else { if(!noSleep && window.NoSleep){ noSleep = new window.NoSleep(); } if(noSleep) noSleep.enable(); } }catch(e){}
   }
   function releaseWakeLock(){ try{ if(wakeLock){ wakeLock.release(); wakeLock=null; } }catch(e){} try{ if(noSleep){ noSleep.disable(); noSleep=null; } }catch(e){} }
   on(document,'visibilitychange',function(){ if(document.visibilityState==='visible') requestWakeLock(); });
   on(window,'pageshow',function(){ requestWakeLock(); });
   on(window,'click',function(){ if(!('wakeLock' in navigator) && window.NoSleep){ try{ if(!noSleep) noSleep=new window.NoSleep(); noSleep.enable(); }catch(e){} } });
 
-  /* Synk-status */
+  /* Synk badge */
   function setStatus(state, note){
     try{
+      var b=$('syncStatus'), t=$('syncText'), n=$('syncNote');
       var cls=['state-offline','state-syncing','state-online','state-error'];
-      if(syncBadge){ for(var i=0;i<cls.length;i++) syncBadge.classList.remove(cls[i]); }
+      if(b){ for(var i=0;i<cls.length;i++) b.classList.remove(cls[i]); }
       var map={offline:'state-offline', syncing:'state-syncing', online:'state-online', error:'state-error'};
-      if(syncBadge) syncBadge.classList.add(map[state]||'state-offline');
-      if(syncText) syncText.textContent=({offline:'Offline', syncing:'Synkroniserer…', online:'Online', error:'Fejl'})[state]||'Offline';
-      if(syncNote) syncNote.textContent = note ? ('Senest: '+note) : (state==='online'?'Tilsluttet':'-');
+      if(b) b.classList.add(map[state]||'state-offline');
+      if(t) t.textContent=({offline:'Offline', syncing:'Synkroniserer…', online:'Online', error:'Fejl'})[state]||'Offline';
+      if(n) n.textContent = note ? ('Senest: '+note) : (state==='online'?'Tilsluttet':'-');
     }catch(e){}
   }
   function nowTime(){ try{ return new Date().toLocaleTimeString('da-DK',{hour:'2-digit',minute:'2-digit'}); }catch(e){ return ''; } }
@@ -453,6 +449,7 @@
   }
 
   async function writePing(){ try{ setStatus('syncing'); await docRef().set({_ping: Date.now()}, {merge:true}); setStatus('online', nowTime()); }catch(e){ setStatus('error'); } }
+  on(btnTestSync,'click',function(e){ if(e) e.preventDefault(); writePing(); });
 
   function startRealtime(){
     try{
@@ -471,22 +468,25 @@
     }catch(e){ setStatus('error'); }
   }
   startRealtime();
-  on(btnTestSync,'click',function(){ writePing(); });
+
+  /* CLICK HOTFIX (fail-safe) – sikrer at intet dækker forsiden ved load */
+  (function(){
+    function hide(id){ var el=$(id); if(!el) return; el.setAttribute('aria-hidden','true'); el.style.display='none'; el.style.pointerEvents='none'; }
+    function unfreeze(){ hide('wkPanel'); hide('settingsModal'); hide('calendarView'); }
+    unfreeze(); setTimeout(unfreeze, 200); setTimeout(unfreeze, 800);
+  })();
   </script>
 
   <!-- Vejr -->
   <script>
   (function(){
-    var elTemp=document.getElementById('weatherTemp'),
-        elCond=document.getElementById('weatherCond'),
-        elCity=document.getElementById('weatherCity'),
-        elIcon=document.querySelector('.widget.weather .icon');
+    var elTemp=$('weatherTemp'), elCond=$('weatherCond'), elCity=$('weatherCity'), elIcon=document.querySelector('.widget.weather .icon');
     if(!elTemp||!elCond||!elCity||!elIcon) return;
     function g(d){ return "<path d='"+d+"' />"; }
     function iconSVG(c){ c=String(c);
       var sun=g("M12 4v2 M12 18v2 M4 12H2 M22 12h-2 M5 5l-1.4-1.4 M20.4 20.4L19 19 M5 19l-1.4 1.4 M20.4 3.6L19 5")+g("M12 8a4 4 0 1 1 0 8a4 4 0 0 1 0-8");
-      var cloud=g("M3 16.5a4.5 4.5 0 0 1 4.5-4.5h.5A6.5 6.5 0 1 1 20 14.5a3.5 3.5 0 0 1-3.5 3.5H8.5A5.5 5.5 0 0 1 3 16.5z");
-      var sunCloud=g("M7.5 7.5l-1.2-1.2 M12 5V3.8 M16.5 7.5l1.2-1.2 M5 12H3.8")+g("M10.5 6.5a3 3 0  1 1 4.5 4.5")+g("M6 18h9a3 3 0 0 0 0-6h-.3a5.5 5.5 0 0 0-10.6 2");
+      var cloud=g("M3 16.5a4.5 4.5 0 0 1 4.5-4.5h.5A6.5 6.5 0 1 1 20 14.5a3.5 3.5 0 0 1-3.5 3.5H8.5A5.5 5.5 0  0 1 3 16.5z");
+      var sunCloud=g("M7.5 7.5l-1.2-1.2 M12 5V3.8 M16.5 7.5l1.2-1.2 M5 12H3.8")+g("M10.5 6.5a3 3 0 1 1 4.5 4.5")+g("M6 18h9a3 3 0 0 0 0-6h-.3a5.5 5.5 0 0 0-10.6 2");
       var drizzle=cloud+g("M9 20l-.8 1.2 M12 20l-.8 1.2 M15 20l-.8 1.2");
       var rain=cloud+g("M9 18l-1.2 2 M12 18l-1.2 2 M15 18l-1.2 2");
       var snow=cloud+g("M10.5 18l-1.5 2 M10.5 20l-1.5-2 M13.5 18l-1.5 2 M13.5 20l-1.5-2");
@@ -520,34 +520,6 @@
       try{ var rg=await fetch("https://geocoding-api.open-meteo.com/v1/reverse?latitude="+lat+"&longitude="+lon+"&language=da&format=json",{cache:"no-store"}); var gj=await rg.json(); var hit=(gj&&gj.results&&gj.results[0])||null; var city=(hit&&hit.name)||(hit&&hit.admin2)||(hit&&hit.admin1)||(pos.fallback?"København":""); if(city) elCity.textContent=city; }catch(e){ if(pos.fallback) elCity.textContent="København"; }
     }catch(e){ if(!elTemp.textContent.trim()) elTemp.textContent="18°"; if(!elCond.textContent.trim()) elCond.textContent="Klart"; if(!elCity.textContent.trim()) elCity.textContent="Farum"; setIcon(2); } }
     loadWeather(); setInterval(loadWeather, 20*60*1000);
-  })();
-  </script>
-
-  <!-- CLICK HOTFIX (ekstra sikkerhed lige før </body>) -->
-  <style>
-    #settingsModal[aria-hidden="true"],#wkPanel[aria-hidden="true"],#calendarView[aria-hidden="true"]{display:none!important;pointer-events:none!important}
-    #wkPanel:not(.visible){display:none!important;pointer-events:none!important}
-    .tile,.fab button,#openSettings{pointer-events:auto!important;cursor:pointer!important}
-  </style>
-  <script>
-  (function(){
-    function hide(id){
-      var el=document.getElementById(id);
-      if(!el) return;
-      el.setAttribute('aria-hidden','true');
-      el.style.display='none';
-      el.style.pointerEvents='none';
-    }
-    function unfreeze(){ hide('wkPanel'); hide('settingsModal'); hide('calendarView'); }
-    unfreeze(); setTimeout(unfreeze, 200); setTimeout(unfreeze, 800);
-    // Minimal fallback-wiring: kun hvis din normale binding ikke skete
-    function ensureClick(id, handler){
-      var el=document.getElementById(id);
-      if(!el) return;
-      el.style.pointerEvents='auto';
-      if(!el._wired){ el.addEventListener('click', handler, false); el._wired=true; }
-    }
-    ensureClick('openSettings', function(){ var m=document.getElementById('settingsModal'); if(!m)return; m.setAttribute('aria-hidden','false'); m.style.display='flex'; });
   })();
   </script>
 </body>
