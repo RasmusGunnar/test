@@ -42,27 +42,28 @@
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 
   <script>
-  /* Firebase init — samme projekt som webkiosk */
+  // === Din Firebase-config (identisk med Webkiosk) ===
   const firebaseConfig = {
-    apiKey: "AIzaSyA_gh8y-V6kkI9shRzb0ldBxpKWFY5bAck",
+    apiKey: "AIzaSyA_gh8y-V6kkl95hRzb0ldBxpKWFY5bAck",
     authDomain: "webkiosk-e5d32.firebaseapp.com",
     projectId: "webkiosk-e5d32",
     storageBucket: "webkiosk-e5d32.firebasestorage.app",
     messagingSenderId: "920175197353",
-    appId: "1:920175197353:web:c3520e9a3ab8146ec4fdb8"
+    appId: "1:920175197353:web:c3520e9a3ab8146ec4fdb8",
+    measurementId: "G-X6LHDEPS8H"
   };
   firebase.initializeApp(firebaseConfig);
   const auth = firebase.auth();
   const db   = firebase.firestore();
 
-  /* HID fra query (?hid=XXXX) */
+  // === HID fra query (?hid=XXXX) ===
   const HID = (new URLSearchParams(location.search).get('hid') || 'DEFAULT').toUpperCase();
   document.getElementById('hidPill').textContent = HID;
 
-  /* Path: households/<HID>/calendar/v1/items */
+  // === Path: households/<HID>/calendar/v1/items ===
   const itemsCol = db.collection('households').doc(HID).collection('calendar').doc('v1').collection('items');
 
-  /* Ekporteret API så din egen UI kan overtage rendering */
+  // === Ekporteret API så din egen UI kan overtage rendering ===
   const itemsListeners = new Set();
   window.CalendarData = {
     hid: HID,
@@ -70,7 +71,7 @@
     async addItem({title,date,notes=''}) {
       return itemsCol.add({
         title: title||'',
-        date:  date||null, /* yyyy-mm-dd eller ISO */
+        date:  date||null,
         notes: notes||'',
         done:  false,
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -84,18 +85,16 @@
     async deleteItem(id){ return itemsCol.doc(id).delete(); },
   };
 
-  /* Auth + realtime feed */
+  // === Auth + realtime feed ===
   auth.signInAnonymously().then(()=>{
     itemsCol.orderBy('createdAt','asc').onSnapshot(snap=>{
       const data=[]; snap.forEach(doc=>data.push({id:doc.id, ...doc.data()}));
-      // Notify brugers UI
       itemsListeners.forEach(cb=>{ try{ cb(data); }catch(e){} });
-      // Fallback UI hvis ingen lytter
       if(itemsListeners.size===0) renderFallback(data);
     });
   }).catch(e=>console.error('[auth]',e));
 
-  /* ======= Fallback UI (kan fjernes hvis du har egen UI) ======= */
+  // ===== Fallback UI (kan fjernes) =====
   const $=id=>document.getElementById(id);
   function renderFallback(items){
     const box = $('fallbackList'); box.innerHTML='';
