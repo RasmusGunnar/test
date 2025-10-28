@@ -1,36 +1,24 @@
-// service-worker.js — v2025-10-28a
-const CACHE = "webkiosk-v3"; // <- bump denne ved hver ændring
-const ASSETS = [
-  "./",
-  "./index.html",
-  "./webkiosk_apple_crisp_with_settings_fab.html",
-  "./familieoversigt_index_v11_autosync_READY_UPDATED.html",
-  "./manifest.webmanifest"
-];
+/* webkiosk: SW-killer – gør intet, afregistrerer sig selv, rydder caches */
+self.addEventListener('install', (e) => self.skipWaiting());
 
-self.addEventListener("install", (e) => {
-  e.waitUntil(
-    caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting())
-  );
+self.addEventListener('activate', (e) => {
+  e.waitUntil((async () => {
+    // 1) Ryd alle caches (hvis en gammel SW har oprettet nogen)
+    try {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((k) => caches.delete(k)));
+    } catch (err) {}
+
+    // 2) Afregistrer denne SW (så der ikke er nogen fremover)
+    try { await self.registration.unregister(); } catch (err) {}
+
+    // 3) Få alle tabs under scope til at reloade én gang, så de kører “uden SW”
+    try {
+      const all = await self.clients.matchAll({ includeUncontrolled: true, type: 'window' });
+      all.forEach((c) => c.navigate(c.url));
+    } catch (err) {}
+  })());
 });
 
-self.addEventListener("activate", (e) => {
-  e.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
-    ).then(() => self.clients.claim())
-  );
-});
-
-self.addEventListener("fetch", (e) => {
-  if (e.request.method !== "GET") return;
-  e.respondWith(
-    caches.match(e.request).then((cached) => {
-      const fetchP = fetch(e.request).then((res) => {
-        caches.open(CACHE).then((c) => c.put(e.request, res.clone()));
-        return res;
-      }).catch(() => cached);
-      return cached || fetchP;
-    })
-  );
-});
+// 4) Ingen fetch-håndtering = ingen caching, ingen blokering
+self.addEventListener('fetch', () => {});
