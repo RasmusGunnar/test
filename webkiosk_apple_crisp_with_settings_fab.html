@@ -1,4 +1,3 @@
-<!-- ===== webkiosk_apple_crisp_with_settings_fab.html (HELE FILEN – erstat 1:1) ===== -->
 <!DOCTYPE html>
 <html lang="da">
 <head>
@@ -34,10 +33,6 @@
   .back-btn{display:inline-flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;background:#fff;border:1px solid var(--border);color:#0f172a;cursor:pointer;font-weight:650;box-shadow:var(--shadow)}
   .calframe.panel{flex:1;min-height:0;overflow:hidden;display:flex}
   iframe{width:100%;height:100%;border:0;display:block}
-
-  .dbgbar{display:none;align-items:center;gap:8px;flex-wrap:wrap;background:#fff;border:1px solid var(--border);border-radius:10px;padding:8px 10px;box-shadow:var(--shadow)}
-  .dbgbar.visible{display:flex}
-  .dbgbar code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;background:#f5f6f8;border:1px solid #e6e8ec;border-radius:8px;padding:4px 6px;max-width:60vw;overflow:auto;white-space:nowrap}
 
   .fab{position:fixed;right:20px;bottom:20px;z-index:90}
   .fab button{width:56px;height:56px;border-radius:50%;border:1px solid var(--border);background:#fff;color:#0f172a;display:inline-flex;align-items:center;justify-content:center;box-shadow:var(--shadow);cursor:pointer}
@@ -90,8 +85,8 @@
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 16.5a4.5 4.5 0 0 1 4.5-4.5h.5A6.5 6.5 0 1 1 20 14.5a3.5 3.5 0 0 1-3.5 3.5H8.5A5.5 5.5 0 0 1 3 16.5z"/></svg>
           <div>
             <div class="weather-temp" id="weatherTemp">--°</div>
-            <div class="weather-line" id="weatherCond">-</div>
-            <div class="weather-line" id="weatherCity">-</div>
+            <div class="weather-line" id="weatherCond">—</div>
+            <div class="weather-line" id="weatherCity">—</div>
           </div>
         </div>
       </section>
@@ -127,12 +122,6 @@
       <div class="topbar">
         <button class="back-btn" id="closeCalendar" type="button"
           onclick="document.getElementById('calendarView').classList.remove('visible');document.getElementById('calendarView').setAttribute('aria-hidden','true');document.getElementById('calendarFrame').src='about:blank';">⬅ Tilbage</button>
-        <div id="calDebugBar" class="dbgbar" aria-live="polite">
-          <strong>Debug:</strong>
-          <span>HID: <code id="calDebugHid">—</code></span>
-          <span>URL: <code id="calDebugUrl">—</code></span>
-          <button class="btn" type="button" id="calDebugCopy">Kopiér URL</button>
-        </div>
       </div>
       <div class="calframe panel">
         <iframe id="calendarFrame" title="Kalender"></iframe>
@@ -182,14 +171,6 @@
               <div class="row"><div class="logoPreview"><img id="prevSonos" alt=""></div><input type="file" id="logoInputSonos" accept="image/*"/></div>
             </div>
             <div class="field"><label for="logoUrlSonos">Sonos – Logo URL (GitHub)</label><input type="url" id="logoUrlSonos" placeholder="https://raw.githubusercontent.com/.../sonos.png"/></div>
-
-            <div class="field full">
-              <div class="row">
-                <button class="btn" type="button" id="testLogoCalendar">Test Kalender-logo</button>
-                <button class="btn" type="button" id="testLogoHomey">Test Homey-logo</button>
-                <button class="btn" type="button" id="testLogoSonos">Test Sonos-logo</button>
-              </div>
-            </div>
           </div>
           <p class="hint">Tip: Læg filer i dit repo (fx <code>/assets/</code>) og brug GitHub “Raw” URL her.</p>
         </section>
@@ -214,14 +195,6 @@
             <div class="field"><label for="sonosUrl">Sonos link (app/web/custom scheme)</label><input type="text" id="sonosUrl" placeholder="sonos:// eller https://"/></div>
             <div class="field"><label for="sonosPkg">Android package (app)</label><input type="text" id="sonosPkg" placeholder="com.sonos.acr2"/></div>
             <div class="field"><label for="sonosScheme">Custom scheme (iOS/Android)</label><input type="text" id="sonosScheme" placeholder="sonos://"/></div>
-
-            <div class="field full">
-              <div class="row">
-                <button class="btn" type="button" id="testCalendarLink">Test Kalender</button>
-                <button class="btn" type="button" id="testHomeyLink">Test Homey</button>
-                <button class="btn" type="button" id="testSonosLink">Test Sonos</button>
-              </div>
-            </div>
           </div>
         </section>
 
@@ -230,11 +203,6 @@
           <div class="form-grid">
             <div class="field"><label for="householdId">Husstands-ID</label><input id="householdId" placeholder="auto-genereres"/></div>
             <div class="field"><label>Status</label><div class="left-note"><span id="lastSync">—</span></div></div>
-
-            <div class="field"><label for="debugCalendar">Kalender debug</label>
-              <div class="row"><input type="checkbox" id="debugCalendar"/><span class="hint">Vis resolved ?hid-URL i kalender-overlay og kopiér-knap.</span></div>
-            </div>
-
             <div class="field full">
               <label>Eksport / Import</label>
               <div class="row">
@@ -266,7 +234,7 @@
     </div>
   </div>
 
-  <!-- Webpanel (Homey/Sonos/Test) -->
+  <!-- Webpanel (Homey/Sonos) -->
   <div id="wkPanel" class="wk-panel" aria-hidden="true">
     <div class="wk-shell">
       <div class="wk-topbar">
@@ -283,14 +251,14 @@
     <span class="dot"></span><span id="syncBadgeText">Offline</span><span id="syncBadgeNote" class="note"></span>
   </div>
 
-  <!-- SDKs -->
+  <!-- Firebase compat SDK + NoSleep -->
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/nosleep/0.12.0/NoSleep.min.js"></script>
 
   <script>
-  /* Helpers */
+  /* ===== Helpers ===== */
   const $=id=>document.getElementById(id);
   const on=(el,ev,fn)=>el&&el.addEventListener(ev,fn,false);
   const nowStr=()=>new Date().toLocaleTimeString('da-DK',{hour:'2-digit',minute:'2-digit'});
@@ -298,16 +266,55 @@
   const dl=(n,txt)=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type:'application/json'}));a.download=n;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},0);};
   const toB64=f=>new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>res(fr.result);fr.onerror=rej;fr.readAsDataURL(f);});
 
-  /* Ur & Vejr */
-  function updateClock(){const t=$('clockTime'),d=$('clockDate');const n=new Date();t.textContent=n.toLocaleTimeString('da-DK',{hour:'2-digit',minute:'2-digit'});const s=n.toLocaleDateString('da-DK',{weekday:'long',day:'2-digit',month:'long'});d.textContent=s.charAt(0).toUpperCase()+s.slice(1);}
+  /* ===== Ur ===== */
+  function updateClock(){
+    const t=$('clockTime'),d=$('clockDate');
+    const n=new Date();
+    t.textContent=n.toLocaleTimeString('da-DK',{hour:'2-digit',minute:'2-digit'});
+    const s=n.toLocaleDateString('da-DK',{weekday:'long',day:'2-digit',month:'long'});
+    d.textContent=s.charAt(0).toUpperCase()+s.slice(1);
+  }
   setInterval(updateClock,1000);updateClock();
-  (function(){const T=$('weatherTemp'),C=$('weatherCity');if(!T||!C)return;
-    function pos(timeout=7000){return new Promise(r=>{let d=false;const fb=()=>{if(d)return;d=true;r({coords:{latitude:55.6761,longitude:12.5683},fallback:true});};if(!navigator.geolocation){fb();return;}const to=setTimeout(fb,timeout);navigator.geolocation.getCurrentPosition(p=>{if(d)return;d=true;clearTimeout(to);r(p);},fb,{maximumAge:900000,timeout:timeout-500});});}
-    async function wx(){try{const p=await pos();const la=+p.coords.latitude.toFixed(4),lo=+p.coords.longitude.toFixed(4);const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${la}&longitude=${lo}&current=temperature_2m&timezone=auto`);const j=await r.json();const t=Math.round(j?.current?.temperature_2m);if(isFinite(t))T.textContent=t+'°';if(p.fallback)C.textContent='København';}catch{}}
-    wx();setInterval(wx,20*60*1000);
+
+  /* ===== Vejr (temp + beskrivelse) ===== */
+  (function(){
+    const T=$('weatherTemp'), C=$('weatherCity'), D=$('weatherCond');
+    if(!T||!C||!D) return;
+
+    const WMAP={0:'Klart',1:'Mest klart',2:'Delvist skyet',3:'Overskyet',45:'Tåge',48:'Isslud/tåge',51:'Finregn',53:'Regn',55:'Kraftig regn',56:'Isfinregn',57:'Isregn',61:'Let regn',63:'Regn',65:'Kraftig regn',66:'Isregn',67:'Kraftig isregn',71:'Let sne',73:'Snefald',75:'Kraftig sne',77:'Snebyger',80:'Lette byger',81:'Byger',82:'Kraftige byger',85:'Snebyger',86:'Kraftige snebyger',95:'Tordenvejr',96:'Torden/hagl',99:'Torden/kraftig hagl'};
+
+    function pos(timeout=7000){
+      return new Promise(r=>{
+        let done=false;
+        const fb=()=>{ if(done) return; done=true; r({coords:{latitude:55.6761,longitude:12.5683},fallback:true}); };
+        if(!navigator.geolocation){ fb(); return; }
+        const to=setTimeout(fb,timeout);
+        navigator.geolocation.getCurrentPosition(
+          p=>{ if(done) return; done=true; clearTimeout(to); r(p); },
+          fb,
+          {maximumAge:900000, timeout:timeout-500}
+        );
+      });
+    }
+
+    async function wx(){
+      try{
+        const p=await pos();
+        const la=+p.coords.latitude.toFixed(4), lo=+p.coords.longitude.toFixed(4);
+        const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${la}&longitude=${lo}&current=temperature_2m,weather_code&timezone=auto`);
+        const j=await r.json();
+        const t=Math.round(j?.current?.temperature_2m);
+        const code=j?.current?.weather_code;
+        if(Number.isFinite(t)) T.textContent=t+'°';
+        D.textContent=WMAP[code]||'—';
+        if(p.fallback) C.textContent='København';
+      }catch{ D.textContent='—'; }
+    }
+
+    wx(); setInterval(wx,20*60*1000);
   })();
 
-  /* Config */
+  /* ===== Config (local + Firestore sync) ===== */
   const LS_KEY='webkioskConfigV2';
   const defaults={
     calendar:{mode:'url',url:'',fileName:'',fileData:''},
@@ -315,7 +322,7 @@
     logos:{calendar:'',homey:'',sonos:''},
     logoUrls:{calendar:'',homey:'',sonos:''},
     theme:{color:'#0f172a',background:'#f6f7f9'},
-    keepAwake:true,debugCalendar:false,householdId:'',_ts:0
+    keepAwake:true,householdId:'',_ts:0
   };
   function load(){try{const o=JSON.parse(localStorage.getItem(LS_KEY)||'{}');const deep=(m,d)=>{const r=Array.isArray(d)?[]:{};for(const k in d){if(d[k]&&typeof d[k]==='object'&&!Array.isArray(d[k]))r[k]=deep((m||{})[k]||{},d[k]);else r[k]=(m||{})[k]!==undefined?(m||{})[k]:d[k];}return r;};return deep(o,defaults);}catch{return JSON.parse(JSON.stringify(defaults));}}
   function save(c){try{localStorage.setItem(LS_KEY,JSON.stringify(c));}catch{}}
@@ -335,7 +342,6 @@
     $('themeColor').value=config.theme?.color||'#0f172a';
     $('bgColor').value=config.theme?.background||'#f6f7f9';
     $('keepAwake').checked=!!config.keepAwake;
-    $('debugCalendar').checked=!!config.debugCalendar;
 
     $('logoUrlCalendar').value=config.logoUrls?.calendar||'';
     $('logoUrlHomey').value=config.logoUrls?.homey||'';
@@ -355,20 +361,12 @@
   function applyAll(){applyTheme();applyForm();applyLogos();}
   applyAll();
 
-  /* Tabs & modal */
-  (function(){const tabs=[...document.querySelectorAll('.tab')],secs=[...document.querySelectorAll('.section')];
-    tabs.forEach(tb=>on(tb,'click',()=>{tabs.forEach(t=>t.classList.remove('active'));secs.forEach(s=>s.classList.remove('active'));tb.classList.add('active');$(tb.dataset.tab).classList.add('active');}));
-  })();
-  const modal=$('settingsModal'); const closeModal=()=>{modal.classList.remove('visible');modal.setAttribute('aria-hidden','true');};
-  on($('closeSettings'),'click',closeModal);
-
-  /* Live binding */
+  /* ===== Indstillinger bindings ===== */
   const writeSoon=debounced(300,queueWriteFirestore);
   function bind(){
     on($('themeColor'),'input',function(){config.theme.color=this.value;save(config);applyTheme();writeSoon();});
     on($('bgColor'),'input',function(){config.theme.background=this.value;save(config);applyTheme();writeSoon();});
     on($('keepAwake'),'change',function(){config.keepAwake=!!this.checked;save(config);writeSoon();});
-    on($('debugCalendar'),'change',function(){config.debugCalendar=!!this.checked;save(config);writeSoon();});
 
     on($('logoUrlCalendar'),'input',function(){config.logoUrls.calendar=this.value.trim();save(config);applyLogos();writeSoon();});
     on($('logoUrlHomey'),'input',function(){config.logoUrls.homey=this.value.trim();save(config);applyLogos();writeSoon();});
@@ -388,66 +386,36 @@
     on($('sonosScheme'),'input',function(){config.sonosScheme=this.value.trim();save(config);writeSoon();});
     on($('householdId'),'input',function(){const v=this.value.trim().toUpperCase();if(v){config.householdId=v;save(config);startRealtime();writeSoon();}});
 
-    // Test-knapper
-    on($('testCalendarLink'),'click',()=>{const hid=(config.householdId||'DEFAULT').toUpperCase();const u=$('calendarUrl').value.trim();if(!u){alert('Sæt Kalender URL først.');return;}const url=new URL(u,location.href);url.searchParams.set('hid',hid);showPanel(url.toString(),'Test: Kalender');});
-    on($('testHomeyLink'),'click',()=>{const u=$('homeyUrl').value.trim();if(!u){alert('Sæt Homey URL først.');return;}showPanel(u,'Test: Homey');});
-    on($('testSonosLink'),'click',()=>{const u=$('sonosUrl').value.trim();if(!u){alert('Sæt Sonos URL først.');return;} if(/^https?:\/\//i.test(u))showPanel(u,'Test: Sonos'); else alert('App/intent links kan ikke testes i iframe; prøv fra forsiden.');});
-
-    const previewImg=(u,t)=>{if(!u){alert('Sæt URL først.');return;}const w=window.open('','_blank','width=600,height=400'); if(!w){alert('Popups blokeret.');return;} w.document.write(`<title>${t}</title><img src="${u}" style="max-width:100%;height:auto;display:block;margin:0 auto"/>`);};
-    on($('testLogoCalendar'),'click',()=>previewImg($('logoUrlCalendar').value.trim(),'Logo: Kalender'));
-    on($('testLogoHomey'),'click',()=>previewImg($('logoUrlHomey').value.trim(),'Logo: Homey'));
-    on($('testLogoSonos'),'click',()=>previewImg($('logoUrlSonos').value.trim(),'Logo: Sonos'));
+    on($('saveSettings'),'click',()=>{config._ts=Date.now();save(config);queueWriteFirestore();document.getElementById('settingsModal').classList.remove('visible');document.getElementById('settingsModal').setAttribute('aria-hidden','true');});
+    on($('resetConfig'),'click',()=>{if(confirm('Nulstil alle indstillinger?')){localStorage.removeItem(LS_KEY);config=load();if(!config.householdId){config.householdId=Math.random().toString(36).slice(2,10).toUpperCase()}save(config);applyAll();startRealtime();queueWriteFirestore();}});
+    on($('closeSettings'),'click',()=>{document.getElementById('settingsModal').classList.remove('visible');document.getElementById('settingsModal').setAttribute('aria-hidden','true');});
   }
   bind();
 
-  on($('saveSettings'),'click',()=>{config._ts=Date.now();save(config);queueWriteFirestore();closeModal();});
-  on($('resetConfig'),'click',()=>{if(confirm('Nulstil alle indstillinger?')){localStorage.removeItem(LS_KEY);config=load();if(!config.householdId){config.householdId=Math.random().toString(36).slice(2,10).toUpperCase()}save(config);applyAll();startRealtime();queueWriteFirestore();}});
-
-  /* Tiles / overlays */
+  /* ===== Tiles / overlays ===== */
   window.__handlers={};
-
-  function resolveCalendarUrl(hid){
-    if(config.calendar?.mode==='upload' && config.calendar?.fileData){
-      return { src: config.calendar.fileData, canAnnotate: false };
-    }
-    if(config.calendar?.url){
-      const u=new URL(config.calendar.url, location.href);
-      u.searchParams.set('hid', hid);
-      return { src: u.toString(), canAnnotate: true };
-    }
-    return { src: '', canAnnotate: false };
-  }
-
-  async function copyToClipboard(txt){ try{ await navigator.clipboard.writeText(txt); alert('URL kopieret.'); }catch{ prompt('Kopiér URL:', txt); } }
 
   function openCalendar(){
     const hid=(config.householdId||'DEFAULT').toUpperCase();
-    const {src, canAnnotate} = resolveCalendarUrl(hid);
-    if(!src){ alert('Ingen kalenderkilde valgt.'); return; }
-
-    $('calendarFrame').src=src;
-    const v=$('calendarView'); v.classList.add('visible'); v.setAttribute('aria-hidden','false');
-
-    const dbgWrap=$('calDebugBar'), dbgH=$('calDebugHid'), dbgU=$('calDebugUrl');
-    if(config.debugCalendar){
-      dbgH.textContent=hid;
-      dbgU.textContent=src;
-      dbgWrap.classList.add('visible');
-    }else{
-      dbgWrap.classList.remove('visible');
-      dbgH.textContent='—'; dbgU.textContent='—';
+    let src='';
+    if(config.calendar?.mode==='upload' && config.calendar?.fileData){
+      src=config.calendar.fileData;
+    }else if(config.calendar?.url){
+      const u=new URL(config.calendar.url, location.href);
+      u.searchParams.set('hid', hid);
+      src=u.toString();
     }
+    if(!src){alert('Ingen kalenderkilde valgt.');return;}
+    $('calendarFrame').src=src; const v=$('calendarView'); v.classList.add('visible'); v.setAttribute('aria-hidden','false');
   }
-  __handlers.openCalendar=openCalendar;
-
-  on($('calDebugCopy'),'click',()=>{const url=$('calDebugUrl').textContent.trim(); if(url && url!=='—'){ copyToClipboard(url); }});
+  window.__handlers.openCalendar=openCalendar;
 
   function showPanel(url,title){$('wkTitle').textContent=title||url;$('wkFrame').src=url;const p=$('wkPanel');p.classList.add('visible');p.setAttribute('aria-hidden','false');}
   function hidePanel(){const p=$('wkPanel');p.classList.remove('visible');p.setAttribute('aria-hidden','true');$('wkFrame').src='about:blank';}
   on($('wkBack'),'click',hidePanel);
 
   function openHomey(){const u=(config.homeyUrl||'').trim();if(!u){alert('Ingen Homey URL.');return;} if(/^https?:\/\//i.test(u))showPanel(u,'Homey');else location.href=u;}
-  __handlers.openHomey=openHomey;
+  window.__handlers.openHomey=openHomey;
 
   const isAndroid=/Android/i.test(navigator.userAgent), isiOS=/iPhone|iPad|iPod/i.test(navigator.userAgent);
   function openSonosNative(){
@@ -458,26 +426,38 @@
     return false;
   }
   function openSonos(){if(openSonosNative())return;const link=(config.sonosUrl||'').trim()||'https://play.sonos.com';if(/^https?:\/\//i.test(link))showPanel(link,'Sonos');else window.open(link,'_self');}
-  __handlers.openSonos=openSonos;
+  window.__handlers.openSonos=openSonos;
 
-  /* NoSleep */
+  /* ===== NoSleep (hold skærm vågen) ===== */
   let noSleep=null; window.addEventListener('click',()=>{try{if(config.keepAwake&&!noSleep&&window.NoSleep){noSleep=new NoSleep();noSleep.enable();}}catch{}});
 
-  /* Firebase (Auth + Firestore sync) */
-  const firebaseConfig={apiKey:"AIzaSyA_gh8y-V6kkI9shRzb0ldBxpKWFY5bAck",authDomain:"webkiosk-e5d32.firebaseapp.com",projectId:"webkiosk-e5d32",storageBucket:"webkiosk-e5d32.firebasestorage.app",messagingSenderId:"920175197353",appId:"1:920175197353:web:c3520e9a3ab8146ec4fdb8"};
+  /* ===== Firebase init + sync (din config) ===== */
+  const firebaseConfig = {
+    apiKey: "AIzaSyA_gh8y-V6kkl95hRzb0ldBxpKWFY5bAck",
+    authDomain: "webkiosk-e5d32.firebaseapp.com",
+    projectId: "webkiosk-e5d32",
+    storageBucket: "webkiosk-e5d32.firebasestorage.app",
+    messagingSenderId: "920175197353",
+    appId: "1:920175197353:web:c3520e9a3ab8146ec4fdb8",
+    measurementId: "G-X6LHDEPS8H"
+  };
   const fb=firebase.initializeApp(firebaseConfig), auth=firebase.auth(), db=firebase.firestore();
 
   function badge(state,note){const b=$('syncBadge'),t=$('syncBadgeText'),n=$('syncBadgeNote');['sync-online','sync-syncing','sync-offline','sync-error'].forEach(c=>b.classList.remove(c));b.classList.add('sync-'+state);t.textContent={online:'Online',syncing:'Synkroniserer…',offline:'Offline',error:'Fejl'}[state]||'Offline';n.textContent=note?('· '+note):'';$('syncNote').textContent=t.textContent+(note?(' '+note):'');$('lastSync').textContent=note||'—';}
   window.addEventListener('online',()=>badge('online',nowStr())); window.addEventListener('offline',()=>badge('offline',''));
-  auth.signInAnonymously().then(()=>badge(navigator.onLine?'online':'offline',nowStr())).catch(e=>{console.error('[auth]',e);badge('error','auth');});
+
+  auth.signInAnonymously()
+    .then(()=>badge(navigator.onLine?'online':'offline',nowStr()))
+    .catch(e=>{console.error('[auth]',e);badge('error','auth');});
 
   let unsub=null, writeTimer=null;
   const docRef=()=>db.collection('webkiosk').doc((config.householdId||'DEFAULT').toUpperCase());
+
   async function writeFirestore(){
     try{
       const toSave=JSON.parse(JSON.stringify(config));
-      toSave.logos={};                   // hvorfor: base64 lokalt only
-      if(toSave.calendar) toSave.calendar.fileData=''; // hvorfor: data-URL ikke synkes
+      toSave.logos={};                    // ikke sync base64
+      if(toSave.calendar) toSave.calendar.fileData=''; // ikke sync data:URL
       toSave._ts=Date.now();
       save(Object.assign(config,{_ts:toSave._ts}));
       await docRef().set(toSave,{merge:true});
@@ -485,6 +465,7 @@
     }catch(e){console.error('[write]',e);badge('error',e.code||e.message||'write');}
   }
   function queueWriteFirestore(){if(writeTimer)clearTimeout(writeTimer);badge('syncing','…');writeTimer=setTimeout(writeFirestore,300);}
+
   function startRealtime(){
     try{
       if(unsub)unsub();
@@ -497,6 +478,7 @@
   }
   startRealtime();
 
+  // sikker reset af overlays ved load (i tilfælde af caching)
   document.addEventListener('DOMContentLoaded',()=>['calendarView','wkPanel','settingsModal'].forEach(id=>{const el=$(id);if(el){el.classList.remove('visible');el.setAttribute('aria-hidden','true');el.style.display='none';el.offsetHeight;el.style.display='';}}));
   </script>
 </body>
