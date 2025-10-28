@@ -4,11 +4,11 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Webkiosk v2025-10-28t</title>
+<title>Webkiosk v2025-10-28u</title>
 <meta name="theme-color" content="#0f172a" />
 <link rel="manifest" href="./manifest.webmanifest" />
 <style>
-  /* Klik-sikkerhed: overlays er helt væk når skjulte */
+  /* Overlays er HELT væk, indtil vi åbner dem (ingen klik-fang) */
   #settingsModal[aria-hidden="true"],
   #wkPanel[aria-hidden="true"],
   #calendarView[aria-hidden="true"]{display:none!important;pointer-events:none!important}
@@ -20,20 +20,21 @@
   *{box-sizing:border-box}
   html,body{height:100%}
   body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--fg);display:flex;min-height:100vh}
-  .wrap{width:min(1200px,100%);padding:clamp(12px,2vw,24px);margin:auto}
+  .wrap{width:min(1200px,100%);padding:clamp(12px,2vw,24px);margin:auto;position:relative;z-index:4}
   .grid{display:grid;gap:clamp(12px,2vw,18px);grid-template-columns:repeat(12,1fr)}
   .panel{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
   .widget{padding:clamp(16px,2.2vw,24px)}
   .widget h2{margin:0 0 6px;font-size:clamp(15px,1.6vw,18px);color:var(--muted);font-weight:600;letter-spacing:.2px}
   .clock-time{font-size:clamp(40px,6vw,56px);line-height:1;font-weight:750}
   .clock-date{margin-top:6px;font-size:clamp(14px,1.8vw,18px);color:var(--muted)}
+
   .weather-main{display:flex;align-items:center;gap:14px}
   .weather-temp{font-size:clamp(40px,6vw,56px);font-weight:750}
   .weather-line{font-size:clamp(14px,1.8vw,18px);color:var(--muted)}
   .widget .icon{width:clamp(34px,4.5vw,48px);height:clamp(34px,4.5vw,48px);color:var(--accent)}
 
   .tiles{grid-column:1/-1;display:grid;gap:clamp(12px,2vw,18px);grid-template-columns:repeat(3,1fr)}
-  .tile{min-height:140px;padding:clamp(16px,2.4vw,24px);display:grid;grid-template-columns:1fr minmax(160px,min(var(--logoMaxW),var(--logoBoxW)));align-items:center;gap:clamp(12px,2vw,20px);cursor:pointer;user-select:none;transition:transform .12s ease,box-shadow .12s ease,border-color .12s ease}
+  .tile{min-height:140px;padding:clamp(16px,2.4vw,24px);display:grid;grid-template-columns:1fr minmax(160px,min(var(--logoMaxW),var(--logoBoxW)));align-items:center;gap:clamp(12px,2vw,20px);cursor:pointer;user-select:none;transition:transform .12s ease,box-shadow .12s ease,border-color .12s ease; pointer-events:auto!important; position:relative; z-index:5;}
   .tile:hover{transform:translateY(-1px);box-shadow:0 14px 30px rgba(2,6,23,.10)}
   .meta .label{font-size:clamp(18px,2.2vw,22px);font-weight:750;letter-spacing:.2px}
   .meta .sub{color:var(--muted);font-size:clamp(12px,1.8vw,15px);margin-top:6px}
@@ -54,7 +55,7 @@
 
   /* Tandhjul */
   .fab{position:fixed;right:20px;bottom:20px;z-index:80}
-  .fab button{width:56px;height:56px;border-radius:50%;border:1px solid var(--border);background:#fff;color:#0f172a;display:inline-flex;align-items:center;justify-content:center;box-shadow:var(--shadow);cursor:pointer}
+  .fab button{width:56px;height:56px;border-radius:50%;border:1px solid var(--border);background:#fff;color:#0f172a;display:inline-flex;align-items:center;justify-content:center;box-shadow:var(--shadow);cursor:pointer; pointer-events:auto!important; position:relative; z-index:5;}
 
   /* Modal (indstillinger) */
   .modal{position:fixed;inset:0;background:rgba(15,23,42,.28);display:none;align-items:center;justify-content:center;padding:20px;z-index:100}
@@ -152,7 +153,7 @@
     <button id="openSettings" title="Indstillinger" aria-label="Indstillinger" type="button">
       <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <circle cx="12" cy="12" r="3"/>
-        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0  1 1-2.83-2.83l.06-.06a1.65 1.65 0  0 0 .33-1.82 1.65 1.65 0  0 0-1.51-1H3a2 2 0  1 1 0-4h.09a1.65 1.65 0  0 0 1.51-1 1.65 1.65 0  0 0-.33-1.82l-.06-.06a2 2 0  1 1 2.83-2.83l.06.06a1.65 1.65 0  0 0 1.82.33H9a1.65 1.65 0  0 0 1-1.51V3a2 2 0  1 1 4 0v.09a1.65 1.65 0  0 0 1 1.51 1.65 1.65 0  0 0 1.82-.33l.06.06a2 2 0  1 1 2.83 2.83l-.06.06a1.65 1.65 0  0 0-.33 1.82V9c0 .66.26 1.3.73 1.77.47.47 1.11.73 1.77.73h.09a2 2 0  1 1 0 4h-.09a1.65 1.65 0  0 0-1.51 1Z"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0  0 0-1 1.51V21a2 2 0  1 1-4 0v-.09a1.65 1.65 0  0 0-1-1.51 1.65 1.65 0  0 0-1.82.33l-.06.06a2 2 0  1 1-2.83-2.83l.06-.06a1.65 1.65 0  0 0 .33-1.82 1.65 1.65 0  0 0-1.51-1H3a2 2 0  1 1 0-4h.09a1.65 1.65 0  0 0 1.51-1 1.65 1.65 0  0 0-.33-1.82l-.06-.06a2 2 0  1 1 2.83-2.83l.06.06a1.65 1.65 0  0 0 1.82.33H9a1.65 1.65 0  0 0 1-1.51V3a2 2 0  1 1 4 0v.09a1.65 1.65 0  0 0 1 1.51 1.65 1.65 0  0 0 1.82-.33l.06.06a2 2 0  1 1 2.83 2.83l-.06.06a1.65 1.65 0  0 0-.33 1.82V9c0 .66.26 1.3.73 1.77.47.47 1.11.73 1.77.73h.09a2 2 0  1 1 0 4h-.09a1.65 1.65 0  0 0-1.51 1Z"/>
       </svg>
     </button>
   </div>
@@ -243,7 +244,7 @@
 
   <!-- App logic -->
   <script>
-  const VERSION="2025-10-28t";
+  const VERSION="2025-10-28u";
   if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('./service-worker.js?vv='+encodeURIComponent(VERSION)); }catch(e){} }
 
   function $(id){ return document.getElementById(id); }
@@ -318,9 +319,9 @@
     if(sonosUrl) sonosUrl.value=config.sonosUrl||'';
     if(sonosPkg) sonosPkg.value=config.sonosPkg||'';
     if(sonosScheme) sonosScheme.value=config.sonosScheme||'';
-    if(themeColor) themeColor.value=(config.theme&&config.theme.color)||'#0f172a';
-    if(bgColor)    bgColor.value=(config.theme&&config.theme.background)||'#f6f7f9';
-    if(wakeStrategy) wakeStrategy.value=config.wakeStrategy||'auto';
+    if(themeColor)  themeColor.value=(config.theme&&config.theme.color)||'#0f172a';
+    if(bgColor)     bgColor.value=(config.theme&&config.theme.background)||'#f6f7f9';
+    if(wakeStrategy)wakeStrategy.value=config.wakeStrategy||'auto';
     if(householdId) householdId.value=(config.householdId||'').toUpperCase();
     modeRadios.forEach(function(r){ r.checked=(r.value===((config.calendar&&config.calendar.mode)||'url')); });
     if(calendarUploadRow) calendarUploadRow.style.display=((config.calendar&&config.calendar.mode)==='upload')?'':'none';
@@ -365,7 +366,7 @@
   on(tileCalendar,'click',openCalendar);
   on(closeCalendar,'click',closeCalendarFn);
 
-  /* Webpanel overlay (Homey/Sonos) */
+  /* Webpanel (Homey/Sonos) */
   var wkPanel=$('wkPanel'), wkFrame=$('wkFrame'), wkTitle=$('wkTitle'), wkBack=$('wkBack'), wkFallback=$('wkFallback');
   function showPanel(url,title){ if(wkTitle) wkTitle.textContent=title||url; if(wkFallback) wkFallback.style.display='none'; if(wkFrame) wkFrame.src=url; if(wkPanel){ wkPanel.classList.add('visible'); wkPanel.setAttribute('aria-hidden','false'); wkPanel.style.display='block'; } }
   function hidePanel(){ if(wkPanel){ wkPanel.classList.remove('visible'); wkPanel.setAttribute('aria-hidden','true'); wkPanel.style.display='none'; } try{ if(wkFrame) wkFrame.src='about:blank'; }catch(e){} }
@@ -468,24 +469,20 @@
     }catch(e){ setStatus('error'); }
   }
   startRealtime();
-
-  /* CLICK HOTFIX (fail-safe) – sikrer at intet dækker forsiden ved load */
-  (function(){
-    function hide(id){ var el=$(id); if(!el) return; el.setAttribute('aria-hidden','true'); el.style.display='none'; el.style.pointerEvents='none'; }
-    function unfreeze(){ hide('wkPanel'); hide('settingsModal'); hide('calendarView'); }
-    unfreeze(); setTimeout(unfreeze, 200); setTimeout(unfreeze, 800);
-  })();
   </script>
 
   <!-- Vejr -->
   <script>
   (function(){
-    var elTemp=$('weatherTemp'), elCond=$('weatherCond'), elCity=$('weatherCity'), elIcon=document.querySelector('.widget.weather .icon');
+    var elTemp=document.getElementById('weatherTemp'),
+        elCond=document.getElementById('weatherCond'),
+        elCity=document.getElementById('weatherCity'),
+        elIcon=document.querySelector('.widget.weather .icon');
     if(!elTemp||!elCond||!elCity||!elIcon) return;
     function g(d){ return "<path d='"+d+"' />"; }
     function iconSVG(c){ c=String(c);
       var sun=g("M12 4v2 M12 18v2 M4 12H2 M22 12h-2 M5 5l-1.4-1.4 M20.4 20.4L19 19 M5 19l-1.4 1.4 M20.4 3.6L19 5")+g("M12 8a4 4 0 1 1 0 8a4 4 0 0 1 0-8");
-      var cloud=g("M3 16.5a4.5 4.5 0 0 1 4.5-4.5h.5A6.5 6.5 0 1 1 20 14.5a3.5 3.5 0 0 1-3.5 3.5H8.5A5.5 5.5 0  0 1 3 16.5z");
+      var cloud=g("M3 16.5a4.5 4.5 0 0 1 4.5-4.5h.5A6.5 6.5 0 1 1 20 14.5a3.5 3.5 0 0 1-3.5 3.5H8.5A5.5 5.5 0 0 1 3 16.5z");
       var sunCloud=g("M7.5 7.5l-1.2-1.2 M12 5V3.8 M16.5 7.5l1.2-1.2 M5 12H3.8")+g("M10.5 6.5a3 3 0 1 1 4.5 4.5")+g("M6 18h9a3 3 0 0 0 0-6h-.3a5.5 5.5 0 0 0-10.6 2");
       var drizzle=cloud+g("M9 20l-.8 1.2 M12 20l-.8 1.2 M15 20l-.8 1.2");
       var rain=cloud+g("M9 18l-1.2 2 M12 18l-1.2 2 M15 18l-1.2 2");
@@ -509,7 +506,7 @@
       var to=setTimeout(fb,timeoutMs);
       navigator.geolocation.getCurrentPosition(function(p){ if(done)return; done=true; clearTimeout(to); resolve(p); }, function(){ fb(); }, {enableHighAccuracy:false,maximumAge:900000,timeout:timeoutMs-500});
     });}
-    var WMO_DA={0:"Klart",1:"Mest klart",2:"Delvist skyet",3:"Overskyet",45:"Tåge",48:"Rimtåge",51:"Finregn let",53:"Finregn",55:"Finregn kraftig",56:"Isfinregn let",57:"Isfinregn",61:"Regn let",63:"Regn",65:"Regn kraftig",66:"Isregn let",67:"Isregn",71:"Sne let",73:"Sne",75:"Sne kraftig",77:"Sneslud",80:"Byger let",81:"Byger",82:"Byger kraftig",85:"Snebyger let",86:"Snebyger kraftig",95:"Torden",96:"Torden m. hagl",99:"Kraftig torden m. hagl"};
+    var WMO_DA={0:"Klart",1:"Mest klart",2:"Delvist skyet",3:"Overskyet",45:"Tåge",48:"Rimtåge",51:"Finregn let",53:"Finregn",55:"Finregn kraftig",56:"Isfinregn let",57:"Isfinregn",61:"Regn let",63:"Regn",65:"Regn kraftig",66:"Isregn let",67:"Isregn",71:"Sne let",73:"Sne",75:"Sne kraftig",77:"Sneslud",80:"Byger let",81:"Byger",82:"Byger kraftig",95:"Torden",96:"Torden m. hagl",99:"Kraftig torden m. hagl"};
     function codeToDa(c){ return WMO_DA[c]||"Ukendt"; }
     async function loadWeather(){ try{
       var pos=await getPosition(); var lat=+pos.coords.latitude.toFixed(4); var lon=+pos.coords.longitude.toFixed(4);
@@ -522,5 +519,55 @@
     loadWeather(); setInterval(loadWeather, 20*60*1000);
   })();
   </script>
+
+  <!-- === CLICK-THROUGH NUCLEAR HOTFIX (placer LIGE over </body>) === -->
+  <style>
+    .tile, .fab button, #openSettings { pointer-events:auto!important; cursor:pointer!important; position:relative; z-index:5; }
+  </style>
+  <script>
+  (function(){
+    function hide(id){
+      var el=document.getElementById(id);
+      if(!el) return;
+      el.setAttribute('aria-hidden','true');
+      el.style.display='none';
+      el.style.pointerEvents='none';
+    }
+    function unfreeze(){ hide('wkPanel'); hide('settingsModal'); hide('calendarView'); }
+    unfreeze(); setTimeout(unfreeze,200); setTimeout(unfreeze,800);
+
+    var CLICK_IDS = new Set(['openSettings','tileCalendar','tileHomey','tileSonos','closeCalendar','wkBack']);
+    document.addEventListener('click', function(e){
+      try{
+        var modalOpen = (function(m){ return !!(m && m.style.display==='flex'); })(document.getElementById('settingsModal'));
+        var panelOpen = (function(p){ return !!(p && p.classList && p.classList.contains('visible')); })(document.getElementById('wkPanel'));
+        var cv=document.getElementById('calendarView');
+        var calOpen = !!(cv && cv.getAttribute('aria-hidden')==='false');
+
+        if(!modalOpen && !panelOpen && !calOpen){
+          var stack = document.elementsFromPoint(e.clientX, e.clientY) || [];
+          var realTarget = stack.find(function(el){ return el && el.id && CLICK_IDS.has(el.id); });
+          if(realTarget && realTarget !== e.target){
+            e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
+            try{ realTarget.focus({preventScroll:true}); }catch(_){}
+            realTarget.click();
+            return false;
+          }
+        }
+      }catch(_){}
+    }, true);
+
+    var mo = new MutationObserver(function(){
+      ['wkPanel','settingsModal','calendarView'].forEach(function(id){
+        var el=document.getElementById(id);
+        if(!el) return;
+        var hidden = (el.getAttribute('aria-hidden')==='true') || el.style.display==='none';
+        if(hidden){ el.style.pointerEvents='none'; }
+      });
+    });
+    try{ mo.observe(document.documentElement,{subtree:true,attributes:true,attributeFilter:['style','class','aria-hidden']}); }catch(_){}
+  })();
+  </script>
+  <!-- === /CLICK-THROUGH NUCLEAR HOTFIX === -->
 </body>
 </html>
