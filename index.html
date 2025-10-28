@@ -1,18 +1,320 @@
+<!-- /index.html  (læg i repoets rod) -->
 <!doctype html>
 <html lang="da">
 <head>
   <meta charset="utf-8"/>
-  <meta http-equiv="refresh" content="0; url=./webkiosk_apple_crisp_with_settings_fab.html?v=2025-10-28a">
+  <meta http-equiv="refresh" content="0; url=./webkiosk_apple_crisp_with_settings_fab.html?v=2025-10-28e">
   <title>Webkiosk – starter…</title>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <link rel="manifest" href="./manifest.webmanifest" />
 </head>
 <body>
-  Starter… Hvis intet sker, <a href="./webkiosk_apple_crisp_with_settings_fab.html?v=2025-10-28a">klik her</a>.
+  Starter… Hvis intet sker, <a href="./webkiosk_apple_crisp_with_settings_fab.html?v=2025-10-28e">klik her</a>.
   <script>
     if('serviceWorker' in navigator){
-      navigator.serviceWorker.register('./service-worker.js?vv=2025-10-28a').catch(()=>{});
+      navigator.serviceWorker.register('./service-worker.js?vv=2025-10-28e').catch(()=>{});
     }
   </script>
 </body>
 </html>
+
+<!-- /service-worker.js  (læg i repoets rod) -->
+// service-worker.js — v2025-10-28e
+const CACHE = "webkiosk-2025-10-28e";
+const ASSETS = [
+  "./",
+  "./index.html",
+  "./webkiosk_apple_crisp_with_settings_fab.html",
+  "./familieoversigt_index_v11_autosync_READY_UPDATED.html",
+  "./manifest.webmanifest"
+];
+self.addEventListener("install", (e) => {
+  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));
+});
+self.addEventListener("activate", (e) => {
+  e.waitUntil(
+    caches.keys()
+      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then(() => self.clients.claim())
+  );
+});
+self.addEventListener("fetch", (e) => {
+  if (e.request.method !== "GET") return;
+  e.respondWith(
+    caches.match(e.request).then((cached) => {
+      const fetchP = fetch(e.request)
+        .then((res) => { caches.open(CACHE).then((c) => c.put(e.request, res.clone())); return res; })
+        .catch(() => cached);
+      return cached || fetchP;
+    })
+  );
+});
+
+<!-- 🔽 I DIN EKSISTERENDE fil: /webkiosk_apple_crisp_with_settings_fab.html -->
+
+<!-- 1) I <head>: skift kun titlen (synligt versionsstempel) -->
+<title>Webkiosk v2025-10-28e</title>
+
+<!-- (behold alt andet i <head> som det er hos dig) -->
+
+<!-- 2) LIGE FØR </body>: SW-registrering med cache-buster (hvis du ikke allerede har det) -->
+<script>
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('./service-worker.js?vv=2025-10-28e').catch(()=>{});
+  }
+</script>
+
+<!-- 3) LIGE FØR </body>: ENHANCER-SNIPPET (ændrer ikke dit layout) -->
+<script>
+(function(){
+  // --- Wake Lock (skærmen vågen)
+  let wl=null, noSleep=null;
+  async function keepAwake(){
+    try{
+      if('wakeLock' in navigator){ wl = await navigator.wakeLock.request('screen'); }
+      else{
+        if(!noSleep){
+          const s=document.createElement('script');
+          s.src="https://cdnjs.cloudflare.com/ajax/libs/nosleep/0.12.0/NoSleep.min.js";
+          s.onload=()=>{ noSleep = new window.NoSleep(); noSleep.enable(); };
+          document.head.appendChild(s);
+        }else{ noSleep.enable(); }
+      }
+    }catch(_){}
+  }
+  document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') keepAwake(); }, {passive:true});
+  window.addEventListener('pageshow', keepAwake, {passive:true});
+  window.addEventListener('click', ()=>{ if(!('wakeLock' in navigator) && noSleep){ try{ noSleep.enable(); }catch(_){} } }, {passive:true});
+
+  // --- Firebase SDK loader + init (Anon + Firestore)
+  async function ensureFirebase(){
+    const add = (src)=> new Promise(r=>{
+      if([].some.call(document.scripts, s=>s.src.includes(src))) return r();
+      const s=document.createElement('script'); s.src=src; s.onload=r; document.head.appendChild(s);
+    });
+    await add("https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js");
+    await add("https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js");
+    await add("https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js");
+    if(!window.WebKioskFirebase){
+      const cfg = {
+        apiKey: "AIzaSyA_gh8y-V6kkl95hRzb0ldBxpKWFY5bAck",
+        authDomain: "webkiosk-e5d32.firebaseapp.com",
+        projectId: "webkiosk-e5d32",
+        storageBucket: "webkiosk-e5d32.firebasestorage.app",
+        messagingSenderId: "920175197353",
+        appId: "1:920175197353:web:c3520e9a3ab8146ec4fdb8"
+      };
+      const app = firebase.initializeApp(cfg);
+      const auth = firebase.auth();
+      const db   = firebase.firestore();
+      const ready = auth.signInAnonymously().then(()=>true).catch(()=>false);
+      window.WebKioskFirebase = { app, auth, db, ready };
+    }
+    return window.WebKioskFirebase;
+  }
+
+  // --- Settings helpers (bevarer din nuværende struktur, vi spejler bare)
+  const LS_KEYS = { A:'webkiosk.settings', B:'webkioskConfigV2', HID:'webkioskHouseholdId' };
+  function readSettings(){
+    try{
+      const a = localStorage.getItem(LS_KEYS.A);
+      const b = localStorage.getItem(LS_KEYS.B);
+      const sa = a ? JSON.parse(a) : null;
+      const sb = b ? JSON.parse(b) : null;
+      return sa && sa.buttons ? sa : (sb || sa || {});
+    }catch{ return {}; }
+  }
+  function writeSettings(s){
+    localStorage.setItem(LS_KEYS.A, JSON.stringify(s));
+    localStorage.setItem(LS_KEYS.B, JSON.stringify(s));
+  }
+  function ensureArr(x){ return Array.isArray(x) ? x : []; }
+
+  // --- Injicer EKSTRA felter i din eksisterende ⚙️-dialog (uden at ændre dit tema)
+  const modal = document.querySelector('dialog#dlg, #settingsModal, .settings-modal, dialog');
+  const saveBtn = document.getElementById('saveDlg') || document.getElementById('saveSettings');
+  const formsContainer = document.getElementById('btnForms') || modal;
+  let statusBadge = document.getElementById('syncStatus');
+
+  function injectSections(){
+    if(!modal) return;
+    if(!statusBadge){
+      const span = document.createElement('span');
+      span.id = 'syncStatus';
+      span.textContent = 'Offline';
+      span.style.cssText='margin-left:8px;font-size:12px;padding:2px 8px;border-radius:999px;border:1px solid #c7d2fe;background:#eef2ff';
+      const head = modal.querySelector('.dlg-head, .header, .dialog-header') || modal;
+      head.appendChild(span);
+      statusBadge = span;
+    }
+    const body = modal.querySelector('.dlg-body, .dialog-body, .body') || modal;
+
+    if(!body.textContent.includes('Udseende')){
+      body.insertAdjacentHTML('beforeend', `
+        <h3 style="margin-top:16px">Udseende</h3>
+        <div class="row">
+          <div><label>Primærfarve</label><input type="color" id="themeColor"></div>
+          <div><label>Baggrundsfarve</label><input type="color" id="bgColor"></div>
+        </div>`);
+    }
+    if(!body.textContent.includes('Synkronisering')){
+      body.insertAdjacentHTML('beforeend', `
+        <h3 style="margin-top:16px">Synkronisering</h3>
+        <div class="row">
+          <div><label>Husstands-ID</label><input id="householdId" placeholder="auto-genereres" /><div class="hint">Brug samme ID på alle enheder.</div></div>
+          <div><label>Status</label><div><span id="syncStatus2" class="badge">Offline</span></div></div>
+        </div>`);
+      statusBadge = document.getElementById('syncStatus2') || statusBadge;
+    }
+    if(!body.textContent.includes('Skærm')){
+      body.insertAdjacentHTML('beforeend', `
+        <h3 style="margin-top:16px">Skærm</h3>
+        <div class="row">
+          <div>
+            <label>Hold skærmen vågen</label>
+            <select id="wakeStrategy">
+              <option value="auto" selected>Auto (Wake Lock → NoSleep)</option>
+              <option value="off">Fra</option>
+            </select>
+          </div>
+          <div>
+            <label>Note</label>
+            <div class="hint">Installer som PWA for fuldskærm & bedre navigation.</div>
+          </div>
+        </div>`);
+    }
+  }
+
+  function injectPerButtonFields(){
+    const s = readSettings();
+    const buttons = ensureArr(s.buttons);
+    const container = formsContainer || modal;
+    if(!container) return;
+
+    const fsets = container.querySelectorAll('fieldset') || [];
+    const n = Math.max(buttons.length, fsets.length || 3);
+    for(let i=0;i<n;i++){
+      const fs = fsets[i] || (()=>{
+        const f=document.createElement('fieldset');
+        f.style.cssText='border:1px solid #e6e8ec;padding:12px;border-radius:12px;margin-bottom:10px';
+        f.innerHTML = `<legend>Knap ${i+1}</legend>`;
+        container.appendChild(f);
+        return f;
+      })();
+      if(!fs.querySelector(`#pg-${i}`) && !fs.querySelector(`#sc-${i}`)){
+        const row = document.createElement('div');
+        row.className='row';
+        row.style.marginTop='8px';
+        row.innerHTML = `
+          <div><label>Android package (ved Type=App)</label><input id="pg-${i}" placeholder="fx com.sonos.acr2"></div>
+          <div><label>Custom scheme (iOS/Android – valgfri)</label><input id="sc-${i}" placeholder="fx sonos://"></div>`;
+        fs.appendChild(row);
+      }
+    }
+    // prefill
+    buttons.forEach((b,i)=>{
+      const pg = document.getElementById(`pg-${i}`); if(pg && b && b.pkg) pg.value = b.pkg;
+      const sc = document.getElementById(`sc-${i}`); if(sc && b && b.scheme) sc.value = b.scheme;
+    });
+
+    const themeColor = document.getElementById('themeColor');
+    const bgColor    = document.getElementById('bgColor');
+    const wakeSel    = document.getElementById('wakeStrategy');
+    const hid        = document.getElementById('householdId');
+
+    if(themeColor) themeColor.value = (s.theme && s.theme.color) || '#0f172a';
+    if(bgColor)    bgColor.value    = (s.theme && s.theme.background) || '#f6f7f9';
+    if(wakeSel)    wakeSel.value    = s.wakeStrategy || 'auto';
+
+    let houseId = localStorage.getItem(LS_KEYS.HID) || s.householdId || '';
+    if(!houseId){ houseId = Math.random().toString(36).slice(2,10).toUpperCase(); }
+    localStorage.setItem(LS_KEYS.HID, houseId);
+    if(hid) hid.value = houseId;
+  }
+
+  // --- Firestore realtime sync (seneste _ts vinder)
+  let unsub=null, writeTimer=null;
+  function docRef(db, id){ return db.collection('webkiosk').doc(id); }
+
+  async function startSync(){
+    const { db, ready } = await ensureFirebase();
+    const ok = await ready;
+    (statusBadge||{}).textContent = ok ? 'Online' : 'Offline';
+    if(!ok) return;
+
+    const s = readSettings();
+    let houseId = localStorage.getItem(LS_KEYS.HID) || s.householdId || '';
+    if(!houseId){
+      houseId = Math.random().toString(36).slice(2,10).toUpperCase();
+      localStorage.setItem(LS_KEYS.HID, houseId);
+    }
+
+    if(unsub) unsub();
+    unsub = docRef(db, houseId).onSnapshot(snap=>{
+      if(!snap.exists) return;
+      const remote = snap.data();
+      const local  = readSettings();
+      if(remote._ts && (!local._ts || remote._ts > local._ts)){
+        writeSettings(remote);
+        if(typeof window.applyForm==='function'){ try{ window.applyForm(); }catch(_){ } }
+      }
+    });
+  }
+
+  function queueWrite(){
+    clearTimeout(writeTimer);
+    writeTimer = setTimeout(async ()=>{
+      const w = window.WebKioskFirebase || {};
+      if(!w.db || !w.ready) return;
+      const ok = await w.ready; if(!ok) return;
+      const s = readSettings();
+      s._ts = Date.now();
+      const hidEl = document.getElementById('householdId');
+      const houseId = (hidEl?.value || localStorage.getItem(LS_KEYS.HID) || s.householdId || '').toUpperCase();
+      localStorage.setItem(LS_KEYS.HID, houseId);
+      s.householdId = houseId;
+      writeSettings(s);
+      docRef(w.db, houseId).set(s, {merge:true})
+        .then(()=>{ if(statusBadge) statusBadge.textContent='Synkroniseret'; })
+        .catch(()=>{ if(statusBadge) statusBadge.textContent='Sync fejl'; });
+    }, 250);
+  }
+
+  // --- Bind din eksisterende "Gem" knap
+  function bindSave(){
+    const save = saveBtn;
+    if(!save){ setTimeout(bindSave, 600); return; }
+    save.addEventListener('click', ()=>{
+      const s = readSettings();
+      const themeColor = document.getElementById('themeColor');
+      const bgColor    = document.getElementById('bgColor');
+      const wakeSel    = document.getElementById('wakeStrategy');
+      const hid        = document.getElementById('householdId');
+      if(!s.theme) s.theme = {};
+      if(themeColor) s.theme.color = themeColor.value || s.theme.color || '#0f172a';
+      if(bgColor)    s.theme.background = bgColor.value || s.theme.background || '#f6f7f9';
+      if(wakeSel)    s.wakeStrategy = wakeSel.value || s.wakeStrategy || 'auto';
+      if(hid){
+        const v=(hid.value||'').trim().toUpperCase();
+        if(v){ s.householdId=v; localStorage.setItem(LS_KEYS.HID, v); }
+      }
+      const buttons = ensureArr(s.buttons);
+      s.buttons = buttons.map((b,i)=>({
+        ...(b||{}),
+        pkg:    (document.getElementById(`pg-${i}`)?.value || (b&&b.pkg) || '').trim(),
+        scheme: (document.getElementById(`sc-${i}`)?.value || (b&&b.scheme) || '').trim()
+      }));
+      writeSettings(s);
+      queueWrite();
+      keepAwake();
+    });
+  }
+
+  // --- Init
+  injectSections();
+  injectPerButtonFields();
+  bindSave();
+  startSync();
+  keepAwake();
+})();
+</script>
