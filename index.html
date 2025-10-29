@@ -1,4 +1,4 @@
-<!-- /index.html  (ERSTAT DENNE FIL 1:1 I RasmusGunnar/test) -->
+<!-- /index.html (RasmusGunnar/test) -->
 <!doctype html>
 <html lang="da">
 <head>
@@ -8,21 +8,29 @@
   <meta name="robots" content="noindex"/>
   <script>
     (function () {
-      // 1) Nulstil gamle service workers (forebygger caches der “sluger” query)
+      // 0) VÆLG DIT FASTE HID HER
+      var FIXED_HID = "FAMILIE01"; // <-- skift til dit ønskede HID, kun A-Z/0-9
+
+      // 1) Fjern gamle service workers (forebygger cache-støj)
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.unregister()));
       }
-      // 2) Byg mål-URL og BEVAR query/hash (fx ?hid=FAMILIE01)
+
+      // 2) Byg mål-URL og T V I N G ?hid=FIXED_HID
       var target = new URL('./webkiosk_apple_crisp_with_settings_fab.html', location.href);
-      if (location.search) target.search = location.search;
-      if (location.hash)   target.hash   = location.hash;
-      // 3) Gennemfør redirect
+
+      // Bevar evt. eksisterende query/hash, men overstyr hid
+      var params = new URLSearchParams(location.search);
+      params.set('hid', FIXED_HID); // <- altid dit faste HID
+      target.search = '?' + params.toString();
+      if (location.hash) target.hash = location.hash;
+
+      // 3) Redirect
       location.replace(target.toString());
     })();
   </script>
   <noscript>
-    <meta http-equiv="refresh"
-          content="0; url=./webkiosk_apple_crisp_with_settings_fab.html">
+    <meta http-equiv="refresh" content="0; url=./webkiosk_apple_crisp_with_settings_fab.html?hid=FAMILIE01">
   </noscript>
 </head>
 <body>Åbner Webkiosk…</body>
