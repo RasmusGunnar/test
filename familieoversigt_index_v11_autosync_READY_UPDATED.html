@@ -308,5 +308,170 @@
   }
 })();
 </script>
+<!-- 🔧 Firestore-bridge (UI-neutral) – indsæt lige før </body> -->
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script>
+(function(){
+  const DBG = false; // sæt true for console logs
+  const log=(...a)=>{ if(DBG) console.log('[FS-Bridge]',...a); };
+  const warn=(...a)=>{ if(DBG) console.warn('[FS-Bridge]',...a); };
+  const err =(...a)=>console.error('[FS-Bridge]',...a);
+
+  // 1) LocalStorage-nøgle (overstyr via <meta name="calendar-localstorage-key" content="...">)
+  const metaKey = document.querySelector('meta[name="calendar-localstorage-key"]')?.content?.trim();
+  const LS_KEY  = metaKey || 'fam_items_v1';
+
+  // 2) HID fra URL
+  const HID = (new URLSearchParams(location.search).get('hid')||'DEFAULT').toUpperCase();
+
+  // 3) Firebase config (samme som Webkiosk)
+  const firebaseConfig = {
+    apiKey: "AIzaSyA_gh8y-V6kkl95hRzb0ldBxpKWFY5bAck",
+    authDomain: "webkiosk-e5d32.firebaseapp.com",
+    projectId: "webkiosk-e5d32",
+    storageBucket: "webkiosk-e5d32.firebasestorage.app",
+    messagingSenderId: "920175197353",
+    appId: "1:920175197353:web:c3520e9a3ab8146ec4fdb8",
+    measurementId: "G-X6LHDEPS8H"
+  };
+  if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db   = firebase.firestore();
+
+  // 4) Firestore refs (ingen komposit-index påkrævet)
+  const col   = db.collection('households').doc(HID).collection('calendar').doc('v1').collection('items');
+  let   qItems= col.orderBy('createdAt','asc');
+
+  // 5) Utils
+  const parse = (v)=>{ try{return JSON.parse(v);}catch{return null;} };
+  const readLocal = ()=> (parse(localStorage.getItem(LS_KEY))||[]);
+  const writeLocal= (arr)=>{
+    const s = JSON.stringify(arr||[]);
+    localStorage.setItem(LS_KEY, s);
+    // Nænsomt forsøg på at trigge din eksisterende render
+    try{ if(typeof render==='function') render(); }catch{}
+    try{ const ev=new Event('storage'); ev.key=LS_KEY; ev.newValue=s; window.dispatchEvent(ev); }catch{}
+  };
+
+  // Vi spejler ALLE felter i `data`. Derudover kopierer vi få felter op til top-niveau for søgning/sortering.
+  const pick = (o,k)=> o!=null && o[k]!=null ? o[k] : '';
+  const signature = (d)=> [pick(d,'title')||pick(d,'titel'),
+                           pick(d,'date')||pick(d,'dato'),
+                           pick(d,'time')||'',
+                           pick(d,'person')||pick(d,'navn')||'',
+                           pick(d,'type')||'',
+                           pick(d,'location')||'',
+                           pick(d,'note')||pick(d,'noter')||''].join('|');
+
+  // 6) Push lokal -> FS (debounced)
+  let pushTimer=null;
+  function queuePush(items){ clearTimeout(pushTimer); pushTimer=setTimeout(()=>pushAll(items), 350); }
+  async function pushAll(items){
+    try{
+      const snap = await col.get();
+      const existing = new Map();
+      snap.forEach(d=>{
+        const v=d.data();
+        const sig = v.sig || signature(v.data||v);
+        existing.set(sig, {id:d.id, ...v});
+      });
+
+      const batch = db.batch();
+      for(const raw of (items||[])){
+        const data = Object(raw); // hele objektet som din app bruger
+        const sig  = signature(data);
+        if(existing.has(sig)){
+          // opdater small stuff (done/note mv.) hvis ændret
+          const ex  = existing.get(sig);
+          const cur = ex.data || ex;
+          const patch = {};
+          if(!!cur.done !== !!data.done)     patch.done = !!data.done;
+          if(String(cur.note||'') !== String(data.note||'')) patch.note = String(data.note||'');
+          if(Object.keys(patch).length){
+            patch.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
+            batch.set(col.doc(ex.id), patch, {merge:true});
+          }
+        }else{
+          batch.set(col.doc(), {
+            // spejl primære felter for evt. fremtidig sortering/filtrering
+            title: pick(data,'title')||pick(data,'titel')||'',
+            date:  pick(data,'date') ||pick(data,'dato')  ||'',
+            time:  pick(data,'time') ||'',
+            person:pick(data,'person')||pick(data,'navn')||'',
+            type:  pick(data,'type') ||'',
+            note:  pick(data,'note') ||pick(data,'noter') ||'',
+            done:  !!data.done,
+            sig:   sig,
+            data:  data, // ← hele din post her
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        }
+      }
+      await batch.commit();
+      log('Pushed', (items||[]).length, 'items');
+    }catch(e){ err('pushAll', e); }
+  }
+
+  // Patch setItem for KUN vores nøgle (din UI kalder i forvejen setItem)
+  (function patchSetItem(){
+    const _set = localStorage.setItem.bind(localStorage);
+    localStorage.setItem = function(k,v){
+      const r = _set(k,v);
+      if(k===LS_KEY){
+        try{ queuePush(parse(v)||[]); }catch(e){ warn('setItem parse', e); }
+      }
+      return r;
+    };
+  })();
+
+  // 7) Start
+  auth.signInAnonymously().then(async ()=>{
+    log('Anon OK · HID', HID);
+
+    // Seed: hvem er tom først gang?
+    const localArr = readLocal();
+    const hasFS    = !(await col.limit(1).get()).empty;
+
+    if(localArr.length && !hasFS){
+      log('Seed FS fra lokal', localArr.length);
+      await pushAll(localArr);
+    }else if(!localArr.length && hasFS){
+      log('Seed lokal fra FS');
+      const all=await qItems.get(), arr=[];
+      all.forEach(d=> arr.push((d.data().data)||d.data()) );
+      writeLocal(arr);
+    }
+
+    // Realtime → lokal
+    qItems.onSnapshot(s=>{
+      const arr=[]; s.forEach(d=> arr.push((d.data().data)||d.data()) );
+      writeLocal(arr);
+      log('Realtime', arr.length);
+    }, e=>{
+      warn('snapshot', e.code||e.message);
+      // fallback – burde ikke være nødvendig m. createdAt
+      qItems = col.orderBy('createdAt','asc');
+      qItems.onSnapshot(ss=>{
+        const a=[]; ss.forEach(d=>a.push((d.data().data)||d.data()));
+        writeLocal(a);
+        log('Realtime(fallback)', a.length);
+      });
+    });
+  }).catch(err);
+
+  // Valgfrit: ?caltest=1
+  if (new URLSearchParams(location.search).get('caltest')==='1') {
+    col.add({
+      title:'Synk-test', date:new Date().toISOString().slice(0,10),
+      done:false, note:'auto', sig:'test-'+Date.now(), data:{title:'Synk-test',date:new Date().toISOString().slice(0,10),note:'auto',done:false},
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }).then(()=>log('test write ok')).catch(err);
+  }
+})();
+</script>
 </body>
 </html>
