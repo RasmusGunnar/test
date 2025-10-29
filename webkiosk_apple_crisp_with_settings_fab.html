@@ -1,4 +1,3 @@
-<!-- webkiosk_PATCH_SAFE.html -->
 <!DOCTYPE html>
 <html lang="da">
 <head>
@@ -26,10 +25,10 @@
   .widget.weather{grid-column:span 6} .widget.clock{grid-column:span 6}
   @media (max-width:900px){.widget.weather,.widget.clock{grid-column:span 12}.tiles{grid-template-columns:1fr}}
 
-  /* overlays must never intercept clicks when hidden */
+  /* overlays må ikke fange klik når skjult */
   [hidden]{display:none !important;}
 
-  /* Kalender overlay */
+  /* Kalender-overlay */
   .calendar-view{position:fixed;inset:0;padding:clamp(12px,2vw,20px);background:rgba(246,247,249,.92);backdrop-filter:blur(8px);z-index:60}
   .calendar-inner{height:100%;display:flex;flex-direction:column;gap:12px}
   .topbar{display:flex;align-items:center;gap:12px}
@@ -41,7 +40,7 @@
   .fab{position:fixed;right:20px;bottom:20px;z-index:90}
   .fab button{width:56px;height:56px;border-radius:50%;border:1px solid var(--border);background:#fff;color:#0f172a;display:inline-flex;align-items:center;justify-content:center;box-shadow:var(--shadow);cursor:pointer}
 
-  /* Webpanel */
+  /* Webpanel (Homey/Sonos) */
   .wk-panel{position:fixed;inset:0;background:#0001;backdrop-filter:saturate(1.1) blur(4px);z-index:80}
   .wk-shell{position:absolute;inset:0;background:#fff;box-shadow:0 12px 60px rgba(2,6,23,.25)}
   .wk-topbar{position:absolute;left:0;right:0;top:0;height:52px;display:flex;align-items:center;gap:10px;padding:0 12px;border-bottom:1px solid var(--border);background:linear-gradient(#fff,#fafafa);z-index:2}
@@ -136,7 +135,7 @@
   <!-- FAB: Indstillinger -->
   <div class="fab">
     <button id="openSettings" title="Indstillinger" aria-label="Indstillinger" type="button">
-      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0  0 0-1 1.51V21a2 2 0  1 1-4 0v-.09a1.65 1.65 0  0 0-1-1.51 1.65 1.65 0  0 0-1.82.33l-.06.06a2 2 0  1 1-2.83-2.83l.06-.06a1.65 1.65 0  0 0 .33-1.82 1.65 1.65 0  0 0-1.51-1H3a2 2 0  1 1 0-4h.09a1.65 1.65 0  0 0 1.51-1 1.65 1.65 0  0 0-.33-1.82l-.06-.06a2 2 0  1 1 2.83-2.83l.06.06a1.65 1.65 0  0 0 1.82.33H9a1.65 1.65 0  0 0 1-1.51V3a2  2 0 1 1 4 0v.09a1.65 1.65 0  0 0 1 1.51 1.65 1.65 0  0 0 1.82-.33l.06.06a2 2 0  1 1 2.83 2.83l-.06.06a1.65 1.65 0  0 0-.33 1.82V9c0 .66.26 1.3.73 1.77.47.47 1.11.73 1.77.73h.09a2  2 0 1 1 0 4h-.09a1.65 1.65 0  0 0-1.51 1Z"/></svg>
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0  0 0-.33-1.82l-.06-.06a2 2 0  1 1 2.83-2.83l.06.06a1.65 1.65 0  0 0 1.82.33H9a1.65 1.65 0  0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0  0 0 1 1.51 1.65 1.65 0  0 0 1.82-.33l.06.06a2 2 0  1 1 2.83 2.83l-.06.06a1.65 1.65 0  0 0-.33 1.82V9c0 .66.26 1.3.73 1.77.47.47 1.11.73 1.77.73h.09a2 2 0  1 1 0 4h-.09a1.65 1.65 0  0 0-1.51 1Z"/></svg>
     </button>
   </div>
 
@@ -266,7 +265,7 @@
   function save(c){try{localStorage.setItem(LS_KEY,JSON.stringify(c));}catch{}}
   let config=load();
 
-  /* HID lock fra ?hid=... (låser stabilt selv efter cache-rydning) */
+  /* HID lås fra ?hid=... (stabil efter cache-rydning) */
   (function lockHIDFromQuery(){
     try{
       const qs=new URLSearchParams(location.search);
@@ -296,7 +295,7 @@
     const first=tabs.find(t=>t.classList.contains('active'))||tabs[0]; if(first) act(first.dataset.tab);
   }
 
-  /* Bind */
+  /* Bind UI */
   const writeSoon=debounced(300,queueWriteFirestore);
   function bind(){
     on($('themeColor'),'input',function(){config.theme.color=this.value;save(config);applyTheme();writeSoon();});
@@ -329,29 +328,33 @@
   function showSettings(){const m=$('settingsModal');m.removeAttribute('hidden');m.setAttribute('aria-hidden','false');setupTabs();}
   function hideSettings(){const m=$('settingsModal');m.setAttribute('hidden','');m.setAttribute('aria-hidden','true');}
 
-  /* Kalender – med self-iframe guard */
+  /* Kalender – self-iframe guard */
   function openCalendar(){
     const hid=(config.householdId||'DEFAULT').toUpperCase();
-    let src='';
+    // Luk evt. tidligere overlay for at undgå stacking
+    const v0=$('calendarView'), f0=$('calendarFrame');
+    if(v0 && !v0.hasAttribute('hidden')){ try{f0.src='about:blank';}catch{} v0.setAttribute('hidden',''); v0.setAttribute('aria-hidden','true'); }
 
-    if(config.calendar?.mode==='upload' && config.calendar?.fileData){
-      src=config.calendar.fileData; // data:URL
-    }else{
-      const base=(config.calendar?.url||DEFAULT_CAL_URL).trim();
-      if(!base){ alert('Ingen kalender-URL. Sæt: '+DEFAULT_CAL_URL); return; }
-      try{ const u=new URL(base,location.href); u.searchParams.set('hid',hid); src=u.toString(); }
-      catch{ src=base+(base.includes('?')?'&':'?')+'hid='+encodeURIComponent(hid); }
-    }
+    let base='';
+    if(config.calendar?.mode==='upload' && config.calendar?.fileData){ base=config.calendar.fileData; }
+    else { base=(config.calendar?.url||DEFAULT_CAL_URL).trim()||DEFAULT_CAL_URL; }
 
-    // guard: må ikke iframe denne side
     try{
-      const here=new URL(location.href), target=new URL(src,location.href);
+      const here=new URL(location.href);
+      const target=new URL(base,location.href);
       const samePath=here.pathname.replace(/\/+$/,'')===target.pathname.replace(/\/+$/,'');
-      if(here.origin===target.origin && samePath){
+      const looksLikeSelf=/webkiosk_apple_crisp_with_settings_fab\.html/i.test(target.pathname)||/\/test\/?$/i.test(target.pathname);
+      if((here.origin===target.origin && samePath) || looksLikeSelf){
         alert('Kalender-URL peger på Webkiosk-siden. Sæt URL til: '+DEFAULT_CAL_URL);
         return;
       }
     }catch{}
+
+    let src=base;
+    if(!/^data:/i.test(base)){
+      try{ const u=new URL(base,location.href); u.searchParams.set('hid',hid); src=u.toString(); }
+      catch{ src=base+(base.includes('?')?'&':'?')+'hid='+encodeURIComponent(hid); }
+    }
 
     const frame=$('calendarFrame'), view=$('calendarView');
     if(!frame||!view){ alert('Kalender-visning mangler i HTML.'); return; }
