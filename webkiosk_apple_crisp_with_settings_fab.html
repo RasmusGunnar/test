@@ -48,8 +48,8 @@
   .dialog{width:min(980px,96vw);max-height:92vh;overflow:hidden;background:#fff;border:1px solid var(--border);border-radius:18px;box-shadow:0 22px 60px rgba(2,6,23,.18);display:flex;flex-direction:column}
   .dlg-head{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
   .dlg-head h3{margin:0;font-size:20px}
-  .tabs{display:flex;gap:4px;flex-wrap:wrap}
-  .tab{padding:8px 12px;border:1px solid var(--border);border-radius:10px;background:#fbfbfb;cursor:pointer;font-weight:600;color:#334155}
+  .tabs{display:flex;gap:4px;flex-wrap:wrap;position:relative;z-index:4}
+  .tab{padding:8px 12px;border:1px solid var(--border);border-radius:10px;background:#fbfbfb;cursor:pointer;font-weight:600;color:#334155;pointer-events:auto}
   .tab.active{background:#0f172a;color:#fff;border-color:#0f172a}
   .dlg-body{padding:16px 20px 6px;overflow:auto}
   .section{display:none}.section.active{display:block}
@@ -133,7 +133,7 @@
   <!-- Tandhjul / Indstillinger (skjult fra start) -->
   <div class="fab">
     <button id="openSettings" title="Indstillinger" aria-label="Indstillinger" type="button">
-      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c0 .66.26 1.3.73 1.77.47.47 1.11.73 1.77.73h.09a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0  0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0  1 1 0-4h.09a1.65 1.65 0  0 0 1.51-1 1.65 1.65 0  0 0-.33-1.82l-.06-.06a2 2 0  1 1 2.83-2.83l.06.06a1.65 1.65 0  0 0 1.82.33H9a1.65 1.65 0  0 0 1-1.51V3a2 2 0  1 1 4 0v.09a1.65 1.65 0  0 0 1 1.51 1.65 1.65 0  0 0 1.82-.33l.06.06a2 2 0  1 1 2.83 2.83l-.06.06a1.65 1.65 0  0 0-.33 1.82V9c0 .66.26 1.3.73 1.77.47.47 1.11.73 1.77.73h.09a2 2 0  1 1 0 4h-.09a1.65 1.65 0  0 0-1.51 1Z"/></svg>
     </button>
   </div>
 
@@ -295,16 +295,22 @@
   function applyForm(){ $('themeColor').value=config.theme?.color||'#0f172a'; $('bgColor').value=config.theme?.background||'#f6f7f9'; $('keepAwake').checked=!!config.keepAwake; $('logoUrlCalendar').value=config.logoUrls?.calendar||''; $('logoUrlHomey').value=config.logoUrls?.homey||''; $('logoUrlSonos').value=config.logoUrls?.sonos||''; $('calendarUrl').value=config.calendar?.url||''; $('homeyUrl').value=config.homeyUrl||''; $('sonosUrl').value=config.sonosUrl||''; $('sonosPkg').value=config.sonosPkg||''; $('sonosScheme').value=config.sonosScheme||''; $('householdId').value=(config.householdId||'').toUpperCase(); const mode=config.calendar?.mode||'url'; [...document.querySelectorAll('input[name="calendarMode"]')].forEach(r=>r.checked=(r.value===mode)); $('calendarUploadRow').style.display=(mode==='upload')?'':'none'; }
   function applyAll(){applyTheme();applyForm();applyLogos();} applyAll();
 
-  /* Failsafe tab-delegation */
-  document.addEventListener('click',function(e){
-    const btn=e.target.closest('.tab'); if(!btn) return;
-    const dlg=btn.closest('.dialog')||document;
-    dlg.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-    dlg.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
-    btn.classList.add('active');
-    const target=document.getElementById(btn.dataset.tab);
-    if(target) target.classList.add('active');
-  });
+  /* Failsafe: bind tabs direkte (ingen delegation der kan “tabes”) */
+  function setupTabs(){
+    const dlg=document.querySelector('#settingsModal .dialog'); if(!dlg) return;
+    const tabs=[...dlg.querySelectorAll('.tab')];
+    const sections=[...dlg.querySelectorAll('.section')];
+    const act=(id)=>{
+      tabs.forEach(t=>t.classList.toggle('active',t.dataset.tab===id));
+      sections.forEach(s=>s.classList.toggle('active',s.id===id));
+    };
+    tabs.forEach(btn=>{
+      btn.onclick=(e)=>{e.preventDefault();e.stopPropagation();act(btn.dataset.tab);};
+    });
+    // sikre initial aktiv
+    const first=tabs.find(t=>t.classList.contains('active'))||tabs[0];
+    if(first) act(first.dataset.tab);
+  }
 
   /* Bindings */
   const writeSoon=debounced(300,queueWriteFirestore);
@@ -339,7 +345,7 @@
   bind();
 
   /* Overlays – hidden toggling */
-  function showSettings(){const m=$('settingsModal');m.removeAttribute('hidden');m.setAttribute('aria-hidden','false');}
+  function showSettings(){const m=$('settingsModal');m.removeAttribute('hidden');m.setAttribute('aria-hidden','false');setupTabs();}
   function hideSettings(){const m=$('settingsModal');m.setAttribute('hidden','');m.setAttribute('aria-hidden','true');}
   $('openSettings').onclick=showSettings;
 
