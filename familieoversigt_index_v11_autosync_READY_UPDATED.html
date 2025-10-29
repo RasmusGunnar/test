@@ -42,7 +42,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 
   <script>
-  /* Firebase config (samme som Webkiosk) */
+  /* === Firebase config (identisk med Webkiosk) === */
   const firebaseConfig = {
     apiKey: "AIzaSyA_gh8y-V6kkl95hRzb0ldBxpKWFY5bAck",
     authDomain: "webkiosk-e5d32.firebaseapp.com",
@@ -55,14 +55,14 @@
   firebase.initializeApp(firebaseConfig);
   const auth=firebase.auth(), db=firebase.firestore();
 
-  /* HID */
+  /* === HID === */
   const HID=(new URLSearchParams(location.search).get('hid')||'DEFAULT').toUpperCase();
   document.getElementById('hidPill').textContent=HID;
 
-  /* Kalender collection */
+  /* === Kalender collection === */
   const itemsCol=db.collection('households').doc(HID).collection('calendar').doc('v1').collection('items');
 
-  /* Offentligt API så din UI kan bruge data */
+  /* === API til din egen UI === */
   const itemsListeners=new Set();
   window.CalendarData={
     hid:HID,
@@ -72,7 +72,7 @@
     async deleteItem(id){return itemsCol.doc(id).delete();}
   };
 
-  /* Realtime feed */
+  /* === Realtime feed === */
   auth.signInAnonymously().then(()=>{
     itemsCol.orderBy('createdAt','asc').onSnapshot(snap=>{
       const data=[]; snap.forEach(d=>data.push({id:d.id,...d.data()}));
@@ -81,7 +81,7 @@
     });
   }).catch(e=>console.error('[auth]',e));
 
-  /* Fallback UI */
+  /* === Fallback UI (kan fjernes) === */
   const $=id=>document.getElementById(id);
   function renderFallback(items){
     const box=$('fallbackList'); box.innerHTML='';
@@ -97,7 +97,10 @@
   }
   $('addBtn').onclick=()=>{const t=$('titleIn').value.trim(),d=$('dateIn').value,n=$('notesIn').value.trim();if(!t){alert('Titel mangler');return;}window.CalendarData.addItem({title:t,date:d,notes:n}).then(()=>{$('titleIn').value='';$('notesIn').value='';});};
 
-  /* Avatar-URL pr. person (Gemmes i Firestore) */
+  /* === Avatar-URL pr. familie-medlem (GitHub Raw) – synkes i Firestore ===
+     Kræver at din Indstillinger • Familie-UI har en DOM-struktur med en række pr. person,
+     hvor der findes et navn og et file-input. Scriptet tilføjer et ekstra URL-felt.
+  */
   (function(){
     const col=db.collection('households').doc(HID).collection('calendar').doc('v1').collection('profiles');
 
