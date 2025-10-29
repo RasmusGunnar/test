@@ -146,5 +146,167 @@
     else document.addEventListener('DOMContentLoaded',enhanceRows);
   })();
   </script>
+<!-- 🔧 Firestore-bridge (UI-neutral) – indsæt lige før </body> -->
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script>
+(function(){
+  /* ====== KONFIG ====== */
+  const DBG = true;                          // sæt false for tavs log
+  const LS_ITEMS = "fam_items_v1";           // <- din kalender bruger denne
+  const HID = (new URLSearchParams(location.search).get('hid')||'DEFAULT').toUpperCase();
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyA_gh8y-V6kkl95hRzb0ldBxpKWFY5bAck",
+    authDomain: "webkiosk-e5d32.firebaseapp.com",
+    projectId: "webkiosk-e5d32",
+    storageBucket: "webkiosk-e5d32.firebasestorage.app",
+    messagingSenderId: "920175197353",
+    appId: "1:920175197353:web:c3520e9a3ab8146ec4fdb8",
+    measurementId: "G-X6LHDEPS8H"
+  };
+
+  const log=(...a)=>DBG&&console.log("[FS-Bridge]",...a);
+  const warn=(...a)=>DBG&&console.warn("[FS-Bridge]",...a);
+  const error=(...a)=>console.error("[FS-Bridge]",...a);
+
+  /* ====== INIT ====== */
+  if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db   = firebase.firestore();
+
+  const col = db.collection("households").doc(HID)
+                .collection("calendar").doc("v1").collection("items");
+
+  // Sortering uden komposit index-krav
+  let qItems = col.orderBy("createdAt","asc");
+
+  /* ====== HJÆLPERE ====== */
+  function parseJSON(x){ try{return JSON.parse(x);}catch{return null;} }
+  function readLocal(){ return (parseJSON(localStorage.getItem(LS_ITEMS))||[]).map(norm); }
+  function writeLocal(items){
+    const s = JSON.stringify(items||[]);
+    localStorage.setItem(LS_ITEMS, s);
+    // Forsøg at trigge din app til at re-render
+    try { if (typeof render === "function") render(); } catch {}
+    try {
+      const ev = new Event("storage"); ev.key = LS_ITEMS; ev.newValue = s; window.dispatchEvent(ev);
+    } catch {}
+  }
+  function norm(it){
+    // hold dig til dine feltnavne
+    return {
+      id: it.id || null,
+      title: String(it.title||"(uden titel)"),
+      date: String(it.date||""),
+      time: String(it.time||""),
+      durationMin: Number.isFinite(it.durationMin)?it.durationMin:0,
+      location: String(it.location||""),
+      note: String(it.note||""),
+      type: String(it.type||"Aktivitet"),
+      person: String(it.person||"Alle"),
+      repeatWeekly: !!it.repeatWeekly,
+      done: !!it.done,
+      source: it.source || "local"
+    };
+  }
+  // unik nøgle til dedup (ingen garanti men robust nok)
+  const keyFor = (it)=>[it.title,it.date,it.time,it.person,it.type,it.location,it.note].join("|");
+
+  /* ====== PUSH LOKAL → FS ====== */
+  let pushTimer=null;
+  function queuePush(items){ clearTimeout(pushTimer); pushTimer = setTimeout(()=>pushAll(items), 350); }
+  async function pushAll(items){
+    try{
+      const snap = await col.get();
+      const existing = new Map();
+      snap.forEach(d=>existing.set(keyFor(d.data()), {id:d.id, ...d.data()}));
+      const batch = db.batch();
+      for(const raw of items||[]){
+        const it = norm(raw);
+        const k = keyFor(it);
+        if(existing.has(k)){
+          const ex = existing.get(k);
+          const patch = {};
+          if(!!ex.done !== !!it.done) patch.done = !!it.done;
+          if(String(ex.note||"") !== String(it.note||"")) patch.note = String(it.note||"");
+          if(Object.keys(patch).length){
+            patch.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
+            batch.set(col.doc(ex.id), patch, {merge:true});
+          }
+        }else{
+          batch.set(col.doc(), {
+            ...it,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        }
+      }
+      await batch.commit();
+      log("Pushed", (items||[]).length, "items → Firestore");
+    }catch(e){ error("pushAll", e); }
+  }
+
+  // Patch kun setItem for vores nøgle (din app kalder saveItems() → setItem)
+  (function patchSetItem(){
+    const _set = localStorage.setItem.bind(localStorage);
+    localStorage.setItem = function(k,v){
+      const r = _set(k,v);
+      if(k===LS_ITEMS){
+        try{ queuePush((parseJSON(v)||[]).map(norm)); }catch(e){ warn("setItem parse", e); }
+      }
+      return r;
+    };
+  })();
+
+  /* ====== START ====== */
+  auth.signInAnonymously().then(async ()=>{
+    log("Anon auth OK · HID =", HID);
+
+    // Første seed-logik
+    const localArr = readLocal();
+    const fsSnap   = await col.limit(1).get();
+
+    if(localArr.length && fsSnap.empty){
+      log("Seeding Firestore fra lokal…", localArr.length);
+      await pushAll(localArr);
+    }else if(!localArr.length && !fsSnap.empty){
+      log("Seeding lokal fra Firestore…");
+      const all = await qItems.get();
+      const arr=[]; all.forEach(d=>arr.push(norm(d.data())));
+      writeLocal(arr);
+    }
+
+    // Realtime → lokal
+    qItems.onSnapshot(
+      snap=>{
+        const arr=[]; snap.forEach(d=>arr.push(norm(d.data())));
+        writeLocal(arr);
+        log("Realtime items:", arr.length);
+      },
+      e=>{
+        // Fallback hvis index-krav (skulle ikke ramme med createdAt, men bare in case)
+        warn("Snapshot error", e.code||e.message);
+        if(String(e.message||"").includes("index")){
+          qItems = col.orderBy("createdAt","asc");
+          qItems.onSnapshot(s=>{ const a=[]; s.forEach(d=>a.push(norm(d.data()))); writeLocal(a); log("Realtime (fallback) items:", a.length); });
+        }
+      }
+    );
+  }).catch(e=>error("Auth error", e));
+
+  // Valgfrit: hurtig test → ?caltest=1
+  if (new URLSearchParams(location.search).get("caltest")==="1") {
+    col.add({
+      title:"Synk-test", date:new Date().toISOString().slice(0,10), time:"",
+      durationMin:0, location:"", note:"auto", type:"Aktivitet", person:"Alle",
+      repeatWeekly:false, done:false, source:"local",
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }).then(()=>log("Test item skrevet")).catch(error);
+  }
+})();
+</script>
 </body>
 </html>
