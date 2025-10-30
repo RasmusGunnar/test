@@ -620,7 +620,8 @@
           }
         }
 
-        if (isOfficialRepeat eller isHeuristicRepeat){
+        // >>> FIX: brug '||' (ikke 'eller')
+        if (isOfficialRepeat || isHeuristicRepeat){
           const storageId = "gcalr:"+key;
           if (idx[storageId] !== latestUpdated){
             list.sort((a,b)=> (toLocalDateISO(a)).localeCompare(toLocalDateISO(b)));
@@ -777,7 +778,7 @@
   const auth=firebase.auth(), db=firebase.firestore();
 
   const col = db.collection("households").doc(HID).collection("calendar").doc("v1").collection("items");
-  let   q   = col.orderBy("createdAt","asc"); // undgår komposit-index
+  let   q   = col.orderBy("createdAt","asc");
 
   const J={p:(v)=>{try{return JSON.parse(v)}catch(_){return null}}, s:(v)=>JSON.stringify(v||[])};
   const read = ()=> J.p(localStorage.getItem(LS_KEY)) || [];
