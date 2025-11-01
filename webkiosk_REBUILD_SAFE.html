@@ -80,6 +80,12 @@
   .wk-topbar .btn{border:1px solid var(--border);border-radius:10px;background:#fff;padding:8px 10px;cursor:pointer}
   .wk-topbar .title{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .wk-iframe{position:absolute;top:52px;left:0;right:0;bottom:0;width:100%;height:calc(100% - 52px);border:0}
+  .wk-blocked{position:absolute;top:52px;left:0;right:0;bottom:0;background:linear-gradient(#fff,#f8f9fb);display:flex;align-items:center;justify-content:center;padding:24px;z-index:2}
+  .wk-blocked[hidden]{display:none !important}
+  .wk-blocked-card{max-width:420px;width:min(100%,420px);background:#fff;border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow);padding:24px;text-align:center;display:flex;flex-direction:column;gap:12px}
+  .wk-blocked-card h4{margin:0;font-size:18px;color:var(--fg)}
+  .wk-blocked-card p{margin:0;color:var(--muted);font-size:14px;line-height:1.5}
+  .wk-blocked-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:6px}
 
   /* Sync badge */
   .sync-badge{position:fixed;left:12px;bottom:12px;z-index:95;background:#fff;border:1px solid #e6e8ec;border-radius:14px;padding:8px 12px;font:13px/1.2 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial;box-shadow:0 8px 24px rgba(2,6,23,.08);display:flex;gap:8px;align-items:center;color:#0f172a}
@@ -198,6 +204,17 @@
         <div id="wkTitle" class="title">Indlæser…</div>
       </div>
       <iframe id="wkFrame" class="wk-iframe" sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox" referrerpolicy="no-referrer"></iframe>
+      <div id="wkBlocked" class="wk-blocked" hidden>
+        <div class="wk-blocked-card">
+          <h4>Kan ikke indlæse siden</h4>
+          <p><strong id="wkBlockedHost">play.sonos.com</strong> blokerer for at blive vist i Webkiosk.</p>
+          <p>Åbn siden direkte i en ny fane eller brug Sonos-appens link.</p>
+          <div class="wk-blocked-actions">
+            <button id="wkBlockedClose" class="btn" type="button">Tilbage</button>
+            <button id="wkBlockedOpen" class="btn primary" type="button">Åbn fuld Sonos-side</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -278,7 +295,7 @@
   on($('openSettings'),'click',openModal);
   on($('closeSettings'),'click',closeModal);
   on(modal,'click',function(e){ if(e.target===modal) closeModal(); });
-  [].slice.call(document.querySelectorAll('input[name="calendarMode"]')).forEach(function(r){ on(r,'change',function(){ config.calendar.mode=r.value; var r2=$('calendarUploadRow'); if(r2) r2.style.display=(r.value==='upload')?'':''; }); });
+  [].slice.call(document.querySelectorAll('input[name="calendarMode"]')).forEach(function(r){ on(r,'change',function(){ config.calendar.mode=r.value; var r2=$('calendarUploadRow'); if(r2) r2.style.display=(r.value==='upload')?'':''; queueWriteFirestore(); }); });
 
   // ---- inputs
   on($('logoInputCalendar'),'change',async function(){ if(!this.files||!this.files[0])return; config.logos.calendar=await toB64(this.files[0]); config._ts=Date.now(); save(config); applyLogos(); queueWriteFirestore(); });
@@ -312,10 +329,57 @@
   on($('closeCalendar'),'click',closeCalendar);
 
   // ---- web panel (Homey/Sonos)
-  var wkPanel=$('wkPanel'), wkFrame=$('wkFrame'), wkTitle=$('wkTitle');
-  function showPanel(url,title){ wkTitle.textContent=title||url; wkFrame.src=url; wkPanel.classList.add('visible'); wkPanel.setAttribute('aria-hidden','false'); }
-  function hidePanel(){ wkPanel.classList.remove('visible'); wkPanel.setAttribute('aria-hidden','true'); try{ wkFrame.src='about:blank'; }catch(e){} }
+  var wkPanel=$('wkPanel'), wkFrame=$('wkFrame'), wkTitle=$('wkTitle'), wkBlocked=$('wkBlocked');
+  function showPanel(url,title){
+    if(wkTitle) wkTitle.textContent=title||url;
+    if(wkBlocked){
+      wkBlocked.dataset.url='';
+      wkBlocked.setAttribute('hidden','');
+      wkBlocked.style.display='none';
+    }
+    if(wkFrame) wkFrame.src=url;
+    if(wkPanel){ wkPanel.classList.add('visible'); wkPanel.setAttribute('aria-hidden','false'); }
+  }
+  function hidePanel(){
+    if(wkPanel){ wkPanel.classList.remove('visible'); wkPanel.setAttribute('aria-hidden','true'); }
+    if(wkBlocked){
+      wkBlocked.dataset.url='';
+      wkBlocked.setAttribute('hidden','');
+      wkBlocked.style.display='none';
+    }
+    try{ if(wkFrame) wkFrame.src='about:blank'; }catch(e){}
+  }
+  function needsTopLevel(url){
+    try{
+      var host=new URL(url,location.href).hostname.toLowerCase();
+      return host==='sonos.com' || /\.sonos\.com$/.test(host);
+    }catch(e){ return false; }
+  }
+  function showBlocked(url,title){
+    if(wkTitle) wkTitle.textContent=title||url;
+    if(wkFrame){ try{ wkFrame.src='about:blank'; }catch(e){} }
+    if(wkBlocked){
+      if(wkBlocked.dataset) wkBlocked.dataset.url=url;
+      var hostEl=$('wkBlockedHost');
+      if(hostEl){
+        try{ hostEl.textContent=new URL(url,location.href).hostname; }
+        catch(e){ hostEl.textContent=url; }
+      }
+      wkBlocked.style.display='';
+      wkBlocked.removeAttribute('hidden');
+    }
+    if(wkPanel){ wkPanel.classList.add('visible'); wkPanel.setAttribute('aria-hidden','false'); }
+  }
   on($('wkBack'),'click',hidePanel);
+  on($('wkBlockedClose'),'click',hidePanel);
+  on($('wkBlockedOpen'),'click',function(){
+    var target=(wkBlocked && wkBlocked.dataset && wkBlocked.dataset.url) || '';
+    hidePanel();
+    if(target){
+      var opened=window.open(target,'_blank','noopener');
+      if(!opened) location.href=target;
+    }
+  });
 
   on($('tileHomey'),'click',function(){
     var url=(config.homeyUrl||'').trim(); if(!url){ alert('Ingen Homey URL sat.'); return; }
@@ -338,7 +402,12 @@
   on($('tileSonos'),'click',function(){
     if(tryOpenSonosNative()) return;
     var link=(config.sonosUrl||'').trim() || 'https://play.sonos.com';
-    if(/^https?:\/\//i.test(link)) showPanel(link,'Sonos'); else window.open(link,'_self');
+    if(/^https?:\/\//i.test(link)){
+      if(needsTopLevel(link)){ showBlocked(link,'Sonos'); return; }
+      showPanel(link,'Sonos');
+    } else {
+      window.open(link,'_self');
+    }
   });
 
   // ---- wake lock (NoSleep)
@@ -387,7 +456,7 @@
 
   // ---- Sikkerhed: sørg for at alle overlays er skjult ved load
   document.addEventListener('DOMContentLoaded', function(){
-    ['calendarView','wkPanel','settingsModal'].forEach(function(id){ var el=$(id); if(el){ el.classList.remove('visible'); el.setAttribute('aria-hidden','true'); el.style.display='none'; } });
+    ['calendarView','wkPanel','settingsModal','wkBlocked'].forEach(function(id){ var el=$(id); if(el){ el.classList.remove('visible'); el.setAttribute('aria-hidden','true'); el.style.display='none'; } });
   });
   </script>
 </body>
