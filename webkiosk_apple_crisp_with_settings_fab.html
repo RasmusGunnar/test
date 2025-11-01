@@ -306,7 +306,7 @@
     on($('logoUrlHomey'),'input',function(){config.logoUrls.homey=this.value.trim();save(config);applyLogos();writeSoon();});
     on($('logoUrlSonos'),'input',function(){config.logoUrls.sonos=this.value.trim();save(config);applyLogos();writeSoon();});
 
-    ;[...document.querySelectorAll('input[name="calendarMode"]')].forEach(r=>on(r,'change',function(){config.calendar.mode=r.value;save(config);applyForm();}));
+    ;[...document.querySelectorAll('input[name="calendarMode"]')].forEach(r=>on(r,'change',function(){config.calendar.mode=r.value;save(config);applyForm();writeSoon();}));
     on($('calendarUrl'),'input',function(){config.calendar.url=this.value.trim()||DEFAULT_CAL_URL;save(config);writeSoon();});
     on($('calendarFile'),'change',async function(){if(this.files&&this.files[0]){const f=this.files[0];const txt=await f.text();config.calendar.fileName=f.name;config.calendar.fileData="data:text/html;base64,"+btoa(unescape(encodeURIComponent(txt)));config.calendar.mode='upload';save(config);writeSoon();alert('Kalender gemt lokalt. For deling: brug URL (GitHub Pages).');}});
 

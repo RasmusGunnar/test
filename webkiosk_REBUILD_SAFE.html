@@ -278,7 +278,7 @@
   on($('openSettings'),'click',openModal);
   on($('closeSettings'),'click',closeModal);
   on(modal,'click',function(e){ if(e.target===modal) closeModal(); });
-  [].slice.call(document.querySelectorAll('input[name="calendarMode"]')).forEach(function(r){ on(r,'change',function(){ config.calendar.mode=r.value; var r2=$('calendarUploadRow'); if(r2) r2.style.display=(r.value==='upload')?'':''; }); });
+  [].slice.call(document.querySelectorAll('input[name="calendarMode"]')).forEach(function(r){ on(r,'change',function(){ config.calendar.mode=r.value; var r2=$('calendarUploadRow'); if(r2) r2.style.display=(r.value==='upload')?'':''; queueWriteFirestore(); }); });
 
   // ---- inputs
   on($('logoInputCalendar'),'change',async function(){ if(!this.files||!this.files[0])return; config.logos.calendar=await toB64(this.files[0]); config._ts=Date.now(); save(config); applyLogos(); queueWriteFirestore(); });
