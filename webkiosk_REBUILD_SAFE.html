@@ -203,7 +203,7 @@
         <button id="wkBack" class="btn" type="button">← Tilbage</button>
         <div id="wkTitle" class="title">Indlæser…</div>
       </div>
-      <iframe id="wkFrame" class="wk-iframe" sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox" referrerpolicy="no-referrer"></iframe>
+      <iframe id="wkFrame" class="wk-iframe" sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox" referrerpolicy="no-referrer" allow="autoplay; fullscreen; picture-in-picture"></iframe>
       <div id="wkBlocked" class="wk-blocked" hidden>
         <div class="wk-blocked-card">
           <h4>Kan ikke indlæse siden</h4>
@@ -330,7 +330,22 @@
 
   // ---- web panel (Homey/Sonos)
   var wkPanel=$('wkPanel'), wkFrame=$('wkFrame'), wkTitle=$('wkTitle'), wkBlocked=$('wkBlocked');
+  var WK_IFRAME_SANDBOX_DEFAULT='allow-forms allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox';
+  var WK_IFRAME_SANDBOX_SONOS=WK_IFRAME_SANDBOX_DEFAULT+' allow-modals allow-top-navigation allow-top-navigation-by-user-activation allow-storage-access-by-user-activation';
+  var WK_IFRAME_ALLOW_DEFAULT='autoplay; fullscreen; picture-in-picture';
+  var WK_IFRAME_ALLOW_SONOS=WK_IFRAME_ALLOW_DEFAULT+'; encrypted-media; clipboard-write; geolocation; microphone; camera';
+
   var panelLoadTimer=null;
+
+  function configureFrameFor(url){
+    if(!wkFrame) return;
+    var host='';
+    try{host=new URL(url,location.href).hostname;}catch(e){}
+    var isSonos=/(?:^|\.)sonos(?:-radio)?\.com$/i.test(host);
+    wkFrame.setAttribute('sandbox',isSonos?WK_IFRAME_SANDBOX_SONOS:WK_IFRAME_SANDBOX_DEFAULT);
+    wkFrame.setAttribute('allow',isSonos?WK_IFRAME_ALLOW_SONOS:WK_IFRAME_ALLOW_DEFAULT);
+    wkFrame.dataset.profile=isSonos?'sonos':'default';
+  }
   function stopPanelWatch(){ if(panelLoadTimer){ clearTimeout(panelLoadTimer); panelLoadTimer=null; } }
   function watchPanelLoad(url,title){
     if(!wkFrame) return;
@@ -351,11 +366,15 @@
       }
     };
     wkFrame.addEventListener('load',handle,{once:true});
+    var host='';
+    try{host=new URL(url,location.href).hostname;}catch(e){}
+    var isSonos=/(?:^|\.)sonos(?:-radio)?\.com$/i.test(host);
+    var waitMs=isSonos?10000:4500;
     panelLoadTimer=setTimeout(function(){
       if(wkFrame.dataset.loading==='1' && wkPanel && wkPanel.getAttribute('aria-hidden')==='false'){
         showBlocked(url,title);
       }
-    },4500);
+    },waitMs);
   }
   function showPanel(url,title){
     var label=title||url;
@@ -366,6 +385,7 @@
       wkBlocked.style.display='none';
     }
     if(wkFrame){
+      configureFrameFor(url);
       wkFrame.dataset.requestUrl=url;
       wkFrame.dataset.requestTitle=label;
       try{ wkFrame.src='about:blank'; }catch(e){}
@@ -382,7 +402,15 @@
       wkBlocked.style.display='none';
     }
     stopPanelWatch();
-    try{ if(wkFrame){ wkFrame.src='about:blank'; wkFrame.dataset.loading='0'; } }catch(e){}
+    try{
+      if(wkFrame){
+        wkFrame.src='about:blank';
+        wkFrame.dataset.loading='0';
+        wkFrame.setAttribute('sandbox',WK_IFRAME_SANDBOX_DEFAULT);
+        wkFrame.setAttribute('allow',WK_IFRAME_ALLOW_DEFAULT);
+        wkFrame.dataset.profile='default';
+      }
+    }catch(e){}
   }
   function showBlocked(url,title){
     stopPanelWatch();
