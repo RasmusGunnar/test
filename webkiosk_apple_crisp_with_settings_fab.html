@@ -229,7 +229,7 @@
         <div class="wk-blocked-card">
           <h4>Kan ikke indlæse siden</h4>
           <p>Vi kunne ikke indlæse <strong id="wkBlockedHost">play.sonos.com</strong> her i panelet.</p>
-          <p>Siden kan være blokeret for indlejring. Åbn den evt. direkte i en ny fane.</p>
+          <p id="wkBlockedHint">Siden kan være blokeret for indlejring. Åbn den evt. direkte i en ny fane.</p>
           <div class="wk-blocked-actions">
             <button id="wkBlockedClose" class="btn" type="button">Tilbage</button>
             <button id="wkBlockedOpen" class="btn primary" type="button">Åbn fuld Sonos-side</button>
@@ -411,21 +411,23 @@
   }
 
   let panelLoadTimer=null;
+  let sonosFetchAbort=null;
 
-  function configureFrameFor(url){
+  function configureFrameFor(url,profile){
     const frame=$('wkFrame');
     if(!frame) return;
     let host='';
     try{host=new URL(url,location.href).hostname;}catch{}
-    const isSonos=SONOS_HOST_RE.test(host);
+    const effectiveProfile=profile|| (SONOS_HOST_RE.test(host)?'sonos':'default');
+    const isSonos=effectiveProfile==='sonos';
     frame.setAttribute('sandbox',isSonos?WK_IFRAME_SANDBOX_SONOS:WK_IFRAME_SANDBOX_DEFAULT);
     frame.setAttribute('allow',isSonos?WK_IFRAME_ALLOW_SONOS:WK_IFRAME_ALLOW_DEFAULT);
-    frame.dataset.profile=isSonos?'sonos':'default';
+    frame.dataset.profile=effectiveProfile;
   }
   function stopPanelWatch(){
     if(panelLoadTimer){clearTimeout(panelLoadTimer);panelLoadTimer=null;}
   }
-  function watchPanelLoad(url,title){
+  function watchPanelLoad(url,title,profile){
     const frame=$('wkFrame');
     const blocked=$('wkBlocked');
     if(!frame)return;
@@ -439,28 +441,38 @@
     };
     frame.addEventListener('load',handle,{once:true});
     const host=(()=>{try{return new URL(url,location.href).hostname;}catch{return '';}})();
-    const isSonos=SONOS_HOST_RE.test(host);
-    const waitMs=isSonos?10000:4500;
+    const isSonos=(profile==='sonos')||SONOS_HOST_RE.test(host);
+    const waitMs=isSonos?12000:4500;
     panelLoadTimer=setTimeout(()=>{
       if(frame.dataset.loading==='1' && $('wkPanel') && !$('wkPanel').hasAttribute('hidden')){
-        showBlocked(url,title);
+        showBlocked(url,title,profile);
       }
     },waitMs);
   }
-  function showPanel(url,title){
-    const label=title||url;
+  function showPanel(url,title,options={}){
+    const requestUrl=options.displayUrl||url;
+    const label=title||requestUrl;
     $('wkTitle').textContent=label;
     const frame=$('wkFrame');
     const panel=$('wkPanel');
     const blocked=$('wkBlocked');
-    if(blocked){blocked.dataset.url='';blocked.setAttribute('hidden','');}
+    if(blocked){blocked.dataset.url='';blocked.dataset.profile='';blocked.setAttribute('hidden','');}
     if(frame){
-      configureFrameFor(url);
-      frame.dataset.requestUrl=url;
+      if(frame._releaseFn){try{frame._releaseFn();}catch{} frame._releaseFn=null;}
+      configureFrameFor(requestUrl,options.profile);
+      frame.dataset.requestUrl=requestUrl;
       frame.dataset.requestTitle=label;
+      frame.dataset.requestProfile=options.profile||'';
       try{frame.src='about:blank';}catch{}
-      watchPanelLoad(url,label);
-      frame.src=url;
+      if(options.release){frame._releaseFn=options.release;}
+      if(options.skipWatch){
+        stopPanelWatch();
+        frame.dataset.loading='0';
+        frame.src=url;
+      }else{
+        watchPanelLoad(requestUrl,label,options.profile);
+        frame.src=url;
+      }
     }
     if(panel){panel.removeAttribute('hidden');panel.setAttribute('aria-hidden','false');}
   }
@@ -469,14 +481,19 @@
     const frame=$('wkFrame');
     const blocked=$('wkBlocked');
     stopPanelWatch();
+    if(sonosFetchAbort){try{sonosFetchAbort.abort();}catch{} sonosFetchAbort=null;}
     if(frame){
+      if(frame._releaseFn){try{frame._releaseFn();}catch{} frame._releaseFn=null;}
       frame.src='about:blank';
       frame.dataset.loading='0';
       frame.setAttribute('sandbox',WK_IFRAME_SANDBOX_DEFAULT);
       frame.setAttribute('allow',WK_IFRAME_ALLOW_DEFAULT);
       frame.dataset.profile='default';
+      frame.dataset.requestUrl='';
+      frame.dataset.requestTitle='';
+      frame.dataset.requestProfile='';
     }
-    if(blocked){blocked.dataset.url='';blocked.setAttribute('hidden','');}
+    if(blocked){blocked.dataset.url='';blocked.dataset.profile='';blocked.setAttribute('hidden','');}
     if(panel){panel.setAttribute('hidden','');panel.setAttribute('aria-hidden','true');}
   }
   on($('wkBack'),'click',hidePanel);
@@ -484,7 +501,12 @@
   on($('wkBlockedOpen'),'click',()=>{
     const blocked=$('wkBlocked');
     const target=blocked&&blocked.dataset?blocked.dataset.url:'';
+    const profile=blocked&&blocked.dataset?blocked.dataset.profile||'':'';
     hidePanel();
+    if(profile==='sonos' && target){
+      openSonosStandalone(target);
+      return;
+    }
     if(target){
       if(isSonosUrl(target)){
         openSonosStandalone(target);
@@ -495,19 +517,95 @@
     }
   });
 
-  function showBlocked(url,title){
+  function showBlocked(url,title,profile){
     stopPanelWatch();
     const hostLabel=$('wkBlockedHost');
     if(hostLabel){
       try{hostLabel.textContent=new URL(url,location.href).hostname;}catch{hostLabel.textContent=url;}
     }
+    const hint=$('wkBlockedHint');
+    if(hint){
+      if(profile==='sonos'){
+        hint.textContent='Sonos tillader ikke indlejring i en webvisning, så vi åbner den i en ny fane i stedet.';
+      }else{
+        hint.textContent='Siden kan være blokeret for indlejring. Åbn den evt. direkte i en ny fane.';
+      }
+    }
     const blocked=$('wkBlocked');
-    if(blocked){blocked.dataset.url=url;blocked.removeAttribute('hidden');}
+    if(blocked){blocked.dataset.url=url;blocked.dataset.profile=profile||'';blocked.removeAttribute('hidden');}
     $('wkTitle').textContent=title||url;
     const panel=$('wkPanel');
     if(panel){panel.removeAttribute('hidden');panel.setAttribute('aria-hidden','false');}
     const frame=$('wkFrame');
-    if(frame){frame.src='about:blank';frame.dataset.loading='blocked';}
+    if(frame){
+      if(frame._releaseFn){try{frame._releaseFn();}catch{} frame._releaseFn=null;}
+      frame.src='about:blank';
+      frame.dataset.loading='blocked';
+    }
+  }
+
+  function prepareSonosDocument(html,url){
+    try{
+      const targetUrl=new URL(url,location.href);
+      const baseHref=new URL('.',targetUrl).href;
+      let doc=html.replace(/<meta[^>]+http-equiv=["']?Content-Security-Policy["']?[^>]*>/gi,'');
+      doc=doc.replace(/<base[^>]*>/gi,'');
+      const baseTag=`<base href="${baseHref}">`;
+      const styleTag='<style>html,body{height:100%;margin:0;background:#000;}body{overflow:hidden;}</style>';
+      if(/<head[^>]*>/i.test(doc)){
+        doc=doc.replace(/<head([^>]*)>/i,`<head$1>${baseTag}${styleTag}`);
+      }else{
+        doc=`${baseTag}${styleTag}`+doc;
+      }
+      return doc;
+    }catch(err){
+      console.error('[sonos] prepare failed',err);
+      return html;
+    }
+  }
+
+  async function openSonosEmbedded(target){
+    if(!target){openSonosStandalone('https://play.sonos.com');return;}
+    if(sonosFetchAbort){try{sonosFetchAbort.abort();}catch{} sonosFetchAbort=null;}
+    const controller=new AbortController();
+    sonosFetchAbort=controller;
+    showPanel('about:blank','Indlæser Sonos…',{profile:'sonos',displayUrl:target,skipWatch:true});
+    const frame=$('wkFrame');
+    if(frame){
+      frame.dataset.loading='fetch';
+    }
+    let timedOut=false;
+    let timeoutId=null;
+    try{
+      timeoutId=setTimeout(()=>{timedOut=true;try{controller.abort();}catch{}},15000);
+      const res=await fetch(target,{credentials:'include',mode:'cors',signal:controller.signal});
+      clearTimeout(timeoutId);
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      const text=await res.text();
+      if(controller.signal.aborted) return;
+      if(!text||text.length<200){throw new Error('Empty Sonos response');}
+      const prepared=prepareSonosDocument(text,target);
+      const blob=new Blob([prepared],{type:'text/html'});
+      const blobUrl=URL.createObjectURL(blob);
+      const release=()=>{URL.revokeObjectURL(blobUrl);};
+      sonosFetchAbort=null;
+      showPanel(blobUrl,'Sonos',{profile:'sonos',displayUrl:target,release});
+    }catch(err){
+      clearTimeout(timeoutId);
+      if(sonosFetchAbort===controller){sonosFetchAbort=null;}
+      if(controller.signal.aborted){
+        if(timedOut){
+          console.error('[sonos] embed timeout',err);
+          hidePanel();
+          openSonosStandalone(target);
+        }
+        return;
+      }
+      sonosFetchAbort=null;
+      console.error('[sonos] embed failed',err);
+      hidePanel();
+      openSonosStandalone(target);
+    }
   }
 
   function openHomey(){
@@ -524,7 +622,7 @@
     const link=(config.sonosUrl||'').trim()||'https://play.sonos.com';
     if(/^https?:\/\//i.test(link)){
       if(isSonosUrl(link)){
-        openSonosStandalone(link);
+        openSonosEmbedded(link);
       }else{
         showPanel(link,'Sonos');
       }
