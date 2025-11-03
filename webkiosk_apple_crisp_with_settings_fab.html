@@ -385,6 +385,30 @@
   const WK_IFRAME_SANDBOX_SONOS=WK_IFRAME_SANDBOX_DEFAULT+' allow-modals allow-top-navigation allow-top-navigation-by-user-activation allow-storage-access-by-user-activation';
   const WK_IFRAME_ALLOW_DEFAULT='autoplay; fullscreen; picture-in-picture';
   const WK_IFRAME_ALLOW_SONOS=WK_IFRAME_ALLOW_DEFAULT+'; encrypted-media; clipboard-write; geolocation; microphone; camera';
+  const SONOS_HOST_RE=/(?:^|\.)sonos(?:-radio)?\.com$/i;
+
+  function isSonosUrl(url){
+    try{
+      const host=new URL(url,location.href).hostname;
+      return SONOS_HOST_RE.test(host);
+    }catch(_){
+      return false;
+    }
+  }
+
+  function openSonosStandalone(link){
+    try{
+      const here=new URL(location.href);
+      const launcher=new URL('./sonos_launcher.html',here);
+      if(link) launcher.searchParams.set('target',link);
+      launcher.searchParams.set('return',here.pathname+here.search);
+      const hid=here.searchParams.get('hid');
+      if(hid) launcher.searchParams.set('hid',hid);
+      location.href=launcher.toString();
+    }catch(_){
+      location.href=link||'https://play.sonos.com';
+    }
+  }
 
   let panelLoadTimer=null;
 
@@ -393,7 +417,7 @@
     if(!frame) return;
     let host='';
     try{host=new URL(url,location.href).hostname;}catch{}
-    const isSonos=/(?:^|\.)sonos(?:-radio)?\.com$/i.test(host);
+    const isSonos=SONOS_HOST_RE.test(host);
     frame.setAttribute('sandbox',isSonos?WK_IFRAME_SANDBOX_SONOS:WK_IFRAME_SANDBOX_DEFAULT);
     frame.setAttribute('allow',isSonos?WK_IFRAME_ALLOW_SONOS:WK_IFRAME_ALLOW_DEFAULT);
     frame.dataset.profile=isSonos?'sonos':'default';
@@ -415,7 +439,7 @@
     };
     frame.addEventListener('load',handle,{once:true});
     const host=(()=>{try{return new URL(url,location.href).hostname;}catch{return '';}})();
-    const isSonos=/(?:^|\.)sonos(?:-radio)?\.com$/i.test(host);
+    const isSonos=SONOS_HOST_RE.test(host);
     const waitMs=isSonos?10000:4500;
     panelLoadTimer=setTimeout(()=>{
       if(frame.dataset.loading==='1' && $('wkPanel') && !$('wkPanel').hasAttribute('hidden')){
@@ -462,6 +486,10 @@
     const target=blocked&&blocked.dataset?blocked.dataset.url:'';
     hidePanel();
     if(target){
+      if(isSonosUrl(target)){
+        openSonosStandalone(target);
+        return;
+      }
       const opened=window.open(target,'_blank','noopener');
       if(!opened){location.href=target;}
     }
@@ -495,7 +523,11 @@
     if(isAndroid && pkg){const fb=encodeURIComponent(location.href);location.href='intent://open/#Intent;package='+pkg+';S.browser_fallback_url='+fb+';end;';setTimeout(()=>{location.href='market://details?id='+pkg;},1200);return;}
     const link=(config.sonosUrl||'').trim()||'https://play.sonos.com';
     if(/^https?:\/\//i.test(link)){
-      showPanel(link,'Sonos');
+      if(isSonosUrl(link)){
+        openSonosStandalone(link);
+      }else{
+        showPanel(link,'Sonos');
+      }
     }else{
       window.open(link,'_self');
     }
