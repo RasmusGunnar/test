@@ -30,6 +30,8 @@
     .titlex{font-weight:800;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.note{color:#475569;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .done{background:var(--done)}.done .titlex{text-decoration:line-through}
     .floating{position:fixed;right:16px;bottom:16px;display:flex;gap:8px;z-index:999;flex-wrap:wrap;justify-content:flex-end}
+    .sb-reminder{margin:12px 0;padding:10px 12px;border-radius:12px;background:#fee2e2;color:#7f1d1d;font-weight:600;border:1px solid #fecaca}
+    .sb-reminder.ok{background:#dcfce7;border-color:#bbf7d0;color:#166534}
     .badge{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:8px 12px;font-weight:700;color:#334155;box-shadow:var(--shadow)}
     .backdrop{position:fixed;inset:0;background:rgba(2,6,23,.28);display:none;align-items:flex-start;justify-content:center;padding:32px;z-index:2000}
     .modal{width:min(860px,92vw);max-height:min(92vh,92dvh);overflow:auto;background:#fff;border-radius:16px;box-shadow:var(--shadow);padding:16px 16px 12px}
@@ -56,6 +58,10 @@
         <button class="btn" id="settingsBtn">Indstillinger</button>
       </div>
     </header>
+
+    <div id="supabaseReminder" class="sb-reminder" hidden>
+      Supabase autosync er ikke konfigureret endnu. Tilføj dit projekt-URL og anon key i scriptet nederst på siden.
+    </div>
 
     <div id="peopleBar" class="chipbar"></div>
     <section id="grid" class="grid"></section>
@@ -100,7 +106,7 @@
         <button class="btn ghost" id="settClose">Luk</button>
       </div>
       <div id="settRows"></div>
-      <div class="tip">Billeder gemmes lokalt. Farver/avatars synkes via Firestore til alle enheder.</div>
+      <div class="tip">Billeder gemmes lokalt. Farver/avatars synkes via Supabase til alle enheder.</div>
       <div class="actions" style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px">
         <button class="btn primary" id="settSave">Gem ændringer</button>
       </div>
@@ -306,84 +312,199 @@
     $("gSync").onclick=()=>syncNow()
     $("gReset").onclick=()=>{localStorage.removeItem(LS_GIDX);setBadge("nulstiller…");syncNow()}
 
-    /* ---------- Firestore bridges ---------- */
+    /* ---------- Supabase bridges ---------- */
   </script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <!-- Supabase projektkonfiguration: erstat værdierne nedenfor med dit eget projekt -->
   <script>
-    (function(){
-      const cfg={apiKey:"AIzaSyA_gh8y-V6kkl95hRzb0ldBxpKWFY5bAck",authDomain:"webkiosk-e5d32.firebaseapp.com",projectId:"webkiosk-e5d32",storageBucket:"webkiosk-e5d32.firebasestorage.app",messagingSenderId:"920175197353",appId:"1:920175197353:web:c3520e9a3ab8146ec4fdb8"};
-      if(!firebase.apps.length)firebase.initializeApp(cfg);
-      const auth=firebase.auth(),db=firebase.firestore();
+    // Eksempel:
+    // window.SUPABASE_URL = "https://din-instans.supabase.co";
+    // window.SUPABASE_ANON_KEY = "eyJhbGciOiJI...";
+    window.SUPABASE_URL = window.SUPABASE_URL || "";
+    window.SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || "";
+    window.SUPABASE_CONFIG = window.SUPABASE_CONFIG || {
+      url: window.SUPABASE_URL,
+      anonKey: window.SUPABASE_ANON_KEY
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.0/dist/umd/supabase.min.js"></script>
+  <script>
+    (async function(){
+      const reminder=document.getElementById("supabaseReminder");
+      const cfg=window.SUPABASE_CONFIG||{url:window.SUPABASE_URL||"",anonKey:window.SUPABASE_ANON_KEY||""};
+      if(!cfg.url||!cfg.anonKey||!window.supabase||typeof window.supabase.createClient!=="function"){
+        console.warn("Supabase-konfigurationen mangler eller biblioteket kunne ikke indlæses. Autosync er deaktiveret.");
+        if(reminder){
+          reminder.hidden=false;
+          reminder.classList.remove("ok");
+          reminder.innerHTML="Supabase autosync er ikke aktiv. Indsæt <code>window.SUPABASE_URL</code> og <code>window.SUPABASE_ANON_KEY</code> med dine projektværdier.";
+        }
+        return;
+      }
 
-      const col=db.collection("households").doc(HID).collection("calendar").doc("v1").collection("items");
+      const client=window.supabase.createClient(cfg.url,cfg.anonKey,{auth:{persistSession:false}});
 
-      function canon(v,id){
-        const d=(v&&v.data&&typeof v.data==="object")?v.data:v||{};
-        const out={ id:(d.id||v.id||("fs:"+id)), title:d.title||(v.title)||"(uden titel)", type:normalizeType(d.type||v.type), person:(d.person||v.person)||"Alle",
-          date:fromAnyToLocalISO(d.date||v.date||""), time:(d.time||v.time)||"", durationMin: Number.isFinite(d.durationMin)?d.durationMin:(v.durationMin||0),
-          location:d.location||v.location||"", note:d.note||v.note||"", repeatWeekly:!!(d.repeatWeekly||v.repeatWeekly), done:!!(d.done||v.done), source:d.source||v.source||"fs" };
+      if(reminder){
+        reminder.hidden=false;
+        reminder.classList.add("ok");
+        reminder.textContent="Supabase autosync er aktiv.";
+      }
+
+      function canon(row,id){
+        const base=row&&typeof row==="object"?row:{};
+        const payload=base.data&&typeof base.data==="object"?base.data:base;
+        const out={
+          id:payload.id||base.uid||id||"sb:"+(payload.title||"item"),
+          title:(payload.title||base.title||"(uden titel)").trim()||"(uden titel)",
+          type:normalizeType(payload.type||base.type),
+          person:(payload.person||base.person)||"Alle",
+          date:fromAnyToLocalISO(payload.date||base.date||""),
+          time:(payload.time||base.time)||"",
+          durationMin:Number.isFinite(payload.durationMin)?payload.durationMin:(base.duration_min||0),
+          location:payload.location||base.location||"",
+          note:payload.note||base.note||"",
+          repeatWeekly:!!(payload.repeatWeekly||payload.repeat_weekly||base.repeat_weekly),
+          done:!!(payload.done??base.done),
+          source:payload.source||base.source||"sb"
+        };
         return out;
       }
 
-      async function migrateSnapshot(snap){
-        const b=db.batch(); let changed=false; const seen=new Set();
-        snap.forEach(doc=>{
-          const dat=canon(doc.data(),doc.id); const uid=uidFor(dat);
-          if(doc.id!==uid){ b.set(col.doc(uid),{data:dat,uid, title:dat.title,date:dat.date,time:dat.time,person:dat.person,type:dat.type,note:dat.note,done:dat.done,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true}); b.delete(col.doc(doc.id)); changed=true; }
-          else { b.set(col.doc(uid),{uid, data:dat, title:dat.title,date:dat.date,time:dat.time,person:dat.person,type:dat.type,note:dat.note,done:dat.done,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true}); changed=true; }
-          if(seen.has(uid)){ b.delete(col.doc(doc.id)); changed=true; } else seen.add(uid);
-        });
-        if(changed) await b.commit();
+      let pushLock=false;
+      function writeAndRender(arr){
+        pushLock=true;
+        items=Array.isArray(arr)?arr.map(it=>({...it})) : [];
+        saveLS(LS_ITEMS,items);
+        pushLock=false;
+        try{render()}catch(_){ }
+      }
+
+      async function fetchRemoteItems(){
+        const {data,error}=await client.from("calendar_items").select("uid,data,title,date,time,person,type,note,done,repeat_weekly").eq("hid",HID);
+        if(error){console.error("[Supabase fetch]",error);return new Map();}
+        const map=new Map();
+        for(const row of data){
+          const it=canon(row,row.uid);
+          const uid=uidFor(it);
+          if(!map.has(uid)) map.set(uid,it);
+        }
+        return map;
+      }
+
+      async function syncFromRemote(){
+        const map=await fetchRemoteItems();
+        writeAndRender([...map.values()]);
       }
 
       async function pushAll(localArr){
         try{
-          const b=db.batch(); const seen=new Set();
+          const seen=new Set();
+          const rows=[];
           for(const it of localArr){
+            if(!it) continue;
             const data={...it,type:normalizeType(it.type),date:fromAnyToLocalISO(it.date)};
-            const uid=uidFor(data); if(seen.has(uid)) continue; seen.add(uid);
-            b.set(col.doc(uid),{uid, data, title:data.title,date:data.date,time:data.time,person:data.person,type:data.type,note:data.note,done:!!data.done,createdAt:firebase.firestore.FieldValue.serverTimestamp(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+            const uid=uidFor(data);
+            if(seen.has(uid)) continue;
+            seen.add(uid);
+            rows.push({
+              hid:HID,
+              uid,
+              data,
+              title:data.title,
+              date:data.date,
+              time:data.time,
+              person:data.person,
+              type:data.type,
+              note:data.note,
+              done:!!data.done,
+              repeat_weekly:!!data.repeatWeekly
+            });
           }
-          await b.commit();
-        }catch(e){console.error("[FS push]",e)}
+
+          if(rows.length){
+            const {error}=await client.from("calendar_items").upsert(rows,{onConflict:"hid,uid"});
+            if(error) throw error;
+          }
+
+          const {data:existing,error:existingError}=await client.from("calendar_items").select("uid").eq("hid",HID);
+          if(existingError) throw existingError;
+          const toDelete=existing.filter(r=>!seen.has(r.uid)).map(r=>r.uid);
+          if(toDelete.length){
+            const {error:delError}=await client.from("calendar_items").delete().eq("hid",HID).in("uid",toDelete);
+            if(delError) throw delError;
+          }
+        }catch(e){console.error("[Supabase push]",e);}
       }
 
-      function writeAndRender(arr){ saveLS(LS_ITEMS,arr); try{ render() }catch(_){ } }
+      function applyPrefs(map){
+        const payload=map&&typeof map==="object"?map:{};
+        savePrefs(payload);
+        refreshPeople();
+      }
 
-      // people prefs sync
-      const prefsDoc=db.collection("households").doc(HID).collection("prefs").doc("people_v1");
       async function ensurePrefs(){
-        const d=await prefsDoc.get(); if(!d.exists){ const base={}; for(const p of DEFAULT_PEOPLE) base[p.name]={color:p.color,avatar:""}; await prefsDoc.set({people:base,updatedAt:firebase.firestore.FieldValue.serverTimestamp()}) }
-        prefsDoc.onSnapshot(s=>{ if(s.exists){ const map=s.data().people||{}; saveLS(LS_PREFS,map); refreshPeople() } })
+        const fallback={};
+        for(const p of DEFAULT_PEOPLE) fallback[p.name]={color:p.color,avatar:""};
+        try{
+          const {data,error,status}=await client.from("people_prefs").select("people").eq("hid",HID).maybeSingle();
+          if(error&&status!==406) throw error;
+          if(!data){
+            applyPrefs(fallback);
+            const {error:seedError}=await client.from("people_prefs").upsert({hid:HID,people:fallback});
+            if(seedError) throw seedError;
+          } else {
+            applyPrefs(data.people||fallback);
+          }
+        }catch(e){console.error("[Supabase prefs fetch]",e);}
+
+        client.channel(`people-prefs-${HID}`)
+          .on("postgres_changes",{event:"*",schema:"public",table:"people_prefs",filter:`hid=eq.${HID}`},payload=>{
+            applyPrefs(payload.new?.people||{});
+          })
+          .subscribe();
       }
-      window._peopleFS={ save:async(p)=>{try{await prefsDoc.set({people:p,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true})}catch(e){console.error("[prefs save]",e)}} };
 
-      auth.signInAnonymously().then(async ()=>{
-        await ensurePrefs();
+      await ensurePrefs();
 
-        const local=loadLS(LS_ITEMS,[]);
-        const snap=await col.get();
-        if(local.length && snap.empty){ await pushAll(local) }
-        else if(!local.length && !snap.empty){
-          await migrateSnapshot(snap);
-          const s2=await col.get(); const map=new Map();
-          s2.forEach(d=>{const it=canon(d.data(),d.id); map.set(uidFor(it),it)});
-          writeAndRender([...map.values()]);
+      const local=loadLS(LS_ITEMS,[]);
+      const remoteMap=await fetchRemoteItems();
+      if(local.length && remoteMap.size===0){
+        await pushAll(local);
+        await syncFromRemote();
+      } else {
+        writeAndRender([...remoteMap.values()]);
+      }
+
+      client.channel(`calendar-items-${HID}`)
+        .on("postgres_changes",{event:"*",schema:"public",table:"calendar_items",filter:`hid=eq.${HID}`},()=>{
+          syncFromRemote();
+        })
+        .subscribe();
+
+      let t=null;
+      const origSet=localStorage.setItem.bind(localStorage);
+      localStorage.setItem=function(k,v){
+        const res=origSet(k,v);
+        if(k===LS_ITEMS&&!pushLock){
+          clearTimeout(t);
+          t=setTimeout(()=>{
+            try{
+              const arr=JSON.parse(v||"null");
+              if(Array.isArray(arr)) pushAll(arr);
+            }catch(err){console.error("[Supabase push decode]",err);}
+          },300);
         }
+        return res;
+      };
 
-        col.onSnapshot(async s=>{
-          await migrateSnapshot(s);
-          const fresh=await col.get(); const map=new Map();
-          fresh.forEach(d=>{const it=canon(d.data(),d.id); map.set(uidFor(it),it)});
-          writeAndRender([...map.values()]);
-        });
-
-        // når lokale ændres → skub til FS (debounce)
-        let t=null; const origSet=localStorage.setItem.bind(localStorage);
-        localStorage.setItem=function(k,v){const r=origSet(k,v); if(k===LS_ITEMS){ clearTimeout(t); t=setTimeout(()=>{ try{pushAll(JSON.parse(v)||[])}catch(_){}} ,300);} return r; };
-      }).catch(e=>console.error("[auth]",e));
+      window._peopleFS={
+        save:async(prefs)=>{
+          try{
+            const payload=prefs&&typeof prefs==="object"?prefs:{};
+            const {error}=await client.from("people_prefs").upsert({hid:HID,people:payload});
+            if(error) throw error;
+          }catch(e){console.error("[Supabase prefs save]",e);}
+        }
+      };
     })();
   </script>
 
