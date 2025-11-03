@@ -302,7 +302,42 @@
     function loadGIdx(){return loadLS(LS_GIDX,{})}function saveGIdx(x){saveLS(LS_GIDX,x)}
     function setBadge(t){gBadge.textContent="Google sync: "+t}
     async function fetchEvents(){const u=GAS_URL+(GAS_URL.includes("?")?"&":"?")+"t="+Date.now();const r=await fetch(u,{cache:"no-store"});if(!r.ok)throw new Error("GAS "+r.status);const j=await r.json();return Array.isArray(j.items)?j.items:[]}
-    async function syncNow(){try{setBadge("henter…");const evs=await fetchEvents();const idx=loadGIdx();let created=0;for(const ev of evs){const date=fromAnyToLocalISO(ev.startISO||ev.date);const id="gcal:"+ev.id;const item={id,title:ev.summary||"(uden titel)",type:"Aktivitet",person:"Alle",date,time:ev.time||"",durationMin:ev.durationMin||30,location:ev.location||"",note:ev.description||"",repeatWeekly:false,done:false,source:"google"};const uid=uidFor(item);if(idx[uid]===ev.updated)continue; upsert(item);idx[uid]=ev.updated;created++}saveGIdx(idx);setBadge(created?`+${created} oprettet`:"ingen ændringer")}catch(e){console.error(e);setBadge("fejl")}}
+      async function syncNow(){
+        try{
+          setBadge("henter…");
+          const evs=await fetchEvents();
+          const idx=loadGIdx();
+          let created=0;
+          const truthy=v=>{
+            if(typeof v==="boolean") return v;
+            if(typeof v==="number") return v!==0;
+            if(typeof v==="string") return /^(true|1|ja|yes)$/i.test(v.trim());
+            return false;
+          };
+          const recurWeekly=r=>{
+            if(!r) return false;
+            if(Array.isArray(r)) return r.some(recurWeekly);
+            if(typeof r==="object") return Object.values(r).some(recurWeekly);
+            return typeof r==="string" && /FREQ\s*=\s*WEEKLY/i.test(r);
+          };
+          for(const ev of evs){
+            const date=fromAnyToLocalISO(ev.startISO||ev.date);
+            const id="gcal:"+ev.id;
+            const repeatWeekly=!!(truthy(ev.repeatWeekly)||truthy(ev.repeat_weekly)||recurWeekly(ev.recurrence)||recurWeekly(ev.recurrenceRule)||recurWeekly(ev.rrule)||recurWeekly(ev.recurrence_rule));
+            const item={id,title:ev.summary||"(uden titel)",type:"Aktivitet",person:"Alle",date,time:ev.time||"",durationMin:ev.durationMin||30,location:ev.location||"",note:ev.description||"",repeatWeekly,done:false,source:"google"};
+            const uid=uidFor(item);
+            if(idx[uid]===ev.updated)continue;
+            upsert(item);
+            idx[uid]=ev.updated;
+            created++;
+          }
+          saveGIdx(idx);
+          setBadge(created?`+${created} oprettet`:"ingen ændringer");
+        }catch(e){
+          console.error(e);
+          setBadge("fejl");
+        }
+      }
     $("gSync").onclick=()=>syncNow()
     $("gReset").onclick=()=>{localStorage.removeItem(LS_GIDX);setBadge("nulstiller…");syncNow()}
 
