@@ -308,6 +308,15 @@
 
     /* ---------- Supabase bridges ---------- */
   </script>
+  <!-- Supabase projektkonfiguration: erstat værdierne nedenfor med dit eget projekt -->
+  <script>
+    window.SUPABASE_URL = window.SUPABASE_URL || "https://nnfkumgdebxdegjykkwp.supabase.co";
+    window.SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5uZmt1bWdkZWJ4ZGVnanlra3dwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIxMzA5OTYsImV4cCI6MjA3NzcwNjk5Nn0.HjDkwmW-AXvEq3t3UIknu8ut-rWyKFEhbQ9WPIftkLM";
+    window.SUPABASE_CONFIG = window.SUPABASE_CONFIG || {
+      url: window.SUPABASE_URL,
+      anonKey: window.SUPABASE_ANON_KEY
+    };
+  </script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.0/dist/umd/supabase.min.js"></script>
   <script>
     (async function(){
