@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Webkiosk</title>
 <meta name="theme-color" content="#0f172a" />
+<link rel="manifest" href="./manifest.webmanifest" />
+<link rel="icon" href="./assets/icon-192.png" />
 <style>
   :root{--bg:#f6f7f9;--panel:#fff;--fg:#0f172a;--muted:#6b7280;--border:#e6e8ec;--accent:#0f172a;--shadow:0 10px 30px rgba(2,6,23,.06);--logoH:64px;--logoBoxW:42%;--logoMaxW:280px}
   *{box-sizing:border-box} html,body{height:100%}
@@ -276,7 +278,8 @@
 
   /* Config */
   const LS_KEY='webkioskConfigV2';
-  const DEFAULT_CAL_URL="https://rasmusgunnar.github.io/test/familieoversigt_index_v11_autosync_READY_UPDATED.html";
+  const DEFAULT_CAL_PATH='familieoversigt_index_v11_autosync_READY_UPDATED.html';
+  const DEFAULT_CAL_URL=(()=>{try{return new URL('./'+DEFAULT_CAL_PATH,location.href).toString();}catch{return DEFAULT_CAL_PATH;}})();
   const defaults={calendar:{mode:'url',url:DEFAULT_CAL_URL,fileName:'',fileData:''},homeyUrl:'',sonosUrl:'',sonosPkg:'',sonosScheme:'',logos:{calendar:'',homey:'',sonos:''},logoUrls:{calendar:'',homey:'',sonos:''},theme:{color:'#0f172a',background:'#f6f7f9'},keepAwake:true,householdId:'',_ts:0};
   function load(){try{const o=JSON.parse(localStorage.getItem(LS_KEY)||'{}');const deep=(m,d)=>{const r=Array.isArray(d)?[]:{};for(const k in d){if(d[k]&&typeof d[k]==='object'&&!Array.isArray(d[k]))r[k]=deep((m||{})[k]||{},d[k]);else r[k]=(m||{})[k]!==undefined?(m||{})[k]:d[k];}return r;};return deep(o,defaults);}catch{return JSON.parse(JSON.stringify(defaults));}}
   function save(c){try{localStorage.setItem(LS_KEY,JSON.stringify(c));}catch{}}
