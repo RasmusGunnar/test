@@ -134,6 +134,7 @@
     function loadLS(k,fallback){try{const v=localStorage.getItem(k);return v?JSON.parse(v):fallback}catch(_){return fallback}}
     function saveLS(k,v){localStorage.setItem(k,JSON.stringify(v))}
     function normalizeType(t){if(t==="Anden aftale"||t==="Andre aftaler")return"Aktivitet";if(t==="Fritidsinteresser")return"Fritidsinteresse";return t||"Aktivitet"}
+    function normalizePersonName(name){const raw=(name??"").toString().trim();if(!raw)return"Alle";const pool=(typeof PEOPLE!=="undefined"&&Array.isArray(PEOPLE)&&PEOPLE.length?PEOPLE:DEFAULT_PEOPLE);const lower=raw.toLowerCase();const match=pool.find(p=>(p.name||"").toLowerCase()===lower);return match?match.name:raw}
 
     function keyOf(it){return[(it.title||"").trim().toLowerCase(),(it.date||"").trim(),(it.time||"").trim(),(it.person||"Alle").trim(),(it.type||"Aktivitet").trim()].join("|")}
     function djb2(s){let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h)^s.charCodeAt(i);return (h>>>0).toString(36)}
@@ -150,13 +151,13 @@
     function loadPrefs(){return loadLS(LS_PREFS,{});}
     function savePrefs(p){saveLS(LS_PREFS,p)}
     function getPeople(){const p=loadPrefs();return DEFAULT_PEOPLE.map(x=>({...x,color:p[x.name]?.color||x.color,avatar:p[x.name]?.avatar||""}))}
-    function loadItems(){const arr=loadLS(LS_ITEMS,[]).map(it=>({...it,type:normalizeType(it.type),person:it.person||"Alle"}));saveLS(LS_ITEMS,arr);return arr}
+    function loadItems(){const arr=loadLS(LS_ITEMS,[]).map(it=>{const person=normalizePersonName(it.person||"Alle");return {...it,type:normalizeType(it.type),person}});saveLS(LS_ITEMS,arr);return arr}
     function saveItems(){saveLS(LS_ITEMS,items)}
 
     PEOPLE=getPeople(); items=loadItems();
 
-    function personColor(n){const p=PEOPLE.find(x=>x.name===n);return p?p.color:"#64748b"}
-    function personAvatar(n){const p=PEOPLE.find(x=>x.name===n);return p?.avatar||""}
+    function personColor(n){const key=(n??"").toString().trim().toLowerCase();if(!key)return"#64748b";const pool=(typeof PEOPLE!=="undefined"&&Array.isArray(PEOPLE)&&PEOPLE.length?PEOPLE:DEFAULT_PEOPLE);const p=pool.find(x=>(x.name||"").toLowerCase()===key);return p?p.color:"#64748b"}
+    function personAvatar(n){const key=(n??"").toString().trim().toLowerCase();if(!key)return"";const pool=(typeof PEOPLE!=="undefined"&&Array.isArray(PEOPLE)&&PEOPLE.length?PEOPLE:DEFAULT_PEOPLE);const p=pool.find(x=>(x.name||"").toLowerCase()===key);return p?.avatar||""}
 
     function buildPeople(){
       peopleBar.innerHTML="";
@@ -229,8 +230,9 @@
       weekNo.textContent=weekNumber(wk); weekBtn.textContent=weekLabel(wk); buildGrid();
 
       const materialized=materializeRepeats(items);
+      const normalized=materialized.map(it=>({...it,person:normalizePersonName(it.person)}));
 
-      const visible=materialized
+      const visible=normalized
         .filter(it=>withinWeek(it.date))
         .filter(it=>current==="Alle"||it.person===current)
         .sort((a,b)=>a.date.localeCompare(b.date)||(a.time||"").localeCompare(b.time||""));
@@ -253,7 +255,7 @@
 
       const doneCounts={};
       for(const p of PEOPLE){ if(p.name!=="Alle") doneCounts[p.name]=0; }
-      for(const it of materialized){
+      for(const it of normalized){
         if(it.type==="Opgave" && it.done && it.person && withinWeek(it.date)){
           doneCounts[it.person]=(doneCounts[it.person]||0)+1;
         }
@@ -270,7 +272,7 @@
     }
 
     function upsert(obj){
-      obj.type=normalizeType(obj.type); if(!obj.person)obj.person="Alle";
+      obj.type=normalizeType(obj.type); obj.person=normalizePersonName(obj.person||"Alle");
       const UID=uidFor(obj);           // why: stabil identitet
       const i=items.findIndex(x=>uidFor(x)===UID);
       if(i>=0) items[i]={...items[i],...obj}; else items.push(obj);
@@ -281,8 +283,8 @@
     // editor
     const EBD=$("editorBD"), DTitle=$("dlgTitle"), Ftitle=$("f_title"), Ftype=$("f_type"), Fperson=$("f_person"), Fdate=$("f_date"), Ftime=$("f_time"), Fdur=$("f_dur"), Floc=$("f_loc"), Fnote=$("f_note"), Frep=$("f_rep"), Fdone=$("f_done");
     function fillPeopleSelect(){Fperson.innerHTML=PEOPLE.map(p=>`<option${p.name==="Alle"?" selected":""}>${p.name}</option>`).join("")}
-    function openNew(dateISO){editId=null;DTitle.textContent="Tilføj";Ftitle.value="";Ftype.value="Aktivitet";Fperson.value="Alle";Fdate.value=dateISO||fmtISO(new Date());Ftime.value="";Fdur.value="";Floc.value="";Fnote.value="";Frep.checked=false;Fdone.checked=false;$("btnDel").style.display="none";EBD.style.display="flex"}
-    function openEditor(any){const b=getByAnyId(any);if(!b)return;editId=b.id;DTitle.textContent="Rediger";Ftitle.value=b.title||"";Ftype.value=normalizeType(b.type);Fperson.value=b.person||"Alle";Fdate.value=b.date||fmtISO(new Date());Ftime.value=b.time||"";Fdur.value=b.durationMin||"";Floc.value=b.location||"";Fnote.value=b.note||"";Frep.checked=!!b.repeatWeekly;Fdone.checked=!!b.done;$("btnDel").style.display="inline-flex";EBD.style.display="flex"}
+    function openNew(dateISO){editId=null;DTitle.textContent="Tilføj";Ftitle.value="";Ftype.value="Aktivitet";Fperson.value=normalizePersonName("Alle");Fdate.value=dateISO||fmtISO(new Date());Ftime.value="";Fdur.value="";Floc.value="";Fnote.value="";Frep.checked=false;Fdone.checked=false;$("btnDel").style.display="none";EBD.style.display="flex"}
+    function openEditor(any){const b=getByAnyId(any);if(!b)return;editId=b.id;DTitle.textContent="Rediger";Ftitle.value=b.title||"";Ftype.value=normalizeType(b.type);Fperson.value=normalizePersonName(b.person||"Alle");Fdate.value=b.date||fmtISO(new Date());Ftime.value=b.time||"";Fdur.value=b.durationMin||"";Floc.value=b.location||"";Fnote.value=b.note||"";Frep.checked=!!b.repeatWeekly;Fdone.checked=!!b.done;$("btnDel").style.display="inline-flex";EBD.style.display="flex"}
     $("dlgClose").onclick=()=>EBD.style.display="none";
     $("btnDel").onclick=()=>{if(editId){remove(editId);EBD.style.display="none"}}
     $("btnSave").onclick=()=>{const existing=editId?getByAnyId(editId):null;const newRepeat=!!Frep.checked;const o={id:editId||("loc:"+Date.now().toString(36)+Math.random().toString(36).slice(2)),title:(Ftitle.value||"(uden titel)").trim(),type:normalizeType(Ftype.value),person:Fperson.value||"Alle",date:Fdate.value,time:Ftime.value||"",durationMin:Fdur.value?parseInt(Fdur.value,10):0,location:(Floc.value||"").trim(),note:(Fnote.value||"").trim(),repeatWeekly:newRepeat,done:!!Fdone.checked,source: editId&&String(editId).startsWith("gcal")?"google":"local"};if(existing&&String(existing.id||"").startsWith("gcal:")){const prevAuto=existing.autoRepeatWeekly;let manualOverride=false;if(prevAuto!==undefined){manualOverride=newRepeat!==prevAuto}else if(existing.repeatWeekly!==newRepeat){manualOverride=true}else{manualOverride=!!existing.manualRepeatWeekly}o.manualRepeatWeekly=manualOverride;if(prevAuto!==undefined)o.autoRepeatWeekly=prevAuto}else if(existing&&existing.manualRepeatWeekly!==undefined){o.manualRepeatWeekly=existing.manualRepeatWeekly;if(existing.autoRepeatWeekly!==undefined)o.autoRepeatWeekly=existing.autoRepeatWeekly}upsert(o);EBD.style.display="none"}
@@ -314,7 +316,7 @@
       });
     }
     function detectWeeklyRepeat(ev){if(!ev||typeof ev!=="object")return false;if(ev.repeatWeekly||ev.repeat_weekly)return true;if(ev.__weeklyHint)return true;const freq=(ev.repeatFrequency||ev.repeat_frequency||ev.frequency||ev.recurrenceFrequency||"").toString();const type=(ev.repeatType||ev.repeat_type||ev.recurrenceType||"").toString();if(containsWeekly(freq)||containsWeekly(type))return true;const interval=Number(ev.repeatInterval||ev.repeat_interval||ev.interval||ev.recurrenceInterval);if((freq||type)&&Number.isFinite(interval)&&interval===1&&/(week|uge)/i.test(freq+" "+type))return true;return containsWeekly(ev.recurrence)||containsWeekly(ev.recurrenceRule)||containsWeekly(ev.recurrence_rule)||containsWeekly(ev.repeat)||containsWeekly(ev.repeatRule)||containsWeekly(ev.pattern)||containsWeekly(ev.schedule)||containsWeekly(ev.recurrenceText)||containsWeekly(ev.recurrence_text)||containsWeekly(ev.repeatText)||containsWeekly(ev.repeat_text)}
-    async function syncNow(){try{setBadge("henter…");const evs=await fetchEvents();markLikelyWeekly(evs);const idx=loadGIdx();let created=0;for(const ev of evs){const date=fromAnyToLocalISO(ev.startISO||ev.date);const id="gcal:"+ev.id;const repeatWeeklyAuto=detectWeeklyRepeat(ev);const item={id,title:ev.summary||"(uden titel)",type:"Aktivitet",person:"Alle",date,time:ev.time||"",durationMin:ev.durationMin||30,location:ev.location||"",note:ev.description||"",repeatWeekly:repeatWeeklyAuto,done:false,source:"google",manualRepeatWeekly:false,autoRepeatWeekly:repeatWeeklyAuto};const uid=uidFor(item);const existingIdx=items.findIndex(x=>uidFor(x)===uid);const existingItem=existingIdx>=0?items[existingIdx]:null;if(existingItem){item.type=normalizeType(existingItem.type)||item.type;item.person=existingItem.person||item.person;item.done=existingItem.done!==undefined?!!existingItem.done:item.done;if(existingItem.note&&existingItem.note.trim()&&existingItem.note!==item.note)item.note=existingItem.note;const autoPrev=existingItem.autoRepeatWeekly;const manualOverride=!!(existingItem.manualRepeatWeekly||(autoPrev!==undefined&&existingItem.repeatWeekly!==autoPrev));item.manualRepeatWeekly=manualOverride;if(manualOverride){item.repeatWeekly=!!existingItem.repeatWeekly}}const needsUpdate=!existingItem||["title","type","person","date","time","durationMin","location","note","repeatWeekly","done","manualRepeatWeekly","autoRepeatWeekly"].some(key=>(existingItem?existingItem[key]:undefined)!==item[key]);if(idx[uid]===ev.updated&&!needsUpdate)continue;upsert(item);idx[uid]=ev.updated;created++}saveGIdx(idx);setBadge(created?`+${created} oprettet`:"ingen ændringer")}catch(e){console.error(e);setBadge("fejl")}}
+    async function syncNow(){try{setBadge("henter…");const evs=await fetchEvents();markLikelyWeekly(evs);const idx=loadGIdx();let created=0;for(const ev of evs){const date=fromAnyToLocalISO(ev.startISO||ev.date);const id="gcal:"+ev.id;const repeatWeeklyAuto=detectWeeklyRepeat(ev);const item={id,title:ev.summary||"(uden titel)",type:"Aktivitet",person:"Alle",date,time:ev.time||"",durationMin:ev.durationMin||30,location:ev.location||"",note:ev.description||"",repeatWeekly:repeatWeeklyAuto,done:false,source:"google",manualRepeatWeekly:false,autoRepeatWeekly:repeatWeeklyAuto};const uid=uidFor(item);const existingIdx=items.findIndex(x=>uidFor(x)===uid);const existingItem=existingIdx>=0?items[existingIdx]:null;if(existingItem){item.type=normalizeType(existingItem.type)||item.type;item.person=existingItem.person||item.person;item.done=existingItem.done!==undefined?!!existingItem.done:item.done;if(existingItem.note&&existingItem.note.trim()&&existingItem.note!==item.note)item.note=existingItem.note;const autoPrev=existingItem.autoRepeatWeekly;const manualOverride=!!(existingItem.manualRepeatWeekly||(autoPrev!==undefined&&existingItem.repeatWeekly!==autoPrev));item.manualRepeatWeekly=manualOverride;if(manualOverride){item.repeatWeekly=!!existingItem.repeatWeekly}}item.person=normalizePersonName(item.person);const needsUpdate=!existingItem||["title","type","person","date","time","durationMin","location","note","repeatWeekly","done","manualRepeatWeekly","autoRepeatWeekly"].some(key=>(existingItem?existingItem[key]:undefined)!==item[key]);if(idx[uid]===ev.updated&&!needsUpdate)continue;upsert(item);idx[uid]=ev.updated;created++}saveGIdx(idx);setBadge(created?`+${created} oprettet`:"ingen ændringer")}catch(e){console.error(e);setBadge("fejl")}}
     $("gSync").onclick=()=>syncNow()
     $("gReset").onclick=()=>{localStorage.removeItem(LS_GIDX);setBadge("nulstiller…");syncNow()}
 
@@ -359,13 +361,14 @@
           manualRepeatWeekly:!!(payload.manualRepeatWeekly??payload.manual_repeat_weekly??base.manual_repeat_weekly??false),
           autoRepeatWeekly:payload.autoRepeatWeekly??payload.auto_repeat_weekly??base.auto_repeat_weekly
         };
+        out.person=normalizePersonName(out.person);
         return out;
       }
 
       let pushLock=false;
       function writeAndRender(arr){
         pushLock=true;
-        items=Array.isArray(arr)?arr.map(it=>({...it})) : [];
+        items=Array.isArray(arr)?arr.map(it=>({...it,person:normalizePersonName(it.person)})) : [];
         saveLS(LS_ITEMS,items);
         pushLock=false;
         try{render()}catch(_){ }
@@ -394,7 +397,7 @@
           const rows=[];
           for(const it of localArr){
             if(!it) continue;
-            const data={...it,type:normalizeType(it.type),date:fromAnyToLocalISO(it.date)};
+            const data={...it,type:normalizeType(it.type),date:fromAnyToLocalISO(it.date)};data.person=normalizePersonName(data.person||"Alle");
             const uid=uidFor(data);
             if(seen.has(uid)) continue;
             seen.add(uid);
