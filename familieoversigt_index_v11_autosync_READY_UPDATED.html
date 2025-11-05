@@ -345,8 +345,37 @@
       function canon(row,id){
         const base=row&&typeof row==="object"?row:{};
         const payload=base.data&&typeof base.data==="object"?base.data:base;
+        const rawUid=typeof base.uid==="string"?base.uid:"";
+        let derivedId=payload.id||base.uid||id||"";
+        const ensureGoogleIdFromUid=()=>{
+          if(!rawUid)return null;
+          if(rawUid.startsWith("g:")){
+            const body=rawUid.slice(2);
+            const [gid,dateHint]=body.split("|");
+            return {id:gid?`gcal:${gid}`:"",dateHint:dateHint||"",source:"google"};
+          }
+          if(rawUid.startsWith("gr:")){
+            return {id:`gcalr:${rawUid.slice(3)}`,dateHint:"",source:"google"};
+          }
+          return null;
+        };
+        if(!derivedId){
+          const guess=ensureGoogleIdFromUid();
+          if(guess?.id){
+            derivedId=guess.id;
+          }
+        }
+        if(/^g:/.test(derivedId)||/^gr:/.test(derivedId)){
+          const guess=ensureGoogleIdFromUid();
+          if(guess?.id){
+            derivedId=guess.id;
+          }
+        }
+        if(!derivedId){
+          derivedId="sb:"+(payload.title||base.title||"item");
+        }
         const out={
-          id:payload.id||base.uid||id||"sb:"+(payload.title||"item"),
+          id:derivedId,
           title:(payload.title||base.title||"(uden titel)").trim()||"(uden titel)",
           type:normalizeType(payload.type||base.type),
           person:(payload.person||base.person)||"Alle",
@@ -361,6 +390,13 @@
           manualRepeatWeekly:!!(payload.manualRepeatWeekly??payload.manual_repeat_weekly??base.manual_repeat_weekly??false),
           autoRepeatWeekly:payload.autoRepeatWeekly??payload.auto_repeat_weekly??base.auto_repeat_weekly
         };
+        const uidGuess=ensureGoogleIdFromUid();
+        if(uidGuess?.dateHint && !out.date){
+          out.date=fromAnyToLocalISO(uidGuess.dateHint);
+        }
+        if(uidGuess?.source && !out.source){
+          out.source=uidGuess.source;
+        }
         out.person=normalizePersonName(out.person);
         return out;
       }
