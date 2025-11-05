@@ -84,6 +84,14 @@
         <div><label for="f_loc">Sted</label><input id="f_loc" type="text" placeholder="Adresse/sted"></div>
         <div class="full"><label for="f_note">Note</label><textarea id="f_note" placeholder="Noter"></textarea></div>
         <div class="full row"><input id="f_rep" type="checkbox"><label for="f_rep">Gentag hver uge</label><input id="f_done" type="checkbox" style="margin-left:16px"><label for="f_done">Marker som udført</label></div>
+        <div class="full" id="repeatScopeRow" style="display:none">
+          <label for="repeatScopeRow">Ændring skal gælde for</label>
+          <div class="row" role="group" aria-labelledby="repeatScopeRow">
+            <label><input type="radio" name="repeatScope" value="one"> Kun denne</label>
+            <label><input type="radio" name="repeatScope" value="future"> Denne og frem</label>
+            <label><input type="radio" name="repeatScope" value="series" checked> Hele serien</label>
+          </div>
+        </div>
       </div>
       <div class="actions" style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px">
         <button class="btn ghost" id="btnDel" style="display:none">Slet</button>
@@ -136,6 +144,12 @@
     function normalizeType(t){if(t==="Anden aftale"||t==="Andre aftaler")return"Aktivitet";if(t==="Fritidsinteresser")return"Fritidsinteresse";return t||"Aktivitet"}
     function normalizePersonName(name){const raw=(name??"").toString().trim();if(!raw)return"Alle";const pool=(typeof PEOPLE!=="undefined"&&Array.isArray(PEOPLE)&&PEOPLE.length?PEOPLE:DEFAULT_PEOPLE);const lower=raw.toLowerCase();const match=pool.find(p=>(p.name||"").toLowerCase()===lower);return match?match.name:raw}
 
+    function toISO(dateLike){if(!dateLike)return"";if(dateLike instanceof Date)return fmtISO(dateLike);if(typeof dateLike==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(dateLike))return dateLike;return fromAnyToLocalISO(dateLike)}
+    function addDaysISO(iso,days){if(!iso||!Number.isFinite(days))return"";const [y,m,d]=iso.split("-").map(Number);if([y,m,d].some(n=>Number.isNaN(n)))return"";const dt=new Date(y,m-1,d);dt.setDate(dt.getDate()+days);return fmtISO(dt)}
+    function uniqueISOList(arr){if(!Array.isArray(arr))return[];const out=[];const seen=new Set();for(const entry of arr){const iso=toISO(entry);if(!iso||seen.has(iso))continue;seen.add(iso);out.push(iso);}return out}
+    function safeSeriesId(it){if(!it)return"";const id=(it.seriesId||it.id||"").toString();return id||""}
+    function makeOverrideId(baseId,dateIso,kind){const base=(baseId||"serie").toString().replace(/[^a-z0-9]+/gi,"-").replace(/^-+|-+$/g,"").slice(0,40)||"serie";return `loc:${kind||'ovr'}:${base}:${dateIso}`}
+
     function keyOf(it){return[(it.title||"").trim().toLowerCase(),(it.date||"").trim(),(it.time||"").trim(),(it.person||"Alle").trim(),(it.type||"Aktivitet").trim()].join("|")}
     function djb2(s){let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h)^s.charCodeAt(i);return (h>>>0).toString(36)}
     function uidFor(it){
@@ -147,11 +161,35 @@
     }
 
     /* ---------- state ---------- */
-    let PEOPLE, items, current="Alle", editId=null, wk=startOfWeek();
+    let PEOPLE, items, current="Alle", editContext=null, wk=startOfWeek();
     function loadPrefs(){return loadLS(LS_PREFS,{});}
     function savePrefs(p){saveLS(LS_PREFS,p)}
     function getPeople(){const p=loadPrefs();return DEFAULT_PEOPLE.map(x=>({...x,color:p[x.name]?.color||x.color,avatar:p[x.name]?.avatar||""}))}
-    function loadItems(){const arr=loadLS(LS_ITEMS,[]).map(it=>{const person=normalizePersonName(it.person||"Alle");return {...it,type:normalizeType(it.type),person}});saveLS(LS_ITEMS,arr);return arr}
+    function normalizeItemShape(it){
+      if(!it||typeof it!=="object") return null;
+      const id=(it.id||"").toString();
+      const person=normalizePersonName(it.person||"Alle");
+      const date=toISO(it.date);
+      const repeatUntil=toISO(it.repeatUntil||it.repeat_until||"");
+      const exceptions=uniqueISOList(it.exceptions||it.exceptionDates||[]);
+      const seriesId=safeSeriesId(it)|| (it.id||"");
+      const overrideOf=it.overrideOf||it.override_of||"";
+      const overrideBaseId=it.overrideBaseId||it.override_base_id||"";
+      return {
+        ...it,
+        id:id||it.id||"",
+        type:normalizeType(it.type),
+        person,
+        date,
+        repeatWeekly:!!it.repeatWeekly,
+        repeatUntil,
+        exceptions,
+        seriesId:(seriesId||id||it.id||""),
+        overrideOf,
+        overrideBaseId
+      };
+    }
+    function loadItems(){const arr=loadLS(LS_ITEMS,[]).map(normalizeItemShape).filter(Boolean);saveLS(LS_ITEMS,arr);return arr}
     function saveItems(){saveLS(LS_ITEMS,items)}
 
     PEOPLE=getPeople(); items=loadItems();
@@ -203,10 +241,18 @@
         if(Number.isNaN(src.getTime())) continue;
         const srcDow=(src.getDay()+6)%7;
         const target=new Date(wk);target.setDate(wk.getDate()+srcDow);
+        const targetISO=fmtISO(target);
+        const skipDates=new Set((it.exceptions||[]).map(toISO).filter(Boolean));
+        if(skipDates.has(targetISO)) continue;
+        const untilISO=toISO(it.repeatUntil);
+        if(untilISO){
+          const untilDate=new Date(untilISO+"T00:00:00");
+          if(target>untilDate) continue;
+        }
         const clone={...it};
         clone.baseId=it.id;
         clone.id=`rpt|${it.id}|${weekISO}`;
-        clone.date=fmtISO(target);
+        clone.date=targetISO;
         out.push(clone);
       }
       return out;
@@ -247,9 +293,16 @@
         const sec=day.querySelector(`.section[data-section="${normalizeType(it.type)}"] .items`); if(!sec) continue;
         const left = (it.type==="Opgave") ? `<input type="checkbox" ${it.done?'checked':''} data-opg="${it.id}">` : (it.time||'<span class="muted">Heldag</span>');
         const div=document.createElement("div");
-        div.className="item"+(it.done?" done":""); div.style.borderLeftColor=personColor(it.person); div.dataset.id=it.id;
-        div.innerHTML=`<div class="left">${left}</div><div class="meta"><div class="titlex">${(it.title||"(uden titel)").replace(/[&<>]/g,s=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[s]))}${it.repeatWeekly?' · <span class="muted">↻ uge</span>':''}</div>${it.location?`<div class="note">${it.location}</div>`:""}${it.note?`<div class="note">${it.note}</div>`:""}</div>`;
-        div.onclick=(e)=>{if(e.target && e.target.matches('input[type="checkbox"]'))return; openEditor(div.dataset.id)}
+        const repeatTag=it.repeatWeekly?' · <span class="muted">↻ uge</span>':'';
+        const overrideTag=it.overrideOf?' · <span class="muted">tilpasset</span>':'';
+        div.className="item"+(it.done?" done":"");
+        div.style.borderLeftColor=personColor(it.person);
+        div.dataset.id=it.id;
+        div.dataset.date=it.date||"";
+        div.dataset.baseId=it.baseId||it.overrideBaseId||it.id;
+        div.dataset.seriesId=it.seriesId||it.overrideOf||it.baseId||it.id;
+        div.innerHTML=`<div class="left">${left}</div><div class="meta"><div class="titlex">${(it.title||"(uden titel)").replace(/[&<>]/g,s=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[s]))}${repeatTag}${overrideTag}</div>${it.location?`<div class="note">${it.location}</div>`:""}${it.note?`<div class="note">${it.note}</div>`:""}</div>`;
+        div.onclick=(e)=>{if(e.target && e.target.matches('input[type="checkbox"]'))return; openEditor({id:div.dataset.id,date:div.dataset.date,baseId:div.dataset.baseId,seriesId:div.dataset.seriesId})}
         sec.appendChild(div);
       }
 
@@ -271,23 +324,283 @@
       })
     }
 
-    function upsert(obj){
-      obj.type=normalizeType(obj.type); obj.person=normalizePersonName(obj.person||"Alle");
-      const UID=uidFor(obj);           // why: stabil identitet
-      const i=items.findIndex(x=>uidFor(x)===UID);
-      if(i>=0) items[i]={...items[i],...obj}; else items.push(obj);
-      saveItems(); render();
+    function putItem(obj,{commit=true}={}){
+      if(!obj)return null;
+      const normalized=normalizeItemShape(obj);
+      if(!normalized) return null;
+      if(!normalized.id){
+        normalized.id=`loc:${Date.now().toString(36)}${Math.random().toString(36).slice(2,8)}`;
+      }
+      if(!normalized.seriesId){
+        normalized.seriesId=normalized.id;
+      }
+      const idx=items.findIndex(x=>String(x.id||"")===String(normalized.id));
+      if(idx>=0){
+        items[idx]={...items[idx],...normalized};
+      }else{
+        items.push(normalized);
+      }
+      if(commit){commitItems();}
+      return normalized;
     }
-    function remove(id){items=items.filter(x=>x.id!==id);saveItems();render()}
+    function upsert(obj){return putItem(obj,{commit:true});}
+    function remove(id){dropItem(id,{commit:true});}
+    function dropItem(id,{commit=true}={}){
+      const key=String(id||"");
+      const next=items.filter(x=>String(x.id||"")!==key);
+      if(next.length===items.length)return;
+      items=next;
+      if(commit){commitItems();}
+    }
+    function findById(id){return items.find(x=>String(x.id||"")===String(id||""))||null}
+    function replaceItem(id,payload){const idx=items.findIndex(x=>String(x.id||"")===String(id||""));if(idx>=0){items[idx]={...items[idx],...payload};}}
+    function commitItems(){saveItems();render();}
+    function findOverride(seriesOrBaseId,dateIso){const targetISO=toISO(dateIso);if(!targetISO)return null;const key=String(seriesOrBaseId||"");return items.find(x=>{if(toISO(x.date)!==targetISO)return false;const overrideKey=String(x.overrideOf||"");const baseKey=String(x.overrideBaseId||"");if(overrideKey&&overrideKey===key)return true;if(baseKey&&baseKey===key)return true;const seriesKey=safeSeriesId(x);if(seriesKey&&seriesKey===key&&!x.repeatWeekly)return true;return false;})||null}
+    function ensureException(baseId,dateIso){const base=findById(baseId);const iso=toISO(dateIso);if(!base||!iso)return;base.exceptions=uniqueISOList([...(base.exceptions||[]),iso]);replaceItem(baseId,{exceptions:base.exceptions});}
+    function removeException(baseId,dateIso){const base=findById(baseId);const iso=toISO(dateIso);if(!base||!iso)return;base.exceptions=(base.exceptions||[]).filter(x=>toISO(x)!==iso);replaceItem(baseId,{exceptions:base.exceptions});}
+    function updateRepeatUntil(baseId,lastIso){const base=findById(baseId);if(!base)return;const iso=toISO(lastIso);if(iso){replaceItem(baseId,{repeatUntil:iso});}else{replaceItem(baseId,{repeatUntil:""});}}
 
     // editor
     const EBD=$("editorBD"), DTitle=$("dlgTitle"), Ftitle=$("f_title"), Ftype=$("f_type"), Fperson=$("f_person"), Fdate=$("f_date"), Ftime=$("f_time"), Fdur=$("f_dur"), Floc=$("f_loc"), Fnote=$("f_note"), Frep=$("f_rep"), Fdone=$("f_done");
+    const scopeRow=$("repeatScopeRow");
+    const scopeRadios=[...document.querySelectorAll('input[name="repeatScope"]')];
+    function showScopeRow(){if(scopeRow)scopeRow.style.display="block";}
+    function hideScopeRow(){if(scopeRow)scopeRow.style.display="none";}
+    function resetScopeRadios(){scopeRadios.forEach(r=>{r.checked=r.value==='series';});}
+    function currentScope(){const found=scopeRadios.find(r=>r.checked);return found?found.value:'series';}
     function fillPeopleSelect(){Fperson.innerHTML=PEOPLE.map(p=>`<option${p.name==="Alle"?" selected":""}>${p.name}</option>`).join("")}
-    function openNew(dateISO){editId=null;DTitle.textContent="Tilføj";Ftitle.value="";Ftype.value="Aktivitet";Fperson.value=normalizePersonName("Alle");Fdate.value=dateISO||fmtISO(new Date());Ftime.value="";Fdur.value="";Floc.value="";Fnote.value="";Frep.checked=false;Fdone.checked=false;$("btnDel").style.display="none";EBD.style.display="flex"}
-    function openEditor(any){const b=getByAnyId(any);if(!b)return;editId=b.id;DTitle.textContent="Rediger";Ftitle.value=b.title||"";Ftype.value=normalizeType(b.type);Fperson.value=normalizePersonName(b.person||"Alle");Fdate.value=b.date||fmtISO(new Date());Ftime.value=b.time||"";Fdur.value=b.durationMin||"";Floc.value=b.location||"";Fnote.value=b.note||"";Frep.checked=!!b.repeatWeekly;Fdone.checked=!!b.done;$("btnDel").style.display="inline-flex";EBD.style.display="flex"}
-    $("dlgClose").onclick=()=>EBD.style.display="none";
-    $("btnDel").onclick=()=>{if(editId){remove(editId);EBD.style.display="none"}}
-    $("btnSave").onclick=()=>{const existing=editId?getByAnyId(editId):null;const newRepeat=!!Frep.checked;const o={id:editId||("loc:"+Date.now().toString(36)+Math.random().toString(36).slice(2)),title:(Ftitle.value||"(uden titel)").trim(),type:normalizeType(Ftype.value),person:Fperson.value||"Alle",date:Fdate.value,time:Ftime.value||"",durationMin:Fdur.value?parseInt(Fdur.value,10):0,location:(Floc.value||"").trim(),note:(Fnote.value||"").trim(),repeatWeekly:newRepeat,done:!!Fdone.checked,source: editId&&String(editId).startsWith("gcal")?"google":"local"};if(existing&&String(existing.id||"").startsWith("gcal:")){const prevAuto=existing.autoRepeatWeekly;let manualOverride=false;if(prevAuto!==undefined){manualOverride=newRepeat!==prevAuto}else if(existing.repeatWeekly!==newRepeat){manualOverride=true}else{manualOverride=!!existing.manualRepeatWeekly}o.manualRepeatWeekly=manualOverride;if(prevAuto!==undefined)o.autoRepeatWeekly=prevAuto}else if(existing&&existing.manualRepeatWeekly!==undefined){o.manualRepeatWeekly=existing.manualRepeatWeekly;if(existing.autoRepeatWeekly!==undefined)o.autoRepeatWeekly=existing.autoRepeatWeekly}upsert(o);EBD.style.display="none"}
+    function openNew(dateISO){editContext=null;resetScopeRadios();hideScopeRow();DTitle.textContent="Tilføj";Ftitle.value="";Ftype.value="Aktivitet";Fperson.value=normalizePersonName("Alle");Fdate.value=dateISO||fmtISO(new Date());Ftime.value="";Fdur.value="";Floc.value="";Fnote.value="";Frep.checked=false;Fdone.checked=false;$("btnDel").style.display="none";EBD.style.display="flex"}
+    function openEditor(ctx){
+      const hint=ctx||{};
+      const rawId=hint.id;
+      const baseHint=hint.baseId;
+      const seriesHint=hint.seriesId;
+      const target=findById(rawId);
+      let base=null;
+      if(baseHint){
+        base=findById(baseHint);
+      }
+      if(!base && rawId){
+        base=getByAnyId(rawId);
+      }
+      if(!base && seriesHint){
+        base=items.find(x=>safeSeriesId(x)===seriesHint && !!x.repeatWeekly) || null;
+      }
+      const source=target||base;
+      if(!source)return;
+      const occISO=toISO(hint.date||source.date||base?.date||"");
+      const effectiveBase=base||source;
+      editContext={
+        id:source.id,
+        rawId:rawId,
+        baseId:effectiveBase.id,
+        seriesId:safeSeriesId(effectiveBase)||effectiveBase.id,
+        occurrence:occISO,
+        isOverride:!!(target && target.id!==effectiveBase.id),
+        hasRepeat:!!effectiveBase.repeatWeekly
+      };
+      const initial={...source};
+      if(occISO) initial.date=occISO;
+      DTitle.textContent="Rediger";
+      Ftitle.value=initial.title||"";
+      Ftype.value=normalizeType(initial.type);
+      Fperson.value=normalizePersonName(initial.person||"Alle");
+      Fdate.value=initial.date||fmtISO(new Date());
+      Ftime.value=initial.time||"";
+      Fdur.value=initial.durationMin||"";
+      Floc.value=initial.location||"";
+      Fnote.value=initial.note||"";
+      Frep.checked=!!initial.repeatWeekly;
+      Fdone.checked=!!initial.done;
+      if(editContext.hasRepeat && !editContext.isOverride){showScopeRow();}else{hideScopeRow();}
+      resetScopeRadios();
+      $("btnDel").style.display="inline-flex";
+      EBD.style.display="flex";
+    }
+    $("dlgClose").onclick=()=>{EBD.style.display="none";editContext=null;};
+    $("btnDel").onclick=()=>{
+      if(!editContext){EBD.style.display="none";return;}
+      const base=findById(editContext.baseId);
+      const seriesId=editContext.seriesId||safeSeriesId(base)|| (base?base.id:"");
+      const scope=(editContext.hasRepeat && !editContext.isOverride)?currentScope():'series';
+      const occISO=toISO(editContext.occurrence||base?.date||"");
+      if(editContext.isOverride || !editContext.hasRepeat){
+        dropItem(editContext.id,{commit:true});
+        EBD.style.display="none";
+        editContext=null;
+        return;
+      }
+      if(scope==='series'){
+        items=items.filter(it=>safeSeriesId(it)!==seriesId);
+        commitItems();
+      }else if(scope==='future'){
+        if(!occISO){
+          items=items.filter(it=>safeSeriesId(it)!==seriesId);
+          commitItems();
+        }else{
+          const baseDate=toISO(base?.date);
+          if(baseDate && occISO<=baseDate){
+            items=items.filter(it=>safeSeriesId(it)!==seriesId);
+            commitItems();
+          }else{
+            const prevIso=addDaysISO(occISO,-7);
+            updateRepeatUntil(editContext.baseId,prevIso);
+            items=items.filter(it=>{
+              if(safeSeriesId(it)!==seriesId) return true;
+              if(it.id===editContext.baseId) return true;
+              const dateIso=toISO(it.date);
+              if(!dateIso) return true;
+              return dateIso<occISO;
+            });
+            commitItems();
+          }
+        }
+      }else{
+        if(occISO){
+          ensureException(editContext.baseId,occISO);
+          const override=findOverride(seriesId,occISO);
+          if(override){dropItem(override.id,{commit:false});}
+          commitItems();
+        }
+      }
+      EBD.style.display="none";
+      editContext=null;
+    };
+    $("btnSave").onclick=()=>{
+      const newRepeat=!!Frep.checked;
+      const dateInput=toISO(Fdate.value)||fmtISO(new Date());
+      const timeValue=Ftime.value||"";
+      let dur=Fdur.value?parseInt(Fdur.value,10):0; if(!Number.isFinite(dur)) dur=0;
+      const base=editContext?findById(editContext.baseId):null;
+      const existing=editContext?findById(editContext.id):null;
+      const seriesId=editContext?.seriesId||safeSeriesId(base)||safeSeriesId(existing)||"";
+      const occISO=editContext?toISO(editContext.occurrence||dateInput):dateInput;
+      const payload={
+        id:existing?.id||"",
+        title:(Ftitle.value||"(uden titel)").trim()||"(uden titel)",
+        type:normalizeType(Ftype.value),
+        person:Fperson.value||"Alle",
+        date:occISO||dateInput,
+        time:timeValue,
+        durationMin:dur,
+        location:(Floc.value||"").trim(),
+        note:(Fnote.value||"").trim(),
+        repeatWeekly:newRepeat,
+        done:!!Fdone.checked,
+        source:existing?.source||base?.source||'local',
+        seriesId:seriesId
+      };
+      if(!payload.date) payload.date=fmtISO(new Date());
+      if(!payload.repeatWeekly){
+        payload.repeatUntil="";
+      }
+      if(existing && String(existing.id||"").startsWith("gcal:")){
+        const prevAuto=existing.autoRepeatWeekly;
+        let manualOverride=false;
+        if(prevAuto!==undefined){
+          manualOverride=newRepeat!==prevAuto;
+        }else if(existing.repeatWeekly!==newRepeat){
+          manualOverride=true;
+        }else{
+          manualOverride=!!existing.manualRepeatWeekly;
+        }
+        payload.manualRepeatWeekly=manualOverride;
+        if(prevAuto!==undefined) payload.autoRepeatWeekly=prevAuto;
+        payload.source=existing.source||'google';
+      }else if(base && String(base.id||"").startsWith("gcal:")){
+        const prevAuto=base.autoRepeatWeekly;
+        let manualOverride=false;
+        if(prevAuto!==undefined){
+          manualOverride=newRepeat!==prevAuto;
+        }else if(base.repeatWeekly!==newRepeat){
+          manualOverride=true;
+        }else{
+          manualOverride=!!base.manualRepeatWeekly;
+        }
+        payload.manualRepeatWeekly=manualOverride;
+        if(prevAuto!==undefined) payload.autoRepeatWeekly=prevAuto;
+        payload.source=base.source||'google';
+      }else if(existing && existing.manualRepeatWeekly!==undefined){
+        payload.manualRepeatWeekly=existing.manualRepeatWeekly;
+        if(existing.autoRepeatWeekly!==undefined) payload.autoRepeatWeekly=existing.autoRepeatWeekly;
+      }else if(base && base.manualRepeatWeekly!==undefined){
+        payload.manualRepeatWeekly=base.manualRepeatWeekly;
+        if(base.autoRepeatWeekly!==undefined) payload.autoRepeatWeekly=base.autoRepeatWeekly;
+      }
+
+      if(!editContext){
+        upsert(payload);
+        EBD.style.display="none";
+        return;
+      }
+
+      if(editContext.isOverride || !editContext.hasRepeat){
+        if(existing){
+          payload.id=existing.id;
+          payload.seriesId=safeSeriesId(existing)||seriesId||existing.id;
+          payload.overrideOf=existing.overrideOf||"";
+          payload.overrideBaseId=existing.overrideBaseId||existing.baseId||editContext.baseId;
+        }else{
+          payload.id=editContext.baseId;
+        }
+        putItem(payload,{commit:true});
+        EBD.style.display="none";
+        editContext=null;
+        return;
+      }
+
+      const baseItem=base||existing;
+      if(!baseItem){
+        upsert(payload);
+        EBD.style.display="none";
+        editContext=null;
+        return;
+      }
+
+      const scope=currentScope();
+      const seriesKey=safeSeriesId(baseItem)||seriesId||baseItem.id;
+      const baseDate=toISO(baseItem.date);
+
+      if(scope==='series'){
+        const updated={...baseItem,...payload,id:baseItem.id,seriesId:seriesKey,overrideOf:"",overrideBaseId:""};
+        putItem(updated,{commit:false});
+        commitItems();
+      }else if(scope==='future'){
+        if(!occISO || (baseDate && occISO<=baseDate)){
+          const updated={...baseItem,...payload,id:baseItem.id,seriesId:seriesKey,overrideOf:"",overrideBaseId:""};
+          putItem(updated,{commit:false});
+          commitItems();
+        }else{
+          const previousEnd=baseItem.repeatUntil;
+          const prevIso=addDaysISO(occISO,-7);
+          updateRepeatUntil(baseItem.id,prevIso);
+          const futureExceptions=(baseItem.exceptions||[]).filter(x=>{const iso=toISO(x);return iso&&iso>occISO;});
+          const remainingExceptions=(baseItem.exceptions||[]).filter(x=>{const iso=toISO(x);return !iso||iso<occISO;});
+          replaceItem(baseItem.id,{exceptions:remainingExceptions});
+          const futureExisting=findOverride(seriesKey,occISO);
+          const futureId=futureExisting?futureExisting.id:makeOverrideId(seriesKey,occISO,'future');
+          const futurePayload={...baseItem,...payload,id:futureId,date:occISO,repeatWeekly:payload.repeatWeekly,seriesId:seriesKey,overrideOf:"",overrideBaseId:baseItem.id,exceptions:futureExceptions,repeatUntil:payload.repeatWeekly?previousEnd:""};
+          putItem(futurePayload,{commit:false});
+          commitItems();
+        }
+      }else{
+        if(occISO){
+          ensureException(baseItem.id,occISO);
+          const existingOverride=findOverride(seriesKey,occISO);
+          const overrideId=existingOverride?existingOverride.id:makeOverrideId(seriesKey,occISO,'one');
+          const overridePayload={...baseItem,...payload,id:overrideId,date:occISO,repeatWeekly:false,seriesId:seriesKey,overrideOf:seriesKey,overrideBaseId:baseItem.id,exceptions:[],repeatUntil:""};
+          putItem(overridePayload,{commit:false});
+          commitItems();
+        }else{
+          const updated={...baseItem,...payload,id:baseItem.id,seriesId:seriesKey};
+          putItem(updated,{commit:false});
+          commitItems();
+        }
+      }
+
+      EBD.style.display="none";
+      editContext=null;
+    }
 
     // header buttons
     $("prev").onclick=()=>{wk.setDate(wk.getDate()-7);render()}
@@ -388,7 +701,12 @@
           done:!!(payload.done??base.done),
           source:payload.source||base.source||"sb",
           manualRepeatWeekly:!!(payload.manualRepeatWeekly??payload.manual_repeat_weekly??base.manual_repeat_weekly??false),
-          autoRepeatWeekly:payload.autoRepeatWeekly??payload.auto_repeat_weekly??base.auto_repeat_weekly
+          autoRepeatWeekly:payload.autoRepeatWeekly??payload.auto_repeat_weekly??base.auto_repeat_weekly,
+          exceptions:uniqueISOList(payload.exceptions||payload.exceptionDates||base.exceptions||base.exception_dates||[]),
+          repeatUntil:toISO(payload.repeatUntil||payload.repeat_until||base.repeat_until||""),
+          seriesId:payload.seriesId||payload.series_id||base.series_id||derivedId,
+          overrideOf:payload.overrideOf||payload.override_of||base.override_of||"",
+          overrideBaseId:payload.overrideBaseId||payload.override_base_id||base.override_base_id||""
         };
         const uidGuess=ensureGoogleIdFromUid();
         if(uidGuess?.dateHint && !out.date){
