@@ -1,0 +1,14 @@
+{
+  "name": "wap-sonos-local",
+  "version": "1.0.0",
+  "description": "Lokal Sonos-controller til Webkiosk",
+  "main": "sonos-local-server.js",
+  "scripts": {
+    "start": "node sonos-local-server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "sonos": "^1.15.2"
+  }
+}

@@ -38,6 +38,47 @@
   .calframe.panel{position:relative;flex:1;min-height:0;overflow:hidden;display:flex}
   iframe{width:100%;height:100%;border:0;display:block}
 
+  /* Sonos overlay */
+  .sonos-view{position:fixed;inset:0;padding:clamp(12px,2vw,20px);background:rgba(246,247,249,.92);backdrop-filter:blur(8px);z-index:65;display:flex;flex-direction:column}
+  .sonos-inner{max-width:1080px;margin:0 auto;display:flex;flex-direction:column;gap:16px;width:100%;height:100%}
+  .sonos-body{flex:1;min-height:0;display:grid;grid-template-columns:1fr;gap:16px}
+  .sonos-panel{background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow);padding:clamp(18px,2.2vw,26px);display:flex;flex-direction:column;gap:18px;min-height:0}
+  .sonos-header{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .sonos-groups{display:flex;flex-wrap:wrap;gap:10px}
+  .sonos-group{padding:10px 14px;border-radius:12px;border:1px solid var(--border);background:#fbfbfd;color:var(--fg);font-weight:650;cursor:pointer;display:flex;align-items:center;gap:8px;transition:transform .12s,box-shadow .12s}
+  .sonos-group.active{background:var(--accent);color:#fff;border-color:var(--accent);box-shadow:0 12px 30px rgba(15,23,42,.20)}
+  .sonos-group:hover{transform:translateY(-1px);box-shadow:0 12px 26px rgba(2,6,23,.08)}
+  .sonos-state{font-size:13px;color:var(--muted)}
+  .sonos-now{display:flex;gap:16px;align-items:center}
+  .sonos-art{width:90px;height:90px;border-radius:18px;background:linear-gradient(120deg,#f1f4f8,#e2e7ef);display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .sonos-art img{width:100%;height:100%;object-fit:cover}
+  .sonos-track{display:flex;flex-direction:column;gap:6px;min-width:0}
+  .sonos-track-title{font-size:clamp(18px,2.2vw,22px);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sonos-track-meta{color:var(--muted);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sonos-controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .sonos-btn{padding:12px 14px;border-radius:12px;border:1px solid var(--border);background:#fff;color:var(--fg);display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-weight:650;transition:transform .12s,box-shadow .12s}
+  .sonos-btn:hover{transform:translateY(-1px);box-shadow:0 12px 24px rgba(2,6,23,.10)}
+  .sonos-btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .sonos-volume{display:flex;align-items:center;gap:12px;flex:1;min-width:200px}
+  .sonos-volume input[type="range"]{flex:1}
+  .sonos-members{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+  .sonos-member{padding:12px 14px;border-radius:14px;border:1px solid var(--border);background:#f8f9fc;display:flex;justify-content:space-between;align-items:center;font-weight:600}
+  .sonos-member span{font-size:13px;color:var(--muted);font-weight:500}
+  .sonos-favs{display:flex;flex-direction:column;gap:12px}
+  .sonos-fav-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+  .sonos-fav{border:1px solid var(--border);border-radius:16px;padding:14px;background:#fff;display:flex;flex-direction:column;gap:8px;cursor:pointer;text-align:left;transition:transform .12s,box-shadow .12s}
+  .sonos-fav:hover{transform:translateY(-1px);box-shadow:0 12px 26px rgba(2,6,23,.10)}
+  .sonos-fav-title{font-weight:650;font-size:15px}
+  .sonos-fav-desc{font-size:13px;color:var(--muted)}
+  .sonos-empty{border:1px dashed var(--border);border-radius:16px;padding:20px;text-align:center;color:var(--muted);font-size:14px}
+  .sonos-notice{border:1px solid var(--border);border-radius:16px;padding:18px;background:#fff4;border-left:4px solid #f59e0b;color:#b45309;font-size:14px;line-height:1.5}
+  .sonos-notice strong{color:#92400e}
+  .sonos-footer{display:flex;flex-wrap:wrap;gap:10px}
+  .sonos-footer .btn{padding:10px 14px;border-radius:12px;border:1px solid var(--border);background:#fff;color:var(--fg);font-weight:650;cursor:pointer}
+  .sonos-footer .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .sonos-loader{font-size:14px;color:var(--muted)}
+  @media(max-width:700px){.sonos-now{flex-direction:column;align-items:flex-start}.sonos-volume{min-width:0;width:100%}}
+
   /* FAB */
   .fab{position:fixed;right:20px;bottom:20px;z-index:90}
   .fab button{width:56px;height:56px;border-radius:50%;border:1px solid var(--border);background:#fff;color:#0f172a;display:inline-flex;align-items:center;justify-content:center;box-shadow:var(--shadow);cursor:pointer}
@@ -121,7 +162,7 @@
         </button>
 
         <button class="panel tile" id="tileSonos" type="button" onclick="window.__handlers && window.__handlers.openSonos()">
-          <div class="meta"><div class="label" id="labelSonos">Sonos</div><div class="sub" id="subSonos">App eller web</div></div>
+          <div class="meta"><div class="label" id="labelSonos">Sonos</div><div class="sub" id="subSonos">Lokal kontrol</div></div>
           <div class="logo-box"><img id="logoSonos" alt="Sonos"></div>
         </button>
       </div>
@@ -136,6 +177,53 @@
       </div>
       <div class="calframe panel">
         <iframe id="calendarFrame" title="Kalender"></iframe>
+      </div>
+    </div>
+  </section>
+
+  <!-- Sonos overlay -->
+  <section class="sonos-view" id="sonosView" aria-hidden="true" hidden>
+    <div class="sonos-inner">
+      <div class="topbar">
+        <button class="back-btn" id="closeSonos" type="button">⬅ Tilbage</button>
+        <div id="sonosStatus" class="sonos-loader" role="status">Forbinder til Sonos…</div>
+      </div>
+      <div class="sonos-body">
+        <div class="sonos-panel" id="sonosPanel">
+          <div class="sonos-header">
+            <div class="sonos-groups" id="sonosGroups" role="tablist" aria-label="Sonos grupper"></div>
+            <div class="sonos-state" id="sonosState"></div>
+          </div>
+          <div class="sonos-now">
+            <div class="sonos-art"><img id="sonosArt" alt="Albumcover"/></div>
+            <div class="sonos-track">
+              <div class="sonos-track-title" id="sonosTrackTitle">Ingen afspilning</div>
+              <div class="sonos-track-meta" id="sonosTrackArtist">—</div>
+              <div class="sonos-track-meta" id="sonosTrackAlbum">—</div>
+            </div>
+          </div>
+          <div class="sonos-controls">
+            <div class="sonos-volume">
+              <label for="sonosVolume">Lydstyrke</label>
+              <input id="sonosVolume" type="range" min="0" max="100" value="0" />
+              <span id="sonosVolumeValue">0%</span>
+            </div>
+            <button class="sonos-btn" id="sonosPrev" type="button">⏮ Forrige</button>
+            <button class="sonos-btn primary" id="sonosPlayPause" type="button">▶ Afspil</button>
+            <button class="sonos-btn" id="sonosNext" type="button">⏭ Næste</button>
+            <button class="sonos-btn" id="sonosMuteToggle" type="button">🔇 Slå lyd fra</button>
+          </div>
+          <div class="sonos-members" id="sonosMembers"></div>
+          <div class="sonos-favs">
+            <h3 style="margin:0;font-size:16px;">Favoritter</h3>
+            <div id="sonosFavs" class="sonos-fav-grid"></div>
+          </div>
+          <div id="sonosNotice" class="sonos-notice" hidden></div>
+          <div class="sonos-footer">
+            <button class="btn" id="sonosReload" type="button">Opdater</button>
+            <button class="btn" id="sonosOpenWeb" type="button">Åbn Sonos webapp</button>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -191,6 +279,12 @@
             <div class="field"><label for="sonosUrl">Sonos link (app/web/custom scheme)</label><input type="text" id="sonosUrl" placeholder="sonos:// eller https://"/></div>
             <div class="field"><label for="sonosPkg">Android package</label><input type="text" id="sonosPkg" placeholder="com.sonos.acr2"/></div>
             <div class="field"><label for="sonosScheme">Custom scheme</label><input type="text" id="sonosScheme" placeholder="sonos://"/></div>
+            <div class="field full">
+              <label for="sonosLocalBase">Lokal Sonos-kontrol (LAN)</label>
+              <div class="row"><label class="row"><input type="checkbox" id="sonosLocalEnabled"/> Aktivér indbygget Sonos-view</label></div>
+              <input type="url" id="sonosLocalBase" placeholder="http://192.168.1.50:8789"/>
+              <span class="hint">Standard: <code>http://localhost:8789</code>. Kræver at denne kiosk kan nå Sonos-controlleren på samme netværk.</span>
+            </div>
           </div>
         </section>
 
@@ -280,7 +374,7 @@
   const LS_KEY='webkioskConfigV2';
   const DEFAULT_CAL_PATH='familieoversigt_index_v11_autosync_READY_UPDATED.html';
   const DEFAULT_CAL_URL=(()=>{try{return new URL('./'+DEFAULT_CAL_PATH,location.href).toString();}catch{return DEFAULT_CAL_PATH;}})();
-  const defaults={calendar:{mode:'url',url:DEFAULT_CAL_URL,fileName:'',fileData:''},homeyUrl:'',sonosUrl:'',sonosPkg:'',sonosScheme:'',logos:{calendar:'',homey:'',sonos:''},logoUrls:{calendar:'',homey:'',sonos:''},theme:{color:'#0f172a',background:'#f6f7f9'},keepAwake:true,householdId:'',_ts:0};
+  const defaults={calendar:{mode:'url',url:DEFAULT_CAL_URL,fileName:'',fileData:''},homeyUrl:'',sonosUrl:'',sonosPkg:'',sonosScheme:'',sonosLocal:{enabled:true,baseUrl:'http://localhost:8789',lastGroupId:''},logos:{calendar:'',homey:'',sonos:''},logoUrls:{calendar:'',homey:'',sonos:''},theme:{color:'#0f172a',background:'#f6f7f9'},keepAwake:true,householdId:'',_ts:0};
   function load(){try{const o=JSON.parse(localStorage.getItem(LS_KEY)||'{}');const deep=(m,d)=>{const r=Array.isArray(d)?[]:{};for(const k in d){if(d[k]&&typeof d[k]==='object'&&!Array.isArray(d[k]))r[k]=deep((m||{})[k]||{},d[k]);else r[k]=(m||{})[k]!==undefined?(m||{})[k]:d[k];}return r;};return deep(o,defaults);}catch{return JSON.parse(JSON.stringify(defaults));}}
   function save(c){try{localStorage.setItem(LS_KEY,JSON.stringify(c));}catch{}}
   let config=load();
@@ -300,9 +394,10 @@
   if(!config.householdId){config.householdId=Math.random().toString(36).slice(2,10).toUpperCase();save(config);}
 
   function applyTheme(){document.documentElement.style.setProperty('--accent',config.theme?.color||'#0f172a');document.documentElement.style.setProperty('--bg',config.theme?.background||'#f6f7f9');}
-  function applyForm(){ $('themeColor').value=config.theme?.color||'#0f172a'; $('bgColor').value=config.theme?.background||'#f6f7f9'; $('keepAwake').checked=!!config.keepAwake; $('logoUrlCalendar').value=config.logoUrls?.calendar||''; $('logoUrlHomey').value=config.logoUrls?.homey||''; $('logoUrlSonos').value=config.logoUrls?.sonos||''; $('calendarUrl').value=config.calendar?.url||DEFAULT_CAL_URL; $('homeyUrl').value=config.homeyUrl||''; $('sonosUrl').value=config.sonosUrl||''; $('sonosPkg').value=config.sonosPkg||''; $('sonosScheme').value=config.sonosScheme||''; $('householdId').value=(config.householdId||'').toUpperCase(); const mode=config.calendar?.mode||'url'; [...document.querySelectorAll('input[name="calendarMode"]')].forEach(r=>r.checked=(r.value===mode)); $('calendarUploadRow').style.display=(mode==='upload')?'':'none'; }
+  function applyForm(){ $('themeColor').value=config.theme?.color||'#0f172a'; $('bgColor').value=config.theme?.background||'#f6f7f9'; $('keepAwake').checked=!!config.keepAwake; $('logoUrlCalendar').value=config.logoUrls?.calendar||''; $('logoUrlHomey').value=config.logoUrls?.homey||''; $('logoUrlSonos').value=config.logoUrls?.sonos||''; $('calendarUrl').value=config.calendar?.url||DEFAULT_CAL_URL; $('homeyUrl').value=config.homeyUrl||''; $('sonosUrl').value=config.sonosUrl||''; $('sonosPkg').value=config.sonosPkg||''; $('sonosScheme').value=config.sonosScheme||''; $('sonosLocalBase').value=(config.sonosLocal?.baseUrl||'http://localhost:8789'); $('sonosLocalEnabled').checked=!!config.sonosLocal?.enabled; $('householdId').value=(config.householdId||'').toUpperCase(); const mode=config.calendar?.mode||'url'; [...document.querySelectorAll('input[name="calendarMode"]')].forEach(r=>r.checked=(r.value===mode)); $('calendarUploadRow').style.display=(mode==='upload')?'':'none'; }
   function applyLogos(){ const ph=t=>"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='64'%3E%3Crect width='160' height='64' fill='%23f0f2f5'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='14' fill='%236b7280' font-family='Inter,Arial' %3E"+encodeURIComponent(t)+"%3C/text%3E%3C/svg%3E"; $('logoCalendar').src=config.logoUrls.calendar||config.logos.calendar||ph('Kalender'); $('logoHomey').src=config.logoUrls.homey||config.logos.homey||ph('Homey'); $('logoSonos').src=config.logoUrls.sonos||config.logos.sonos||ph('Sonos'); }
-  function applyAll(){applyTheme();applyForm();applyLogos();} applyAll();
+  function applySonosSubtitle(){ const el=$('subSonos'); if(!el) return; if(config.sonosLocal?.enabled){el.textContent='Lokal kontrol';} else if((config.sonosUrl||'').trim()){el.textContent='Ekstern Sonos-link';} else {el.textContent='App eller web';}}
+  function applyAll(){applyTheme();applyForm();applyLogos();applySonosSubtitle();} applyAll();
 
   /* Tabs */
   function setupTabs(){
@@ -331,9 +426,11 @@
     on($('calendarFile'),'change',async function(){if(this.files&&this.files[0]){const f=this.files[0];const txt=await f.text();config.calendar.fileName=f.name;config.calendar.fileData="data:text/html;base64,"+btoa(unescape(encodeURIComponent(txt)));config.calendar.mode='upload';save(config);writeSoon();alert('Kalender gemt lokalt. For deling: brug URL (GitHub Pages).');}});
 
     on($('homeyUrl'),'input',function(){config.homeyUrl=this.value.trim();save(config);writeSoon();});
-    on($('sonosUrl'),'input',function(){config.sonosUrl=this.value.trim();save(config);writeSoon();});
+    on($('sonosUrl'),'input',function(){config.sonosUrl=this.value.trim();save(config);applySonosSubtitle();writeSoon();});
     on($('sonosPkg'),'input',function(){config.sonosPkg=this.value.trim();save(config);writeSoon();});
     on($('sonosScheme'),'input',function(){config.sonosScheme=this.value.trim();save(config);writeSoon();});
+    on($('sonosLocalBase'),'input',function(){config.sonosLocal=config.sonosLocal||{};config.sonosLocal.baseUrl=this.value.trim()||'http://localhost:8789';save(config);writeSoon();});
+    on($('sonosLocalEnabled'),'change',function(){config.sonosLocal=config.sonosLocal||{};config.sonosLocal.enabled=!!this.checked;save(config);applySonosSubtitle();writeSoon();});
 
     on($('householdId'),'input',function(){const v=this.value.trim().toUpperCase();if(v){config.householdId=v;save(config);startRealtime();writeSoon();}});
 
@@ -382,6 +479,282 @@
   }
   window.__handlers={openCalendar};
   on($('closeCalendar'),'click',()=>{ $('calendarFrame').src='about:blank'; const v=$('calendarView'); v.setAttribute('hidden',''); v.setAttribute('aria-hidden','true'); });
+
+  /* Sonos lokal kontrol (LAN) */
+  const SONOS_LOCAL_DEFAULT='http://localhost:8789';
+  const SONOS_ART_PLACEHOLDER="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Crect width='120' height='120' rx='18' fill='%23e5e7eb'/%3E%3Cpath d='M32 58h56v4H32z' fill='%236b7280'/%3E%3C/svg%3E";
+  const sonosLocal={pollTimer:null,abortController:null,currentGroupId:'',state:null};
+  const sonosDom={
+    view:$('sonosView'),
+    status:$('sonosStatus'),
+    groups:$('sonosGroups'),
+    state:$('sonosState'),
+    art:$('sonosArt'),
+    trackTitle:$('sonosTrackTitle'),
+    trackArtist:$('sonosTrackArtist'),
+    trackAlbum:$('sonosTrackAlbum'),
+    volume:$('sonosVolume'),
+    volumeValue:$('sonosVolumeValue'),
+    prev:$('sonosPrev'),
+    playPause:$('sonosPlayPause'),
+    next:$('sonosNext'),
+    muteToggle:$('sonosMuteToggle'),
+    members:$('sonosMembers'),
+    favs:$('sonosFavs'),
+    notice:$('sonosNotice'),
+    reload:$('sonosReload'),
+    openWeb:$('sonosOpenWeb')
+  };
+
+  function sonosLocalBase(){
+    const base=(config.sonosLocal?.baseUrl||'').trim();
+    return base||SONOS_LOCAL_DEFAULT;
+  }
+  function sonosLocalUrl(path){
+    const base=sonosLocalBase();
+    if(!base) return '';
+    return base.replace(/\/+$/,'')+path;
+  }
+  function cancelSonosPoll(){ if(sonosLocal.pollTimer){ clearTimeout(sonosLocal.pollTimer); sonosLocal.pollTimer=null; } }
+  function scheduleSonosPoll(){ cancelSonosPoll(); sonosLocal.pollTimer=setTimeout(()=>sonosLocalRefresh(false),6000); }
+  function setSonosStatus(text){ if(sonosDom.status){ sonosDom.status.textContent=text; } }
+  function hideSonosNotice(){ if(sonosDom.notice){ sonosDom.notice.setAttribute('hidden',''); sonosDom.notice.innerHTML=''; } }
+  function showSonosNotice(base,message){
+    if(!sonosDom.notice) return;
+    sonosDom.notice.innerHTML='';
+    const strong=document.createElement('strong');
+    strong.textContent='Kan ikke forbinde til Sonos-controlleren.';
+    sonosDom.notice.appendChild(strong);
+    const p=document.createElement('div');
+    p.textContent='Er du på samme netværk som Sonos? Vi kunne ikke nå: ';
+    const code=document.createElement('code');
+    code.textContent=base||sonosLocalBase();
+    p.appendChild(code);
+    sonosDom.notice.appendChild(p);
+    const extra=document.createElement('div');
+    extra.textContent=message||'Hvis du tilgår løsningen uden for hjemmenetværket, virker den lokale kontrol ikke.';
+    sonosDom.notice.appendChild(extra);
+    sonosDom.notice.removeAttribute('hidden');
+  }
+  function resetSonosUi(){
+    if(sonosDom.art) sonosDom.art.src=SONOS_ART_PLACEHOLDER;
+    if(sonosDom.trackTitle) sonosDom.trackTitle.textContent='Ingen afspilning';
+    if(sonosDom.trackArtist) sonosDom.trackArtist.textContent='—';
+    if(sonosDom.trackAlbum) sonosDom.trackAlbum.textContent='—';
+    if(sonosDom.volume){ sonosDom.volume.value=0; }
+    if(sonosDom.volumeValue) sonosDom.volumeValue.textContent='0%';
+    if(sonosDom.groups){
+      sonosDom.groups.innerHTML='';
+      const empty=document.createElement('div');
+      empty.className='sonos-empty';
+      empty.textContent='Ingen Sonos-grupper fundet.';
+      sonosDom.groups.appendChild(empty);
+    }
+    if(sonosDom.members){ sonosDom.members.innerHTML=''; }
+    if(sonosDom.favs){ sonosDom.favs.innerHTML=''; }
+    if(sonosDom.state) sonosDom.state.textContent='—';
+    if(sonosDom.playPause){ sonosDom.playPause.textContent='▶ Afspil'; sonosDom.playPause.disabled=true; }
+    if(sonosDom.prev) sonosDom.prev.disabled=true;
+    if(sonosDom.next) sonosDom.next.disabled=true;
+    if(sonosDom.muteToggle){ sonosDom.muteToggle.textContent='🔇 Slå lyd fra'; sonosDom.muteToggle.disabled=true; }
+  }
+  function selectSonosGroup(id){
+    sonosLocal.currentGroupId=id;
+    config.sonosLocal=config.sonosLocal||{};
+    config.sonosLocal.lastGroupId=id;
+    save(config);
+    renderSonosState();
+  }
+  function renderSonosState(){
+    const state=sonosLocal.state||{};
+    const groups=Array.isArray(state.groups)?state.groups:[];
+    const current=groups.find(g=>g.id===sonosLocal.currentGroupId) || groups[0] || null;
+    if(current && current.id!==sonosLocal.currentGroupId){
+      sonosLocal.currentGroupId=current.id;
+      config.sonosLocal=config.sonosLocal||{};
+      config.sonosLocal.lastGroupId=current.id;
+      save(config);
+    }
+    if(sonosDom.groups){
+      sonosDom.groups.innerHTML='';
+      if(groups.length){
+        groups.forEach(group=>{
+          const btn=document.createElement('button');
+          btn.type='button';
+          btn.className='sonos-group'+(group.id===sonosLocal.currentGroupId?' active':'');
+          btn.textContent=group.name||'Ukendt gruppe';
+          btn.addEventListener('click',()=>selectSonosGroup(group.id));
+          sonosDom.groups.appendChild(btn);
+        });
+      }else{
+        const empty=document.createElement('div');
+        empty.className='sonos-empty';
+        empty.textContent='Ingen Sonos-grupper fundet.';
+        sonosDom.groups.appendChild(empty);
+      }
+    }
+    if(sonosDom.state){
+      if(current){
+        const playing=current.isPlaying?'Afspiller':'Pause';
+        const volume=Number.isFinite(current.volume)?(current.volume+'%'):'—';
+        sonosDom.state.textContent=playing+' · Vol '+volume;
+      }else if(groups.length){
+        sonosDom.state.textContent='Vælg en gruppe';
+      }else{
+        sonosDom.state.textContent='Ingen grupper tilgængelige';
+      }
+    }
+    if(sonosDom.art){
+      let art=current?.track?.artUri||'';
+      if(art && /^\//.test(art)){ art=sonosLocalBase().replace(/\/+$/,'')+art; }
+      sonosDom.art.src=art||SONOS_ART_PLACEHOLDER;
+    }
+    if(sonosDom.trackTitle) sonosDom.trackTitle.textContent=current?.track?.title||'Ingen afspilning';
+    if(sonosDom.trackArtist){
+      const parts=[];
+      if(current?.track?.artist) parts.push(current.track.artist);
+      if(current?.track?.station && !parts.includes(current.track.station)) parts.push(current.track.station);
+      sonosDom.trackArtist.textContent=parts.length?parts.join(' · '):'—';
+    }
+    if(sonosDom.trackAlbum) sonosDom.trackAlbum.textContent=current?.track?.album||'—';
+    const volumeValue=Number.isFinite(current?.volume)?current.volume:0;
+    if(sonosDom.volume){ sonosDom.volume.value=volumeValue; }
+    if(sonosDom.volumeValue) sonosDom.volumeValue.textContent=volumeValue+'%';
+    if(sonosDom.playPause){
+      sonosDom.playPause.disabled=!current;
+      sonosDom.playPause.textContent=current&&current.isPlaying?'⏸ Pause':'▶ Afspil';
+    }
+    if(sonosDom.prev) sonosDom.prev.disabled=!current;
+    if(sonosDom.next) sonosDom.next.disabled=!current;
+    if(sonosDom.muteToggle){
+      sonosDom.muteToggle.disabled=!current;
+      sonosDom.muteToggle.textContent=current&&current.muted?'🔊 Slå lyd til':'🔇 Slå lyd fra';
+    }
+    if(sonosDom.members){
+      sonosDom.members.innerHTML='';
+      if(current?.members?.length){
+        current.members.forEach(member=>{
+          const row=document.createElement('div');
+          row.className='sonos-member';
+          const name=document.createElement('span');
+          name.textContent=member.name||'Ukendt enhed';
+          const info=document.createElement('span');
+          const vol=Number.isFinite(member.volume)?member.volume+'%':'—';
+          info.textContent=member.muted?vol+' · Muted':vol;
+          row.appendChild(name);
+          row.appendChild(info);
+          sonosDom.members.appendChild(row);
+        });
+      }else{
+        const empty=document.createElement('div');
+        empty.className='sonos-empty';
+        empty.textContent='Ingen medlemmer i gruppen.';
+        sonosDom.members.appendChild(empty);
+      }
+    }
+    if(sonosDom.favs){
+      sonosDom.favs.innerHTML='';
+      const favorites=Array.isArray(state.favorites)?state.favorites:[];
+      if(favorites.length){
+        favorites.forEach(fav=>{
+          const btn=document.createElement('button');
+          btn.type='button';
+          btn.className='sonos-fav';
+          const title=document.createElement('div');
+          title.className='sonos-fav-title';
+          title.textContent=fav.title||'Ukendt';
+          const desc=document.createElement('div');
+          desc.className='sonos-fav-desc';
+          desc.textContent=fav.description||'';
+          btn.appendChild(title);
+          btn.appendChild(desc);
+          btn.addEventListener('click',()=>sendSonosCommand('playFavorite',{favoriteId:fav.id}));
+          sonosDom.favs.appendChild(btn);
+        });
+      }else{
+        const empty=document.createElement('div');
+        empty.className='sonos-empty';
+        empty.textContent='Ingen favoritter fundet.';
+        sonosDom.favs.appendChild(empty);
+      }
+    }
+  }
+  async function sonosLocalRefresh(force){
+    if(!config.sonosLocal?.enabled || !sonosDom.view || sonosDom.view.hasAttribute('hidden')) return;
+    const url=sonosLocalUrl('/api/state');
+    if(!url){ showSonosNotice('', 'Angiv en gyldig base-URL i indstillingerne.'); return; }
+    if(sonosLocal.abortController){ try{sonosLocal.abortController.abort();}catch{} }
+    const controller=new AbortController();
+    sonosLocal.abortController=controller;
+    if(force){ setSonosStatus('Opdaterer Sonos…'); }
+    try{
+      const res=await fetch(url,{signal:controller.signal,cache:'no-store'});
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      const data=await res.json();
+      if(controller.signal.aborted) return;
+      hideSonosNotice();
+      sonosLocal.state=data||{};
+      if(!sonosLocal.currentGroupId && data?.groups?.length){
+        const last=config.sonosLocal?.lastGroupId;
+        const match=data.groups.find(g=>g.id===last) || data.groups[0];
+        if(match){ sonosLocal.currentGroupId=match.id; }
+      }
+      renderSonosState();
+      setSonosStatus('Sidst opdateret '+nowStr());
+      scheduleSonosPoll();
+    }catch(err){
+      if(controller.signal.aborted) return;
+      cancelSonosPoll();
+      console.error('[sonos-local]',err);
+      sonosLocal.state=null;
+      resetSonosUi();
+      setSonosStatus('Ikke forbundet');
+      showSonosNotice(sonosLocalBase(), err.message||'Ingen forbindelse');
+    }
+  }
+  function openSonosLocal(){
+    if(!config.sonosLocal?.enabled || !sonosDom.view) return false;
+    hidePanel();
+    sonosDom.view.removeAttribute('hidden');
+    sonosDom.view.setAttribute('aria-hidden','false');
+    setSonosStatus('Forbinder til Sonos…');
+    hideSonosNotice();
+    resetSonosUi();
+    sonosLocal.currentGroupId=config.sonosLocal?.lastGroupId||'';
+    sonosLocalRefresh(true);
+    return true;
+  }
+  function closeSonosLocal(){
+    if(!sonosDom.view) return;
+    cancelSonosPoll();
+    if(sonosLocal.abortController){ try{sonosLocal.abortController.abort();}catch{} sonosLocal.abortController=null; }
+    sonosDom.view.setAttribute('hidden','');
+    sonosDom.view.setAttribute('aria-hidden','true');
+  }
+  async function sendSonosCommand(action,payload={}){
+    if(!sonosLocal.currentGroupId) return;
+    const url=sonosLocalUrl('/api/groups/'+encodeURIComponent(sonosLocal.currentGroupId)+'/command');
+    if(!url) return;
+    try{
+      await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({action},payload))});
+      setTimeout(()=>sonosLocalRefresh(true),300);
+    }catch(err){
+      console.error('[sonos-local-command]',err);
+      showSonosNotice(sonosLocalBase(),'Kunne ikke sende kommando: '+(err.message||'ukendt fejl'));
+      setSonosStatus('Fejl ved kommando');
+    }
+  }
+  on($('closeSonos'),'click',closeSonosLocal);
+  if(sonosDom.reload){ on(sonosDom.reload,'click',()=>sonosLocalRefresh(true)); }
+  if(sonosDom.openWeb){ on(sonosDom.openWeb,'click',()=>openSonosStandalone((config.sonosUrl||'').trim()||'https://play.sonos.com')); }
+  if(sonosDom.volume){
+    on(sonosDom.volume,'input',function(){ sonosDom.volumeValue.textContent=this.value+'%'; });
+    on(sonosDom.volume,'change',function(){ sendSonosCommand('setVolume',{volume:Number(this.value)}); });
+  }
+  if(sonosDom.playPause){ on(sonosDom.playPause,'click',()=>sendSonosCommand((sonosLocal.state?.groups||[]).find(g=>g.id===sonosLocal.currentGroupId)?.isPlaying?'pause':'play')); }
+  if(sonosDom.prev){ on(sonosDom.prev,'click',()=>sendSonosCommand('previous')); }
+  if(sonosDom.next){ on(sonosDom.next,'click',()=>sendSonosCommand('next')); }
+  if(sonosDom.muteToggle){ on(sonosDom.muteToggle,'click',()=>sendSonosCommand((sonosLocal.state?.groups||[]).find(g=>g.id===sonosLocal.currentGroupId)?.muted?'unmute':'mute')); }
 
   /* Webpanel (Homey/Sonos) */
   const WK_IFRAME_SANDBOX_DEFAULT='allow-forms allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox';
@@ -617,6 +990,9 @@
     if(/^https?:\/\//i.test(u))showPanel(u,'Homey');else location.href=u;
   }
   function openSonos(){
+    if(config.sonosLocal?.enabled && openSonosLocal()){
+      return;
+    }
     const isAndroid=/Android/i.test(navigator.userAgent), isiOS=/iPhone|iPad|iPod/i.test(navigator.userAgent);
     const pkg=(config.sonosPkg||'').trim()||'com.sonos.acr2';
     const scheme=(config.sonosScheme||config.sonosUrl||'').trim();
