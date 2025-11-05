@@ -41,8 +41,13 @@
   /* Spotify overlay */
   .spotify-view{position:fixed;inset:0;padding:clamp(12px,2vw,20px);background:rgba(246,247,249,.92);backdrop-filter:blur(8px);z-index:65;display:flex;justify-content:center;align-items:center}
   .spotify-inner{width:100%;max-width:1080px;max-height:100%;display:flex;flex-direction:column;gap:16px}
-  .spotify-frame{flex:1;min-height:0;overflow:hidden;display:flex;background:#000}
-  .spotify-frame iframe{border:0;width:100%;height:100%;background:#000}
+  .spotify-frame{flex:1;min-height:0;overflow:hidden;display:flex;background:#000;position:relative;border-radius:18px;box-shadow:var(--shadow)}
+  .spotify-frame iframe{border:0;width:100%;height:100%;background:#000;border-radius:inherit}
+  .spotify-blocked{background:#fff;border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow);padding:24px;text-align:center;color:var(--fg);display:flex;flex-direction:column;gap:12px}
+  .spotify-blocked[hidden]{display:none !important}
+  .spotify-blocked h3{margin:0;font-size:18px}
+  .spotify-blocked p{margin:0;font-size:14px;color:var(--muted);line-height:1.5}
+  .spotify-blocked .actions{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:6px}
 
   /* FAB */
   .fab{position:fixed;right:20px;bottom:20px;z-index:90}
@@ -153,7 +158,15 @@
         <button class="back-btn" id="closeSpotify" type="button">⬅ Til forsiden</button>
       </div>
       <div class="spotify-frame panel">
-        <iframe id="spotifyFrame" title="Spotify" allow="autoplay; fullscreen; picture-in-picture" sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe>
+        <iframe id="spotifyFrame" title="Spotify" allow="autoplay; fullscreen; picture-in-picture; encrypted-media" sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe>
+      </div>
+      <div class="spotify-blocked panel" id="spotifyBlocked" aria-hidden="true" hidden>
+        <h3>Spotify kan ikke indlæses</h3>
+        <p>Spotify blokerer nogle gange for indlejrede visninger. Du kan prøve igen eller åbne Spotify i en ny fane.</p>
+        <div class="actions">
+          <button class="btn" id="spotifyRetry" type="button">Prøv igen</button>
+          <button class="btn primary" id="spotifyExternal" type="button">Åbn i ny fane</button>
+        </div>
       </div>
     </div>
   </section>
@@ -318,7 +331,7 @@
   function applyTheme(){document.documentElement.style.setProperty('--accent',config.theme?.color||'#0f172a');document.documentElement.style.setProperty('--bg',config.theme?.background||'#f6f7f9');}
   function applyForm(){ $('themeColor').value=config.theme?.color||'#0f172a'; $('bgColor').value=config.theme?.background||'#f6f7f9'; $('keepAwake').checked=!!config.keepAwake; $('logoUrlCalendar').value=config.logoUrls?.calendar||''; $('logoUrlHomey').value=config.logoUrls?.homey||''; $('logoUrlSpotify').value=config.logoUrls?.spotify||''; $('calendarUrl').value=config.calendar?.url||DEFAULT_CAL_URL; $('homeyUrl').value=config.homeyUrl||''; $('spotifyUrl').value=config.spotifyUrl||'https://open.spotify.com/'; $('householdId').value=(config.householdId||'').toUpperCase(); const mode=config.calendar?.mode||'url'; [...document.querySelectorAll('input[name="calendarMode"]')].forEach(r=>r.checked=(r.value===mode)); $('calendarUploadRow').style.display=(mode==='upload')?'':'none'; }
   function applyLogos(){ const ph=t=>"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='64'%3E%3Crect width='160' height='64' fill='%23f0f2f5'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='14' fill='%236b7280' font-family='Inter,Arial' %3E"+encodeURIComponent(t)+"%3C/text%3E%3C/svg%3E"; const spotifyLogo=config.logoUrls.spotify||config.logoUrls.sonos||config.logos.spotify||config.logos.sonos||ph('Spotify'); $('logoCalendar').src=config.logoUrls.calendar||config.logos.calendar||ph('Kalender'); $('logoHomey').src=config.logoUrls.homey||config.logos.homey||ph('Homey'); $('logoSpotify').src=spotifyLogo; }
-  function applySpotifySubtitle(){ const el=$('subSpotify'); if(!el) return; const url=(config.spotifyUrl||'').trim(); el.textContent=url?'Åbner webvisning':'Musik'; }
+  function applySpotifySubtitle(){ const el=$('subSpotify'); if(!el) return; const url=(config.spotifyUrl||'').trim(); el.textContent=url?'Åbner Spotify':'Musik'; }
   function applyAll(){applyTheme();applyForm();applyLogos();applySpotifySubtitle();} applyAll();
 
   /* Tabs */
@@ -400,23 +413,84 @@
 
   /* Spotify overlay */
   const SPOTIFY_URL_DEFAULT='https://open.spotify.com/';
-  function openSpotify(){
-    const url=(config.spotifyUrl||SPOTIFY_URL_DEFAULT).trim()||SPOTIFY_URL_DEFAULT;
+  let spotifyCurrentUrl=SPOTIFY_URL_DEFAULT;
+  let spotifyOriginalUrl=SPOTIFY_URL_DEFAULT;
+  let spotifyWatchTimer=null;
+
+  function resolveSpotifyExternalUrl(url){
+    try{ return new URL(url,location.href).toString(); }catch{}
+    return url;
+  }
+
+  function normalizeSpotifyUrl(url){
+    try{
+      const parsed=new URL(url,location.href);
+      if(!/spotify\.com$/i.test(parsed.hostname)){ return parsed.toString(); }
+      parsed.protocol='https:';
+      parsed.hostname='open.spotify.com';
+      const segments=parsed.pathname.split('/').filter(Boolean);
+      if(segments[0]==='embed'){ return parsed.toString(); }
+      if(segments.length>=2){
+        const newParts=['','embed',segments[0],segments[1],...segments.slice(2)];
+        parsed.pathname=newParts.join('/');
+        if(!parsed.searchParams.has('utm_source')){ parsed.searchParams.set('utm_source','webkiosk'); }
+        return parsed.toString();
+      }
+      parsed.pathname='/';
+      return parsed.toString();
+    }catch{}
+    return url;
+  }
+
+  function stopSpotifyWatch(){ if(spotifyWatchTimer){clearTimeout(spotifyWatchTimer);spotifyWatchTimer=null;} }
+  function hideSpotifyBlocked(){ const blocked=$('spotifyBlocked'); if(blocked){ blocked.dataset.url=''; blocked.setAttribute('hidden',''); blocked.setAttribute('aria-hidden','true'); } }
+  function showSpotifyBlocked(){ const blocked=$('spotifyBlocked'); if(blocked){ blocked.dataset.url=spotifyCurrentUrl||''; blocked.removeAttribute('hidden'); blocked.setAttribute('aria-hidden','false'); } }
+
+  function openSpotify(opts={}){
+    const base=(config.spotifyUrl||SPOTIFY_URL_DEFAULT).trim()||SPOTIFY_URL_DEFAULT;
+    spotifyOriginalUrl=resolveSpotifyExternalUrl(base);
+    spotifyCurrentUrl=normalizeSpotifyUrl(spotifyOriginalUrl);
+    if(opts.forceExternal){
+      try{ window.open(spotifyOriginalUrl,'_blank','noopener'); }catch{}
+      closeSpotify();
+      return;
+    }
     const frame=$('spotifyFrame');
     const view=$('spotifyView');
     if(!frame||!view){ alert('Spotify-visning mangler i HTML.'); return; }
-    frame.src=url;
+    hideSpotifyBlocked();
     view.removeAttribute('hidden');
     view.setAttribute('aria-hidden','false');
+    stopSpotifyWatch();
+    if(frame._loadHandler){ try{frame.removeEventListener('load',frame._loadHandler);}catch{} frame._loadHandler=null; }
+    frame.dataset.loading='1';
+    const onLoad=()=>{ frame.dataset.loading='0'; hideSpotifyBlocked(); stopSpotifyWatch(); };
+    frame._loadHandler=onLoad;
+    frame.addEventListener('load',onLoad,{once:true});
+    try{ frame.src='about:blank'; }catch{}
+    frame.src=spotifyCurrentUrl;
+    spotifyWatchTimer=setTimeout(()=>{
+      const frm=$('spotifyFrame');
+      if(frm&&frm.dataset.loading==='1'){ showSpotifyBlocked(); }
+    },5000);
   }
+
   function closeSpotify(){
+    stopSpotifyWatch();
     const frame=$('spotifyFrame');
-    if(frame){ try{frame.src='about:blank';}catch{} }
+    if(frame){
+      if(frame._loadHandler){ try{frame.removeEventListener('load',frame._loadHandler);}catch{} frame._loadHandler=null; }
+      try{frame.src='about:blank';}catch{}
+      frame.dataset.loading='0';
+    }
+    hideSpotifyBlocked();
     const view=$('spotifyView');
     if(view){ view.setAttribute('hidden',''); view.setAttribute('aria-hidden','true'); }
   }
   window.__handlers.openSpotify=openSpotify;
   on($('closeSpotify'),'click',closeSpotify);
+  on($('spotifyRetry'),'click',()=>openSpotify());
+  on($('spotifyExternal'),'click',()=>openSpotify({forceExternal:true}));
 
   /* Webpanel (Homey) */
 
