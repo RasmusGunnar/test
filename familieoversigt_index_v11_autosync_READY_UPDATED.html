@@ -836,7 +836,6 @@
           const uid=uidFor(item);
           const existingIdx=items.findIndex(x=>uidFor(x)===uid);
           const existingItem=existingIdx>=0?items[existingIdx]:null;
-          const seriesKeyHint=anchor||googleSeriesKey(existingItem)||googleSeriesKey(item);
           if(existingItem){
             if(anchor){item.seriesId=anchor;}else if(!item.seriesId){item.seriesId=safeSeriesId(existingItem);}
             const existingPeople=normalizePeopleList(existingItem.people&&existingItem.people.length?existingItem.people:existingItem.person);
@@ -849,25 +848,7 @@
             const manualOverride=!!(existingItem.manualRepeatWeekly||(autoPrev!==undefined&&existingItem.repeatWeekly!==autoPrev));
             item.manualRepeatWeekly=manualOverride;
             if(manualOverride){item.repeatWeekly=!!existingItem.repeatWeekly;}
-            const existingKeyForPrefs=seriesKeyHint;
-            if(existingKeyForPrefs){
-              const storedPref=seriesPrefs[existingKeyForPrefs];
-              const hasNonDefaultPeople=existingPeople.length>1||(existingPeople[0]&&existingPeople[0]!=='Alle');
-              const typeOverride=normalizeType(existingItem.type)!=='Aktivitet';
-              if(hasNonDefaultPeople||typeOverride||!storedPref){
-                rememberPref(existingKeyForPrefs,{people:existingPeople,type:existingItem.type});
-              }
-            }
-          }else{
-            if(anchor&&!item.seriesId){item.seriesId=anchor;}
-            const seriesKey=seriesKeyHint;
-            if(seriesKey){
-              if(!seriesPrefs[seriesKey]){const localMatch=items.find(x=>googleSeriesKey(x)===seriesKey);if(localMatch){rememberPref(seriesKey,{people:localMatch.people,type:localMatch.type});}}
-            }
-          }
-          if(seriesKeyHint && seriesPrefs[seriesKeyHint] && !(existingItem?.overrideOf||item.overrideOf)){
-            applyGoogleSeriesPrefsFromCache(item,seriesPrefs);
-          }
+
           item.people=normalizePeopleList(item.people);
           item.person=primaryPersonName(item.people);
           const existingKey=existingItem?peopleKey(existingItem.people&&existingItem.people.length?existingItem.people:existingItem.person):"";
