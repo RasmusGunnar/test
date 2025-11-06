@@ -177,7 +177,7 @@
     const HID=(new URLSearchParams(location.search).get("hid")||"DEFAULT").toUpperCase();
     document.getElementById("hidPill").textContent="HID: "+HID;
 
-    const LS_ITEMS="fam_items_v1", LS_PREFS="fam_people_prefs_v1", LS_GIDX="gcal_index";
+    const LS_ITEMS="fam_items_v1", LS_PREFS="fam_people_prefs_v1", LS_GIDX="gcal_index", LS_GCAL_PREFS="gcal_series_prefs_v1";
     const CELEBRATION_LS="fam_celebrations_v1";
     const CELEBRATION_THRESHOLD=6;
     const CELEBRATION_MAX_TASKS=6;
@@ -209,6 +209,14 @@
     function primaryPersonName(list){const arr=normalizePeopleList(list);return arr.length===1?arr[0]:"Alle";}
     function peopleKey(list){const arr=normalizePeopleList(list);return arr.slice().sort((a,b)=>a.localeCompare(b,'da',{sensitivity:'base'})).join(",");}
     function peopleInclude(list,name){const arr=normalizePeopleList(list);const target=normalizePersonName(name);if(target==="Alle")return true;return arr.includes(target)||arr.includes("Alle");}
+
+    function loadGoogleSeriesPrefs(){return loadLS(LS_GCAL_PREFS,{});}
+    function saveGoogleSeriesPrefs(p){saveLS(LS_GCAL_PREFS,p);}
+    function isGoogleItem(it){if(!it||typeof it!=="object")return false;const src=String(it.source||"");if(src==="google")return true;const id=String(it.id||"");return id.startsWith("gcal:")||id.startsWith("gcalr:");}
+    function googleSeriesKey(it){if(!isGoogleItem(it))return"";return safeSeriesId(it)||"";}
+    function rememberGoogleSeriesPrefsInCache(cache,key,data){if(!key||!cache||!data)return false;const current=cache[key]||{};const next={...current};let changed=false;if(data.people){const normalized=normalizePeopleList(data.people);if(normalized.length&&JSON.stringify(current.people||[])!==JSON.stringify(normalized)){next.people=normalized;changed=true;}}if(data.type){const type=normalizeType(data.type);if(type&&current.type!==type){next.type=type;changed=true;}}if(changed){cache[key]=next;}return changed;}
+    function applyGoogleSeriesPrefsFromCache(item,cache){if(!item||!cache)return item;if(!isGoogleItem(item))return item;const key=googleSeriesKey(item);if(!key)return item;const pref=cache[key];if(!pref)return item;if(pref.people&&pref.people.length){const normalized=normalizePeopleList(pref.people);if(normalized.length){item.people=normalized;item.person=primaryPersonName(normalized);}}
+      if(pref.type){item.type=normalizeType(pref.type);}return item;}
 
     function toISO(dateLike){if(!dateLike)return"";if(dateLike instanceof Date)return fmtISO(dateLike);if(typeof dateLike==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(dateLike))return dateLike;return fromAnyToLocalISO(dateLike)}
     function addDaysISO(iso,days){if(!iso||!Number.isFinite(days))return"";const [y,m,d]=iso.split("-").map(Number);if([y,m,d].some(n=>Number.isNaN(n)))return"";const dt=new Date(y,m-1,d);dt.setDate(dt.getDate()+days);return fmtISO(dt)}
@@ -724,17 +732,23 @@
 
       const scope=currentScope();
       const seriesKey=safeSeriesId(baseItem)||seriesId||baseItem.id;
+      payload.seriesId=seriesKey;
+      const rememberKey=googleSeriesKey(payload);
+      const rememberData={people:selectedPeople,type:payload.type};
+      let rememberSeriesPrefs=false;
       const baseDate=toISO(baseItem.date);
 
       if(scope==='series'){
         const updated={...baseItem,...payload,id:baseItem.id,seriesId:seriesKey,overrideOf:"",overrideBaseId:""};
         putItem(updated,{commit:false});
         commitItems();
+        rememberSeriesPrefs=true;
       }else if(scope==='future'){
         if(!occISO || (baseDate && occISO<=baseDate)){
           const updated={...baseItem,...payload,id:baseItem.id,seriesId:seriesKey,overrideOf:"",overrideBaseId:""};
           putItem(updated,{commit:false});
           commitItems();
+          rememberSeriesPrefs=true;
         }else{
           const previousEnd=baseItem.repeatUntil;
           const prevIso=addDaysISO(occISO,-7);
@@ -747,6 +761,7 @@
           const futurePayload={...baseItem,...payload,id:futureId,date:chosenDate,repeatWeekly:payload.repeatWeekly,seriesId:seriesKey,overrideOf:"",overrideBaseId:baseItem.id,exceptions:futureExceptions,repeatUntil:payload.repeatWeekly?previousEnd:""};
           putItem(futurePayload,{commit:false});
           commitItems();
+          rememberSeriesPrefs=true;
         }
       }else{
         if(occISO){
@@ -760,6 +775,13 @@
           const updated={...baseItem,...payload,id:baseItem.id,seriesId:seriesKey};
           putItem(updated,{commit:false});
           commitItems();
+        }
+      }
+
+      if(rememberSeriesPrefs && rememberKey){
+        const prefs=loadGoogleSeriesPrefs();
+        if(rememberGoogleSeriesPrefsInCache(prefs,rememberKey,rememberData)){
+          saveGoogleSeriesPrefs(prefs);
         }
       }
 
@@ -794,13 +816,76 @@
       });
     }
     function detectWeeklyRepeat(ev){if(!ev||typeof ev!=="object")return false;if(ev.repeatWeekly||ev.repeat_weekly)return true;if(ev.__weeklyHint)return true;const freq=(ev.repeatFrequency||ev.repeat_frequency||ev.frequency||ev.recurrenceFrequency||"").toString();const type=(ev.repeatType||ev.repeat_type||ev.recurrenceType||"").toString();if(containsWeekly(freq)||containsWeekly(type))return true;const interval=Number(ev.repeatInterval||ev.repeat_interval||ev.interval||ev.recurrenceInterval);if((freq||type)&&Number.isFinite(interval)&&interval===1&&/(week|uge)/i.test(freq+" "+type))return true;return containsWeekly(ev.recurrence)||containsWeekly(ev.recurrenceRule)||containsWeekly(ev.recurrence_rule)||containsWeekly(ev.repeat)||containsWeekly(ev.repeatRule)||containsWeekly(ev.pattern)||containsWeekly(ev.schedule)||containsWeekly(ev.recurrenceText)||containsWeekly(ev.recurrence_text)||containsWeekly(ev.repeatText)||containsWeekly(ev.repeat_text)}
-    async function syncNow(){try{setBadge("henter…");const evs=await fetchEvents();markLikelyWeekly(evs);const idx=loadGIdx();let created=0;for(const ev of evs){const date=fromAnyToLocalISO(ev.startISO||ev.date);const id="gcal:"+ev.id;const repeatWeeklyAuto=detectWeeklyRepeat(ev);const item={id,title:ev.summary||"(uden titel)",type:"Aktivitet",people:["Alle"],person:"Alle",date,time:ev.time||"",durationMin:ev.durationMin||30,location:ev.location||"",note:ev.description||"",repeatWeekly:repeatWeeklyAuto,done:false,source:"google",manualRepeatWeekly:false,autoRepeatWeekly:repeatWeeklyAuto};const uid=uidFor(item);const existingIdx=items.findIndex(x=>uidFor(x)===uid);const existingItem=existingIdx>=0?items[existingIdx]:null;if(existingItem){item.type=normalizeType(existingItem.type)||item.type;const existingPeople=normalizePeopleList(existingItem.people&&existingItem.people.length?existingItem.people:existingItem.person);item.people=existingPeople;item.person=primaryPersonName(existingPeople);item.done=existingItem.done!==undefined?!!existingItem.done:item.done;if(existingItem.note&&existingItem.note.trim()&&existingItem.note!==item.note)item.note=existingItem.note;const autoPrev=existingItem.autoRepeatWeekly;const manualOverride=!!(existingItem.manualRepeatWeekly||(autoPrev!==undefined&&existingItem.repeatWeekly!==autoPrev));item.manualRepeatWeekly=manualOverride;if(manualOverride){item.repeatWeekly=!!existingItem.repeatWeekly}}
-        item.people=normalizePeopleList(item.people);
-        item.person=primaryPersonName(item.people);
-        const existingKey=existingItem?peopleKey(existingItem.people&&existingItem.people.length?existingItem.people:existingItem.person):"";
-        const newKey=peopleKey(item.people);
-        const needsUpdate=!existingItem||["title","type","date","time","durationMin","location","note","repeatWeekly","done","manualRepeatWeekly","autoRepeatWeekly"].some(key=>(existingItem?existingItem[key]:undefined)!==item[key])||existingKey!==newKey;
-        if(idx[uid]===ev.updated&&!needsUpdate)continue;upsert(item);idx[uid]=ev.updated;created++}saveGIdx(idx);setBadge(created?`+${created} oprettet`:"ingen ændringer")}catch(e){console.error(e);setBadge("fejl")}}
+    async function syncNow(){
+      try{
+        setBadge("henter…");
+        const evs=await fetchEvents();
+        markLikelyWeekly(evs);
+        const idx=loadGIdx();
+        let created=0;
+        const seriesPrefs=loadGoogleSeriesPrefs();
+        let prefsDirty=false;
+        const rememberPref=(key,data)=>{if(rememberGoogleSeriesPrefsInCache(seriesPrefs,key,data))prefsDirty=true;};
+        for(const ev of evs){
+          const date=fromAnyToLocalISO(ev.startISO||ev.date);
+          const id="gcal:"+ev.id;
+          const repeatWeeklyAuto=detectWeeklyRepeat(ev);
+          const item={id,title:ev.summary||"(uden titel)",type:"Aktivitet",people:["Alle"],person:"Alle",date,time:ev.time||"",durationMin:ev.durationMin||30,location:ev.location||"",note:ev.description||"",repeatWeekly:repeatWeeklyAuto,done:false,source:"google",manualRepeatWeekly:false,autoRepeatWeekly:repeatWeeklyAuto};
+          const anchor=recurrenceAnchor(ev);
+          if(anchor){item.seriesId=anchor;}
+          const uid=uidFor(item);
+          const existingIdx=items.findIndex(x=>uidFor(x)===uid);
+          const existingItem=existingIdx>=0?items[existingIdx]:null;
+          const seriesKeyHint=anchor||googleSeriesKey(existingItem)||googleSeriesKey(item);
+          if(existingItem){
+            if(anchor){item.seriesId=anchor;}else if(!item.seriesId){item.seriesId=safeSeriesId(existingItem);}
+            const existingPeople=normalizePeopleList(existingItem.people&&existingItem.people.length?existingItem.people:existingItem.person);
+            item.type=normalizeType(existingItem.type)||item.type;
+            item.people=existingPeople;
+            item.person=primaryPersonName(existingPeople);
+            item.done=existingItem.done!==undefined?!!existingItem.done:item.done;
+            if(existingItem.note&&existingItem.note.trim()&&existingItem.note!==item.note)item.note=existingItem.note;
+            const autoPrev=existingItem.autoRepeatWeekly;
+            const manualOverride=!!(existingItem.manualRepeatWeekly||(autoPrev!==undefined&&existingItem.repeatWeekly!==autoPrev));
+            item.manualRepeatWeekly=manualOverride;
+            if(manualOverride){item.repeatWeekly=!!existingItem.repeatWeekly;}
+            const existingKeyForPrefs=seriesKeyHint;
+            if(existingKeyForPrefs){
+              const storedPref=seriesPrefs[existingKeyForPrefs];
+              const hasNonDefaultPeople=existingPeople.length>1||(existingPeople[0]&&existingPeople[0]!=='Alle');
+              const typeOverride=normalizeType(existingItem.type)!=='Aktivitet';
+              if(hasNonDefaultPeople||typeOverride||!storedPref){
+                rememberPref(existingKeyForPrefs,{people:existingPeople,type:existingItem.type});
+              }
+            }
+          }else{
+            if(anchor&&!item.seriesId){item.seriesId=anchor;}
+            const seriesKey=seriesKeyHint;
+            if(seriesKey){
+              if(!seriesPrefs[seriesKey]){const localMatch=items.find(x=>googleSeriesKey(x)===seriesKey);if(localMatch){rememberPref(seriesKey,{people:localMatch.people,type:localMatch.type});}}
+            }
+          }
+          if(seriesKeyHint && seriesPrefs[seriesKeyHint] && !(existingItem?.overrideOf||item.overrideOf)){
+            applyGoogleSeriesPrefsFromCache(item,seriesPrefs);
+          }
+          item.people=normalizePeopleList(item.people);
+          item.person=primaryPersonName(item.people);
+          const existingKey=existingItem?peopleKey(existingItem.people&&existingItem.people.length?existingItem.people:existingItem.person):"";
+          const newKey=peopleKey(item.people);
+          const needsUpdate=!existingItem||["title","type","date","time","durationMin","location","note","repeatWeekly","done","manualRepeatWeekly","autoRepeatWeekly","seriesId"].some(key=>(existingItem?existingItem[key]:undefined)!==item[key])||existingKey!==newKey;
+          if(idx[uid]===ev.updated&&!needsUpdate)continue;
+          upsert(item);
+          idx[uid]=ev.updated;
+          created++;
+        }
+        if(prefsDirty){saveGoogleSeriesPrefs(seriesPrefs);}
+        saveGIdx(idx);
+        setBadge(created?`+${created} oprettet`:"ingen ændringer");
+      }catch(e){
+        console.error(e);
+        setBadge("fejl");
+      }
+    }
     $("gSync").onclick=()=>syncNow()
     $("gReset").onclick=()=>{localStorage.removeItem(LS_GIDX);setBadge("nulstiller…");syncNow()}
 
