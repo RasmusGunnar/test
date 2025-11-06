@@ -177,7 +177,7 @@
     const HID=(new URLSearchParams(location.search).get("hid")||"DEFAULT").toUpperCase();
     document.getElementById("hidPill").textContent="HID: "+HID;
 
-    const LS_ITEMS="fam_items_v1", LS_PREFS="fam_people_prefs_v1", LS_GIDX="gcal_index";
+    const LS_ITEMS="fam_items_v1", LS_PREFS="fam_people_prefs_v1", LS_GIDX="gcal_index", LS_GSTATE="gcal_state_v1";
     const CELEBRATION_LS="fam_celebrations_v1";
     const CELEBRATION_THRESHOLD=6;
     const CELEBRATION_MAX_TASKS=6;
@@ -581,9 +581,11 @@
     $("btnDel").onclick=()=>{
       if(!editContext){EBD.style.display="none";return;}
       const base=findById(editContext.baseId);
+      const existing=findById(editContext.id);
       const seriesId=editContext.seriesId||safeSeriesId(base)|| (base?base.id:"");
       const scope=(editContext.hasRepeat && !editContext.isOverride)?currentScope():'series';
       const occISO=toISO(editContext.occurrence||base?.date||"");
+      rememberGoogleDeletion({scope,seriesId,occurrenceISO:occISO,existingItem:existing,baseItem:base});
       if(editContext.isOverride || !editContext.hasRepeat){
         dropItem(editContext.id,{commit:true});
         EBD.style.display="none";
@@ -725,6 +727,7 @@
       const scope=currentScope();
       const seriesKey=safeSeriesId(baseItem)||seriesId||baseItem.id;
       const baseDate=toISO(baseItem.date);
+      rememberGoogleEdit({scope:scope,seriesId:seriesKey,occurrenceISO:occISO||chosenDate,payload,existingItem:existing,baseItem:baseItem});
 
       if(scope==='series'){
         const updated={...baseItem,...payload,id:baseItem.id,seriesId:seriesKey,overrideOf:"",overrideBaseId:""};
@@ -780,6 +783,97 @@
     $("settSave").onclick=()=>{const prefs=loadPrefs();document.querySelectorAll("#settRows .row-s").forEach(r=>{const old=r.querySelector('input[data-f="name"]').getAttribute("data-for");const name=r.querySelector('input[data-f="name"]').value.trim()||old;const color=r.querySelector('input[data-f="color"]').value;const fi=r.querySelector('input[data-f="avatar"]');const prev=prefs[old]?.avatar||"";prefs[name]={color,avatar:prev};if(fi.files&&fi.files[0]){const fr=new FileReader();fr.onload=()=>{prefs[name]={color,avatar:fr.result};savePrefs(prefs);if(window._peopleFS?.save)window._peopleFS.save(prefs);refreshPeople()};fr.readAsDataURL(fi.files[0])}});savePrefs(prefs);if(window._peopleFS?.save)window._peopleFS.save(prefs);refreshPeople();$("settBD").style.display="none"}
     function refreshPeople(){const currentSelection=currentPeopleFromUI();PEOPLE=getPeople();fillPeopleSelect(currentSelection);buildPeople();render()}
 
+    function defaultGState(){return{itemOverrides:{},seriesOverrides:{},deletedUids:{},deletedSeries:{}}}
+    let gStateCache=null;
+    function normalizeGState(state){const base=state&&typeof state==="object"?state:{};return{
+        itemOverrides:base.itemOverrides&&typeof base.itemOverrides==="object"?{...base.itemOverrides}:{},
+        seriesOverrides:base.seriesOverrides&&typeof base.seriesOverrides==="object"?{...base.seriesOverrides}:{},
+        deletedUids:base.deletedUids&&typeof base.deletedUids==="object"?{...base.deletedUids}:{},
+        deletedSeries:base.deletedSeries&&typeof base.deletedSeries==="object"?{...base.deletedSeries}:{}}
+    }
+    function getGState(){if(!gStateCache){gStateCache=normalizeGState(loadLS(LS_GSTATE,defaultGState()));}return gStateCache;}
+    function saveGState(state){gStateCache=normalizeGState(state||defaultGState());saveLS(LS_GSTATE,gStateCache);return gStateCache;}
+    function updateGState(mutator){const current=getGState();const next={
+        itemOverrides:{...current.itemOverrides},
+        seriesOverrides:{...current.seriesOverrides},
+        deletedUids:{...current.deletedUids},
+        deletedSeries:{...current.deletedSeries}
+      };const maybe=mutator&&mutator(next);return saveGState(maybe||next);}
+    function captureGoogleFields(payload){if(!payload||typeof payload!=="object")return{};const out={};if(payload.type!==undefined)out.type=normalizeType(payload.type);if(payload.people!==undefined){const norm=normalizePeopleList(payload.people);if(norm.length){out.people=norm.slice();out.person=primaryPersonName(norm);}}if(payload.manualRepeatWeekly!==undefined)out.manualRepeatWeekly=!!payload.manualRepeatWeekly;if(payload.autoRepeatWeekly!==undefined)out.autoRepeatWeekly=payload.autoRepeatWeekly;if(payload.repeatWeekly!==undefined)out.repeatWeekly=!!payload.repeatWeekly;return out;}
+    function rememberGoogleEdit({scope,seriesId,occurrenceISO,payload,existingItem,baseItem}){
+      const source=(existingItem&&existingItem.source)||(baseItem&&baseItem.source)||payload?.source;
+      if(source!=="google")return;
+      const fields=captureGoogleFields(payload);
+      if(Object.keys(fields).length===0)return;
+      const effectiveSeries=seriesId||safeSeriesId(existingItem)||safeSeriesId(baseItem)||"";
+      updateGState(state=>{
+        if(scope==="series"||scope==="future"){
+          if(!effectiveSeries)return state;
+          const fromISO=scope==="future"?toISO(occurrenceISO||payload?.date||existingItem?.date||baseItem?.date||""):"";
+          state.seriesOverrides[effectiveSeries]={fields,...(fromISO?{from:fromISO}:{} )};
+          delete state.deletedSeries[effectiveSeries];
+          return state;
+        }
+        const target=existingItem||baseItem;
+        if(!target)return state;
+        const clone={...target,...payload};
+        clone.date=toISO(payload?.date||occurrenceISO||target.date||"");
+        const uid=uidFor(clone);
+        if(!uid.startsWith("g:"))return state;
+        state.itemOverrides[uid]={fields};
+        delete state.deletedUids[uid];
+        return state;
+      });
+    }
+    function rememberGoogleDeletion({scope,seriesId,occurrenceISO,existingItem,baseItem}){
+      const source=(existingItem&&existingItem.source)||(baseItem&&baseItem.source)||"";
+      if(source!=="google")return;
+      const effectiveSeries=seriesId||safeSeriesId(existingItem)||safeSeriesId(baseItem)||"";
+      updateGState(state=>{
+        if(scope==="series"||scope==="future"){
+          if(!effectiveSeries)return state;
+          const fromISO=scope==="future"?toISO(occurrenceISO||existingItem?.date||baseItem?.date||""):"";
+          state.deletedSeries[effectiveSeries]=fromISO?{from:fromISO}:{};
+          delete state.seriesOverrides[effectiveSeries];
+          return state;
+        }
+        const target=existingItem||baseItem;
+        if(!target)return state;
+        const clone={...target};
+        clone.date=toISO(occurrenceISO||target.date||"");
+        const uid=uidFor(clone);
+        if(!uid.startsWith("g:"))return state;
+        state.deletedUids[uid]=true;
+        delete state.itemOverrides[uid];
+        return state;
+      });
+    }
+    function shouldIgnoreGoogleEvent(state,{uid,seriesId,dateISO}){
+      if(!state)return false;
+      if(uid&&state.deletedUids&&state.deletedUids[uid])return true;
+      if(seriesId){const info=state.deletedSeries&&state.deletedSeries[seriesId];if(info){const cutoff=toISO(info.from||"");if(!cutoff)return true;const target=toISO(dateISO||"");if(!target)return true;if(target>=cutoff)return true;}}
+      return false;
+    }
+    function applyGoogleOverrides(state,{uid,seriesId,dateISO,item}){
+      if(!state||!item)return{item};
+      let changed=false;
+      const next={...item};
+      const applyFields=entry=>{
+        if(!entry||typeof entry!=='object')return;
+        const fields=entry.fields||entry;
+        if(!fields||typeof fields!=='object')return;
+        if(fields.type!==undefined&&fields.type!==next.type){next.type=normalizeType(fields.type);changed=true;}
+        if(fields.people!==undefined){const norm=normalizePeopleList(fields.people);if(norm.length){next.people=norm;next.person=primaryPersonName(norm);changed=true;}}
+        if(fields.manualRepeatWeekly!==undefined&&fields.manualRepeatWeekly!==next.manualRepeatWeekly){next.manualRepeatWeekly=!!fields.manualRepeatWeekly;changed=true;}
+        if(fields.autoRepeatWeekly!==undefined&&fields.autoRepeatWeekly!==next.autoRepeatWeekly){next.autoRepeatWeekly=fields.autoRepeatWeekly;changed=true;}
+        if(fields.repeatWeekly!==undefined&&fields.repeatWeekly!==next.repeatWeekly){next.repeatWeekly=!!fields.repeatWeekly;changed=true;}
+      };
+      if(seriesId){const info=state.seriesOverrides&&state.seriesOverrides[seriesId];if(info){const fromISO=toISO(info.from||"");const targetISO=toISO(dateISO||next.date||"");if(!fromISO||targetISO&&(targetISO>=fromISO)){applyFields(info);}}}
+      if(uid){const perItem=state.itemOverrides&&state.itemOverrides[uid];if(perItem)applyFields(perItem);}
+      if(changed){next.people=normalizePeopleList(next.people);next.person=primaryPersonName(next.people);}
+      return{item:changed?next:item};
+    }
+
     /* ---------- Google sync (enkeltforekomster) ---------- */
     const GAS_URL="https://script.google.com/macros/s/AKfycbyQeS_NvMVv4A3IImB6S3AsRt67aSpeKuaoHHSf8K4xRE9sx3zSZS8zHlvZFL_WDIKl/exec";
     function loadGIdx(){return loadLS(LS_GIDX,{})}function saveGIdx(x){saveLS(LS_GIDX,x)}
@@ -794,18 +888,23 @@
       });
     }
     function detectWeeklyRepeat(ev){if(!ev||typeof ev!=="object")return false;if(ev.repeatWeekly||ev.repeat_weekly)return true;if(ev.__weeklyHint)return true;const freq=(ev.repeatFrequency||ev.repeat_frequency||ev.frequency||ev.recurrenceFrequency||"").toString();const type=(ev.repeatType||ev.repeat_type||ev.recurrenceType||"").toString();if(containsWeekly(freq)||containsWeekly(type))return true;const interval=Number(ev.repeatInterval||ev.repeat_interval||ev.interval||ev.recurrenceInterval);if((freq||type)&&Number.isFinite(interval)&&interval===1&&/(week|uge)/i.test(freq+" "+type))return true;return containsWeekly(ev.recurrence)||containsWeekly(ev.recurrenceRule)||containsWeekly(ev.recurrence_rule)||containsWeekly(ev.repeat)||containsWeekly(ev.repeatRule)||containsWeekly(ev.pattern)||containsWeekly(ev.schedule)||containsWeekly(ev.recurrenceText)||containsWeekly(ev.recurrence_text)||containsWeekly(ev.repeatText)||containsWeekly(ev.repeat_text)}
-    async function syncNow(){try{setBadge("henter…");const evs=await fetchEvents();markLikelyWeekly(evs);const idx=loadGIdx();let created=0;for(const ev of evs){const date=fromAnyToLocalISO(ev.startISO||ev.date);const id="gcal:"+ev.id;const repeatWeeklyAuto=detectWeeklyRepeat(ev);const seriesAnchor=recurrenceAnchor(ev);const derivedSeriesId=seriesAnchor?`gseries:${seriesAnchor}`:"";const item={id,title:ev.summary||"(uden titel)",type:"Aktivitet",people:["Alle"],person:"Alle",date,time:ev.time||"",durationMin:ev.durationMin||30,location:ev.location||"",note:ev.description||"",repeatWeekly:repeatWeeklyAuto,done:false,source:"google",manualRepeatWeekly:false,autoRepeatWeekly:repeatWeeklyAuto,seriesId:derivedSeriesId||undefined};const uid=uidFor(item);const existingIdx=items.findIndex(x=>uidFor(x)===uid);const existingItem=existingIdx>=0?items[existingIdx]:null;if(existingItem){item.seriesId=safeSeriesId(existingItem)||item.seriesId||derivedSeriesId;item.type=normalizeType(existingItem.type)||item.type;const existingPeople=normalizePeopleList(existingItem.people&&existingItem.people.length?existingItem.people:existingItem.person);item.people=existingPeople;item.person=primaryPersonName(existingPeople);item.done=existingItem.done!==undefined?!!existingItem.done:item.done;if(existingItem.note&&existingItem.note.trim()&&existingItem.note!==item.note)item.note=existingItem.note;const autoPrev=existingItem.autoRepeatWeekly;const manualOverride=!!(existingItem.manualRepeatWeekly||(autoPrev!==undefined&&existingItem.repeatWeekly!==autoPrev));item.manualRepeatWeekly=manualOverride;if(manualOverride){item.repeatWeekly=!!existingItem.repeatWeekly}}
+    async function syncNow(){try{setBadge("henter…");const evs=await fetchEvents();markLikelyWeekly(evs);const idx=loadGIdx();const gState=getGState();let created=0;for(const ev of evs){const date=fromAnyToLocalISO(ev.startISO||ev.date);const id="gcal:"+ev.id;const repeatWeeklyAuto=detectWeeklyRepeat(ev);const seriesAnchor=recurrenceAnchor(ev);const derivedSeriesId=seriesAnchor?`gseries:${seriesAnchor}`:"";const item={id,title:ev.summary||"(uden titel)",type:"Aktivitet",people:["Alle"],person:"Alle",date,time:ev.time||"",durationMin:ev.durationMin||30,location:ev.location||"",note:ev.description||"",repeatWeekly:repeatWeeklyAuto,done:false,source:"google",manualRepeatWeekly:false,autoRepeatWeekly:repeatWeeklyAuto,seriesId:derivedSeriesId||undefined};const uid=uidFor(item);const initialSeriesId=safeSeriesId(item)||derivedSeriesId||"";if(shouldIgnoreGoogleEvent(gState,{uid,seriesId:initialSeriesId,dateISO:date}))continue;const existingIdx=items.findIndex(x=>uidFor(x)===uid);const existingItem=existingIdx>=0?items[existingIdx]:null;if(existingItem){item.seriesId=safeSeriesId(existingItem)||item.seriesId||derivedSeriesId;item.type=normalizeType(existingItem.type)||item.type;const existingPeople=normalizePeopleList(existingItem.people&&existingItem.people.length?existingItem.people:existingItem.person);item.people=existingPeople;item.person=primaryPersonName(existingPeople);item.done=existingItem.done!==undefined?!!existingItem.done:item.done;if(existingItem.note&&existingItem.note.trim()&&existingItem.note!==item.note)item.note=existingItem.note;const autoPrev=existingItem.autoRepeatWeekly;const manualOverride=!!(existingItem.manualRepeatWeekly||(autoPrev!==undefined&&existingItem.repeatWeekly!==autoPrev));item.manualRepeatWeekly=manualOverride;if(manualOverride){item.repeatWeekly=!!existingItem.repeatWeekly}}
         const seriesIdToUse=safeSeriesId(item)||derivedSeriesId;
         if(seriesIdToUse&&!existingItem){const seriesCandidates=items.filter(x=>safeSeriesId(x)===seriesIdToUse&&!x.overrideOf);const seriesSource=seriesCandidates.find(x=>x.manualRepeatWeekly||x.repeatWeekly)||seriesCandidates[0]||null;if(seriesSource){item.type=normalizeType(seriesSource.type)||item.type;const rememberedPeople=normalizePeopleList(seriesSource.people&&seriesSource.people.length?seriesSource.people:seriesSource.person);if(rememberedPeople.length){item.people=rememberedPeople;item.person=primaryPersonName(rememberedPeople);}if(seriesSource.note&&(!item.note||item.note.trim()==="")){item.note=seriesSource.note;}if(seriesSource.manualRepeatWeekly!==undefined){item.manualRepeatWeekly=!!seriesSource.manualRepeatWeekly;}if(seriesSource.autoRepeatWeekly!==undefined){item.autoRepeatWeekly=seriesSource.autoRepeatWeekly;}if(seriesSource.repeatWeekly!==undefined){item.repeatWeekly=!!seriesSource.repeatWeekly;}}}
         item.people=normalizePeopleList(item.people);
         item.person=primaryPersonName(item.people);
+        const overrideApplied=applyGoogleOverrides(gState,{uid,seriesId:seriesIdToUse,dateISO:date,item});
+        item=overrideApplied.item;
+        item.people=normalizePeopleList(item.people);
+        item.person=primaryPersonName(item.people);
+        if(shouldIgnoreGoogleEvent(gState,{uid,seriesId:seriesIdToUse,dateISO:item.date||date}))continue;
         if(seriesIdToUse){item.seriesId=seriesIdToUse;}
         const existingKey=existingItem?peopleKey(existingItem.people&&existingItem.people.length?existingItem.people:existingItem.person):"";
         const newKey=peopleKey(item.people);
         const needsUpdate=!existingItem||["title","type","date","time","durationMin","location","note","repeatWeekly","done","manualRepeatWeekly","autoRepeatWeekly","seriesId"].some(key=>(existingItem?existingItem[key]:undefined)!==item[key])||existingKey!==newKey;
         if(idx[uid]===ev.updated&&!needsUpdate)continue;upsert(item);idx[uid]=ev.updated;created++}saveGIdx(idx);setBadge(created?`+${created} oprettet`:"ingen ændringer")}catch(e){console.error(e);setBadge("fejl")}}
     $("gSync").onclick=()=>syncNow()
-    $("gReset").onclick=()=>{localStorage.removeItem(LS_GIDX);setBadge("nulstiller…");syncNow()}
+    $("gReset").onclick=()=>{localStorage.removeItem(LS_GIDX);localStorage.removeItem(LS_GSTATE);gStateCache=null;setBadge("nulstiller…");syncNow()}
 
     /* ---------- Supabase bridges ---------- */
   </script>
