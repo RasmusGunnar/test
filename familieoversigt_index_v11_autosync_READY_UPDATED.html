@@ -25,9 +25,14 @@
     .list{display:flex;flex-direction:column;gap:6px;margin-top:6px;flex:1;min-height:100px}.section{margin-top:6px}
     .section .h{font-size:11px;font-weight:900;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;margin:6px 0 2px}
     .items{display:flex;flex-direction:column;gap:6px}
-    .item{background:#fff;border:1px solid #e5e7eb;border-left:6px solid #64748b;border-radius:12px;padding:8px 10px;display:flex;gap:8px;align-items:flex-start;box-shadow:0 4px 14px rgba(2,6,23,.06);cursor:pointer}
-    .item .left{display:flex;align-items:center;justify-content:center;min-width:52px;font-weight:800;color:#0f172a}.meta{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
-    .titlex{font-weight:800;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.note{color:#475569;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .item{background:#fff;border:1px solid #e5e7eb;border-left:6px solid #64748b;border-radius:12px;padding:clamp(8px,1.3vw,12px);display:flex;gap:clamp(8px,1.2vw,12px);align-items:flex-start;box-shadow:0 4px 14px rgba(2,6,23,.06);cursor:pointer;min-width:0}
+    .item .left{display:flex;align-items:center;justify-content:center;min-width:clamp(36px,4.6vw,48px);font-weight:800;color:#0f172a}
+    .meta{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1}
+    .title-row{display:flex;align-items:baseline;gap:clamp(6px,1vw,10px);min-width:0}
+    .titlex{font-weight:800;font-size:clamp(12px,1.5vw,15px);line-height:1.2;min-width:0;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;line-clamp:2;word-break:break-word}
+    .time{margin-left:auto;font-weight:650;font-size:clamp(12px,1.3vw,14px);line-height:1.2;color:var(--muted);flex-shrink:0;white-space:nowrap}
+    .muted{color:var(--muted)}
+    .note{color:var(--muted);font-size:clamp(11px,1.3vw,13px);line-height:1.2;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;line-clamp:2;word-break:break-word}
     .done{background:var(--done)}.done .titlex{text-decoration:line-through}
     .floating{position:fixed;right:16px;bottom:16px;display:flex;gap:8px;z-index:999;flex-wrap:wrap;justify-content:flex-end}
     .badge{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:8px 12px;font-weight:700;color:#334155;box-shadow:var(--shadow)}
@@ -398,7 +403,10 @@
         if(baseKey&&seenBase.has(baseKey)) continue; if(baseKey) seenBase.add(baseKey);
         const day=document.querySelector(`.day[data-date="${it.date}"]`); if(!day) continue;
         const sec=day.querySelector(`.section[data-section="${normalizeType(it.type)}"] .items`); if(!sec) continue;
-        const left = (it.type==="Opgave") ? `<input type="checkbox" ${it.done?'checked':''} data-opg="${it.id}">` : (it.time||'<span class="muted">Heldag</span>');
+        const isTask = it.type==="Opgave";
+        const left = isTask ? `<input type="checkbox" ${it.done?'checked':''} data-opg="${it.id}">` : '';
+        const escapeHtml=s=>s.replace(/[&<>]/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[ch]||ch));
+        const timeDetail = it.time ? `<span class="time">${escapeHtml(String(it.time))}</span>` : (!isTask ? `<span class="time muted">Heldag</span>` : '');
         const div=document.createElement("div");
         const repeatTag=it.repeatWeekly?' · <span class="muted">↻ uge</span>':'';
         const overrideTag=it.overrideOf?' · <span class="muted">tilpasset</span>':'';
@@ -413,7 +421,9 @@
         if(peopleDetail) detailParts.push(`<div class="note people">${peopleDetail}</div>`);
         if(it.location) detailParts.push(`<div class="note">${it.location}</div>`);
         if(it.note) detailParts.push(`<div class="note">${it.note}</div>`);
-        div.innerHTML=`<div class="left">${left}</div><div class="meta"><div class="titlex">${(it.title||"(uden titel)").replace(/[&<>]/g,s=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[s]))}${repeatTag}${overrideTag}</div>${detailParts.join("")}</div>`;
+        const leftBlock = left?`<div class="left">${left}</div>`:'';
+        const safeTitle = escapeHtml(it.title||"(uden titel)");
+        div.innerHTML=`${leftBlock}<div class="meta"><div class="title-row"><div class="titlex">${safeTitle}${repeatTag}${overrideTag}</div>${timeDetail}</div>${detailParts.join("")}</div>`;
         div.onclick=(e)=>{if(e.target && e.target.matches('input[type="checkbox"]'))return; openEditor({id:div.dataset.id,date:div.dataset.date,baseId:div.dataset.baseId,seriesId:div.dataset.seriesId})}
         sec.appendChild(div);
       }
