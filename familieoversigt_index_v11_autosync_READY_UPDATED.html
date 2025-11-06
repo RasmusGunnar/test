@@ -848,16 +848,7 @@
             const manualOverride=!!(existingItem.manualRepeatWeekly||(autoPrev!==undefined&&existingItem.repeatWeekly!==autoPrev));
             item.manualRepeatWeekly=manualOverride;
             if(manualOverride){item.repeatWeekly=!!existingItem.repeatWeekly;}
-            const existingKeyForPrefs=anchor||googleSeriesKey(existingItem);
-            if(existingKeyForPrefs){rememberPref(existingKeyForPrefs,{people:existingPeople,type:existingItem.type});}
-          }else{
-            if(anchor&&!item.seriesId){item.seriesId=anchor;}
-            const seriesKey=googleSeriesKey(item);
-            if(seriesKey){
-              if(!seriesPrefs[seriesKey]){const localMatch=items.find(x=>googleSeriesKey(x)===seriesKey);if(localMatch){rememberPref(seriesKey,{people:localMatch.people,type:localMatch.type});}}
-              applyGoogleSeriesPrefsFromCache(item,seriesPrefs);
-            }
-          }
+
           item.people=normalizePeopleList(item.people);
           item.person=primaryPersonName(item.people);
           const existingKey=existingItem?peopleKey(existingItem.people&&existingItem.people.length?existingItem.people:existingItem.person):"";
