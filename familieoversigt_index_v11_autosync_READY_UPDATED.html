@@ -799,6 +799,8 @@
         deletedUids:{...current.deletedUids},
         deletedSeries:{...current.deletedSeries}
       };const maybe=mutator&&mutator(next);return saveGState(maybe||next);}
+    function googleBase(existingItem,baseItem){const hasGoogleId=obj=>obj&&typeof obj.id==='string'&&obj.id.startsWith('gcal:');const isGoogle=obj=>(obj?.source||'').toString().toLowerCase()==='google';if(hasGoogleId(existingItem))return existingItem;if(hasGoogleId(baseItem))return baseItem;if(isGoogle(existingItem))return existingItem;if(isGoogle(baseItem))return baseItem;return existingItem||baseItem||null;}
+    function googleCloneForUid({existingItem,baseItem,payload,occurrenceISO}){const ref=googleBase(existingItem,baseItem);const source=ref||existingItem||baseItem||{};const clone={...source,...(payload||{})};if(ref?.id)clone.id=ref.id;if(ref?.source)clone.source=ref.source;if(!clone.source)clone.source='google';clone.date=toISO((payload&&payload.date)||occurrenceISO||source.date||'');return clone;}
     function captureGoogleFields(payload){if(!payload||typeof payload!=="object")return{};const out={};if(payload.type!==undefined)out.type=normalizeType(payload.type);if(payload.people!==undefined){const norm=normalizePeopleList(payload.people);if(norm.length){out.people=norm.slice();out.person=primaryPersonName(norm);}}if(payload.manualRepeatWeekly!==undefined)out.manualRepeatWeekly=!!payload.manualRepeatWeekly;if(payload.autoRepeatWeekly!==undefined)out.autoRepeatWeekly=payload.autoRepeatWeekly;if(payload.repeatWeekly!==undefined)out.repeatWeekly=!!payload.repeatWeekly;return out;}
     function rememberGoogleEdit({scope,seriesId,occurrenceISO,payload,existingItem,baseItem}){
       const source=(existingItem&&existingItem.source)||(baseItem&&baseItem.source)||payload?.source;
@@ -814,11 +816,9 @@
           delete state.deletedSeries[effectiveSeries];
           return state;
         }
-        const target=existingItem||baseItem;
-        if(!target)return state;
-        const clone={...target,...payload};
-        clone.date=toISO(payload?.date||occurrenceISO||target.date||"");
-        const uid=uidFor(clone);
+        const reference=googleCloneForUid({existingItem,baseItem,payload,occurrenceISO});
+        if(!reference)return state;
+        const uid=uidFor(reference);
         if(!uid.startsWith("g:"))return state;
         state.itemOverrides[uid]={fields};
         delete state.deletedUids[uid];
@@ -837,11 +837,9 @@
           delete state.seriesOverrides[effectiveSeries];
           return state;
         }
-        const target=existingItem||baseItem;
-        if(!target)return state;
-        const clone={...target};
-        clone.date=toISO(occurrenceISO||target.date||"");
-        const uid=uidFor(clone);
+        const reference=googleCloneForUid({existingItem,baseItem,occurrenceISO});
+        if(!reference)return state;
+        const uid=uidFor(reference);
         if(!uid.startsWith("g:"))return state;
         state.deletedUids[uid]=true;
         delete state.itemOverrides[uid];
