@@ -16,10 +16,13 @@
     .btn.primary{background:#0f172a;color:#fff;border-color:transparent}.btn.icon{width:36px;height:36px;display:grid;place-items:center;padding:0}
     .btn.small{padding:8px 10px;border-radius:10px;font-size:13px}.btn.ghost{background:#fff;border:1px solid #e5e7eb}
     .chipbar{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
-    .chip{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #e5e7eb;color:#334155;font-weight:700;border-radius:999px;padding:6px 10px;cursor:pointer}
+    .chip{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #e5e7eb;color:#334155;font-weight:700;border-radius:999px;padding:6px 14px;cursor:pointer}
     .chip .tally{font-size:18px;line-height:1;letter-spacing:2px}
-    .chip.active{background:#0f172a;color:#fff;border-color:transparent}.avatar{width:22px;height:22px;border-radius:999px;object-fit:cover}
+    .chip.active{background:#0f172a;color:#fff;border-color:transparent}.avatar{width:36px;height:36px;border-radius:999px;object-fit:cover;flex-shrink:0}
+    img.avatar{display:block;width:100%;height:100%;border-radius:inherit;object-fit:cover}
+    .avatar:not(img){display:grid;place-items:center;font-size:14px}
     .grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:var(--gap)}
+    .grid.day-mode{grid-template-columns:1fr}
     .day{background:var(--panel);border-radius:var(--radius);box-shadow:var(--shadow);padding:10px 10px 14px;min-height:42vh;display:flex;flex-direction:column}
     .head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}.name{font-weight:800}.date{color:#475569;font-size:12px;font-weight:700}.today{outline:2px solid #11182722}
     .list{display:flex;flex-direction:column;gap:6px;margin-top:6px;flex:1;min-height:100px}.section{margin-top:6px}
@@ -84,9 +87,10 @@
     <header>
       <div class="title">Familieoversigt · uge <span id="weekNo">?</span></div>
       <div class="controls">
-        <span id="hidPill" class="hid">HID: —</span>
+        <span id="hidPill" class="hid" hidden aria-hidden="true"></span>
         <button class="btn icon" id="prev">⟨</button>
         <button class="btn" id="weekBtn">—</button>
+        <button class="btn" id="viewToggle" type="button">Vis dag</button>
         <button class="btn icon" id="next">⟩</button>
         <button class="btn primary" id="newBtn">+ Ny</button>
         <button class="btn" id="settingsBtn">Indstillinger</button>
@@ -145,7 +149,7 @@
         <button class="btn ghost" id="settClose">Luk</button>
       </div>
       <div id="settRows"></div>
-      <div class="tip">Billeder gemmes lokalt. Farver/avatars synkes via Supabase til alle enheder.</div>
+      <div class="tip">Farver og avatar-billeder synkroniseres via Supabase til alle enheder, så ændringer vises overalt.</div>
       <div class="actions" style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px">
         <button class="btn primary" id="settSave">Gem ændringer</button>
       </div>
@@ -175,17 +179,20 @@
   <script>
     /* ---------- core utils ---------- */
     const HID=(new URLSearchParams(location.search).get("hid")||"DEFAULT").toUpperCase();
-    document.getElementById("hidPill").textContent="HID: "+HID;
+    const hidBadge=document.getElementById("hidPill");
+    if(hidBadge){hidBadge.textContent="HID: "+HID;}
 
     const LS_ITEMS="fam_items_v1", LS_PREFS="fam_people_prefs_v1", LS_GIDX="gcal_index", LS_GSTATE="gcal_state_v1";
+    const LS_VIEW_MODE="fam_view_mode";
     const CELEBRATION_LS="fam_celebrations_v1";
     const CELEBRATION_THRESHOLD=6;
     const CELEBRATION_MAX_TASKS=6;
     const DEFAULT_PEOPLE=[{name:"Alle",color:"#0f172a"},{name:"Far",color:"#ef4444"},{name:"Mor",color:"#8b5cf6"},{name:"Carl",color:"#22c55e"},{name:"Jakob",color:"#0ea5e9"},{name:"Ida",color:"#f59e0b"}];
     const DEFAULT_TASK_PRESETS=["Tøm opvaskemaskine","Lektier","Tøm vaskemaskine","Rydde op på værelset","Handle ind","Dæk bordet","Tøm tasker"];
 
+    const WEEK_DAY_NAMES=["mandag","tirsdag","onsdag","torsdag","fredag","lørdag","søndag"];
     const $ = (id)=>document.getElementById(id);
-    const grid = $("grid"), peopleBar = $("peopleBar"), weekNo = $("weekNo"), weekBtn = $("weekBtn");
+    const grid = $("grid"), peopleBar = $("peopleBar"), weekNo = $("weekNo"), weekBtn = $("weekBtn"), viewToggle=$("viewToggle");
     const gBadge=$("gBadge");
 
     function fmtISO(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
@@ -199,9 +206,12 @@
     function weekNumber(d){d=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const dn=d.getUTCDay()||7;d.setUTCDate(d.getUTCDate()+4-dn);const ys=new Date(Date.UTC(d.getUTCFullYear(),0,1));return Math.ceil((((d-ys)/86400000)+1)/7)}
     function monthName(m){return["januar","februar","marts","april","maj","juni","juli","august","september","oktober","november","december"][m]}
     function weekLabel(s){const e=new Date(s);e.setDate(s.getDate()+6);return s.getMonth()===e.getMonth()?`${s.getDate()}.–${e.getDate()}. ${monthName(e.getMonth())}`:`${s.getDate()}. ${monthName(s.getMonth())} – ${e.getDate()}. ${monthName(e.getMonth())}`}
+    function dayLabel(d){const idx=((d.getDay()+6)%7);const name=WEEK_DAY_NAMES[idx]||"";const cap=name?name.charAt(0).toUpperCase()+name.slice(1):"";return `${cap} ${String(d.getDate()).padStart(2,"0")}. ${monthName(d.getMonth())}`}
 
     function loadLS(k,fallback){try{const v=localStorage.getItem(k);return v?JSON.parse(v):fallback}catch(_){return fallback}}
     function saveLS(k,v){localStorage.setItem(k,JSON.stringify(v))}
+    function loadViewMode(){try{return localStorage.getItem(LS_VIEW_MODE)==="day"?"day":"week";}catch(_){return"week";}}
+    function saveViewMode(mode){try{localStorage.setItem(LS_VIEW_MODE,mode);}catch(_){}}
     function normalizeType(t){if(t==="Anden aftale"||t==="Andre aftaler")return"Aktivitet";if(t==="Fritidsinteresser")return"Fritidsinteresse";return t||"Aktivitet"}
     function normalizePersonName(name){const raw=(name??"").toString().trim();if(!raw)return"Alle";const pool=(typeof PEOPLE!=="undefined"&&Array.isArray(PEOPLE)&&PEOPLE.length?PEOPLE:DEFAULT_PEOPLE);const lower=raw.toLowerCase();const match=pool.find(p=>(p.name||"").toLowerCase()===lower);return match?match.name:raw}
     function normalizePeopleList(raw){let arr=[];if(Array.isArray(raw)){arr=raw;}else if(raw===undefined||raw===null){arr=[];}else if(typeof raw==="string"){arr=raw.split(/[;,]/).map(s=>s.trim()).filter(Boolean);if(arr.length===0)arr=[raw];}else{arr=[raw];}
@@ -213,6 +223,7 @@
     function toISO(dateLike){if(!dateLike)return"";if(dateLike instanceof Date)return fmtISO(dateLike);if(typeof dateLike==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(dateLike))return dateLike;return fromAnyToLocalISO(dateLike)}
     function addDaysISO(iso,days){if(!iso||!Number.isFinite(days))return"";const [y,m,d]=iso.split("-").map(Number);if([y,m,d].some(n=>Number.isNaN(n)))return"";const dt=new Date(y,m-1,d);dt.setDate(dt.getDate()+days);return fmtISO(dt)}
     function uniqueISOList(arr){if(!Array.isArray(arr))return[];const out=[];const seen=new Set();for(const entry of arr){const iso=toISO(entry);if(!iso||seen.has(iso))continue;seen.add(iso);out.push(iso);}return out}
+    function setFocusDate(date){let base=date instanceof Date?date:new Date(date);if(!(base instanceof Date)||Number.isNaN(base.getTime())){base=new Date();}const normalized=new Date(base.getFullYear(),base.getMonth(),base.getDate());if(Number.isNaN(normalized.getTime())){const today=new Date();focusDate=new Date(today.getFullYear(),today.getMonth(),today.getDate());wk=startOfWeek(focusDate);return;}focusDate=normalized;wk=startOfWeek(normalized);}
 
     const celebration=(()=>{
       const overlay=document.getElementById("celebrationPopup");
@@ -267,7 +278,11 @@
     }
 
     /* ---------- state ---------- */
-    let PEOPLE, items, current="Alle", editContext=null, wk=startOfWeek();
+    let PEOPLE, items, current="Alle", editContext=null;
+    let focusDate=new Date();
+    let wk=startOfWeek(focusDate);
+    let viewMode=loadViewMode();
+    setFocusDate(focusDate);
     function loadPrefs(){return loadLS(LS_PREFS,{});}
     function savePrefs(p){saveLS(LS_PREFS,p)}
     function getPeople(){const p=loadPrefs();return DEFAULT_PEOPLE.map(x=>({...x,color:p[x.name]?.color||x.color,avatar:p[x.name]?.avatar||""}))}
@@ -309,6 +324,7 @@
     function singlePersonAvatar(name){const key=(name??"").toString().trim().toLowerCase();if(!key)return"";const pool=(typeof PEOPLE!=="undefined"&&Array.isArray(PEOPLE)&&PEOPLE.length?PEOPLE:DEFAULT_PEOPLE);const p=pool.find(x=>(x.name||"").toLowerCase()===key);return p?.avatar||""}
     function personAvatar(n){if(Array.isArray(n)){const arr=normalizePeopleList(n).filter(x=>x!=="Alle");if(arr.length===1)return singlePersonAvatar(arr[0]);return "";}return singlePersonAvatar(n);}
 
+    function updateViewToggle(){if(!viewToggle)return;const label=viewMode==="week"?"Vis dag":"Vis uge";viewToggle.textContent=label;viewToggle.setAttribute("aria-pressed",viewMode==="day"?"true":"false");viewToggle.title=viewMode==="week"?"Skift til dagsvisning":"Skift til ugevisning";}
     function buildPeople(){
       peopleBar.innerHTML="";
       for(const p of PEOPLE){
@@ -324,18 +340,29 @@
       }
     }
     function buildGrid(){
+      grid.classList.toggle("day-mode",viewMode==="day");
       grid.innerHTML="";
-      const names=["mandag","tirsdag","onsdag","torsdag","fredag","lørdag","søndag"];
-      for(let i=0;i<7;i++){
-        const d=new Date(wk);d.setDate(wk.getDate()+i);const iso=fmtISO(d);
-        const card=document.createElement("div");card.className="day"+(fmtISO(new Date())===iso?" today":"");card.dataset.date=iso;
-        const head=`<div class="head"><div class="name">${names[i]}</div><div class="date">${String(d.getDate()).padStart(2,"0")+". "+String(d.getMonth()+1).padStart(2,"0")+"."}</div></div>`;
+      const todayISO=fmtISO(new Date());
+      const appendCard=(dateObj)=>{
+        const iso=fmtISO(dateObj);
+        const idx=((dateObj.getDay()+6)%7);
+        const name=WEEK_DAY_NAMES[idx]||"";
+        const card=document.createElement("div");card.className="day"+(todayISO===iso?" today":"");card.dataset.date=iso;
+        const head=`<div class="head"><div class="name">${name}</div><div class="date">${String(dateObj.getDate()).padStart(2,"0")+". "+String(dateObj.getMonth()+1).padStart(2,"0")+"."}</div></div>`;
         const body=`<div class="list">
           <div class="section" data-section="Aktivitet"><div class="h">Aktiviteter</div><div class="items"></div></div>
           <div class="section" data-section="Fritidsinteresse"><div class="h">Fritidsinteresser</div><div class="items"></div></div>
           <div class="section" data-section="Opgave"><div class="h">Opgaver</div><div class="items"></div></div>
         </div>`;
         card.innerHTML=head+body;grid.appendChild(card);
+      };
+      if(viewMode==="day"){
+        appendCard(new Date(focusDate));
+      }else{
+        for(let i=0;i<7;i++){
+          const d=new Date(wk);d.setDate(wk.getDate()+i);
+          appendCard(d);
+        }
       }
     }
     function withinWeek(iso){if(!iso)return false;const parts=iso.split("-").map(Number);if(parts.length<3||parts.some(n=>Number.isNaN(n)))return false;const [Y,M,D]=parts;const d=new Date(Y,M-1,D);const e=new Date(wk);e.setDate(wk.getDate()+7);return d>=wk && d<e}
@@ -385,13 +412,16 @@
     function getByAnyId(id){const b=baseId(id);return items.find(x=>x.id===b)||null}
 
     function render(){
-      weekNo.textContent=weekNumber(wk); weekBtn.textContent=weekLabel(wk); buildGrid();
+      updateViewToggle();
+      weekNo.textContent=weekNumber(focusDate); weekBtn.textContent=viewMode==="day"?dayLabel(focusDate):weekLabel(wk); if(weekBtn)weekBtn.title="Hop til i dag"; buildGrid();
 
       const materialized=materializeRepeats(items);
       const normalized=materialized.map(it=>{const peopleList=normalizePeopleList(it.people&&it.people.length?it.people:(it.person!==undefined?it.person:"Alle"));return {...it,people:peopleList,person:primaryPersonName(peopleList)};});
 
+      const dayISO=viewMode==="day"?fmtISO(focusDate):null;
       const visible=normalized
         .filter(it=>withinWeek(it.date))
+        .filter(it=>!dayISO||it.date===dayISO)
         .filter(it=>peopleInclude(it.people||it.person,current))
         .sort((a,b)=>a.date.localeCompare(b.date)||(a.time||"").localeCompare(b.time||""));
 
@@ -771,12 +801,21 @@
     }
 
     // header buttons
-    $("prev").onclick=()=>{wk.setDate(wk.getDate()-7);render()}
-    $("next").onclick=()=>{wk.setDate(wk.getDate()+7);render()}
-    weekBtn.onclick=()=>{wk=startOfWeek(new Date());render()}
+    const shiftRange=(days)=>{const next=new Date(focusDate);next.setDate(next.getDate()+days);setFocusDate(next);render();};
+    $("prev").onclick=()=>{shiftRange(viewMode==="day"?-1:-7)}
+    $("next").onclick=()=>{shiftRange(viewMode==="day"?1:7)}
+    weekBtn.onclick=()=>{setFocusDate(new Date());render()}
     $("newBtn").onclick=()=>openNew()
     $("settingsBtn").onclick=()=>{buildSettings();$("settBD").style.display="flex"}
     $("settClose").onclick=()=>{$("settBD").style.display="none"}
+    if(viewToggle){
+      viewToggle.onclick=()=>{
+        viewMode=viewMode==="week"?"day":"week";
+        if(viewMode==="day"){setFocusDate(new Date());}
+        saveViewMode(viewMode);
+        render();
+      };
+    }
 
     // settings (synk farver/avatars)
     function buildSettings(){const box=$("settRows");box.innerHTML="";for(const p of PEOPLE){const row=document.createElement("div");row.className="row-s";row.innerHTML=`<div class="initial">${(p.name[0]||"?").toUpperCase()}</div><input type="text" value="${p.name}" data-f="name" data-for="${p.name}"><input type="file" accept="image/*" data-f="avatar" data-for="${p.name}"><input type="color" value="${p.color}" data-f="color" data-for="${p.name}"><span class="swatch" style="background:${p.color}"></span>`;row.querySelector('input[type="color"]').addEventListener("input",e=>row.querySelector(".swatch").style.background=e.target.value);box.appendChild(row)}}
