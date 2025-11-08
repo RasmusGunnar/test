@@ -30,6 +30,8 @@
     .item{background:#fff;border:1px solid #e5e7eb;border-left:6px solid #64748b;border-radius:12px;padding:clamp(8px,1.3vw,12px);display:flex;gap:clamp(8px,1.2vw,12px);align-items:flex-start;box-shadow:0 4px 14px rgba(2,6,23,.06);cursor:pointer;min-width:0}
     .item .left{display:flex;align-items:center;justify-content:center;min-width:clamp(36px,4.6vw,48px);font-weight:800;color:#0f172a}
     .item .left .birthday-flag{display:block;width:clamp(28px,4.6vw,36px)}
+    .item .left .milestone-icon{display:grid;place-items:center;width:clamp(28px,4.6vw,36px);aspect-ratio:1;border-radius:12px;background:linear-gradient(135deg,#fcd34d,#f59e0b);box-shadow:inset 0 0 0 1px rgba(15,23,42,.08),0 6px 14px rgba(15,23,42,.18)}
+    .milestone-icon__star{width:60%;aspect-ratio:1;display:block;background:#fff;clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);box-shadow:0 1px 2px rgba(15,23,42,.25)}
     .birthday-flag .flag{display:block;width:100%}
     .flag{position:relative;display:block}
     .flag--dannebrog{aspect-ratio:28/22;background:#c8102e;border-radius:4px;box-shadow:inset 0 0 0 1px rgba(15,23,42,.12)}
@@ -125,7 +127,7 @@
       </div>
       <div class="form">
         <div class="full"><label for="f_title">Titel</label><input id="f_title" type="text" placeholder="Titel"></div>
-        <div><label for="f_type">Type</label><select id="f_type"><option>Aktivitet</option><option>Opgave</option><option>Fritidsinteresse</option><option>Fødselsdag</option></select></div>
+        <div><label for="f_type">Type</label><select id="f_type"><option>Aktivitet</option><option>Opgave</option><option>Fritidsinteresse</option><option>Fødselsdag</option><option>Mærkedag</option></select></div>
         <div id="taskPresetRow" class="full" style="display:none"><label for="f_taskPreset">Standardopgave</label><select id="f_taskPreset"><option value="">Vælg opgave…</option></select></div>
         <div class="full"><label>Personer</label><div id="f_person" class="personList"></div></div>
         <div><label for="f_date">Dato</label><input id="f_date" type="date"></div>
@@ -201,8 +203,10 @@
     const DEFAULT_PEOPLE=[{name:"Alle",color:"#0f172a"},{name:"Far",color:"#ef4444"},{name:"Mor",color:"#8b5cf6"},{name:"Carl",color:"#22c55e"},{name:"Jakob",color:"#0ea5e9"},{name:"Ida",color:"#f59e0b"}];
     const DEFAULT_TASK_PRESETS=["Tøm opvaskemaskine","Lektier","Tøm vaskemaskine","Rydde op på værelset","Handle ind","Dæk bordet","Tøm tasker"];
     const BIRTHDAY_TYPE="Fødselsdag";
+    const MILESTONE_TYPE="Mærkedag";
     const FLAG_DANNEBROG='<span class="flag flag--dannebrog"></span>';
     const BIRTHDAY_FLAG=FLAG_DANNEBROG;
+    const MILESTONE_ICON='<span class="milestone-icon" aria-hidden="true"><span class="milestone-icon__star"></span></span>';
 
     const WEEK_DAY_NAMES=["mandag","tirsdag","onsdag","torsdag","fredag","lørdag","søndag"];
     const $ = (id)=>document.getElementById(id);
@@ -228,7 +232,7 @@
     function weekdayDatesFor(dateIso){const base=parseISODate(dateIso);if(!base){return dateIso?[dateIso]:[];}const monday=startOfWeek(base);const out=[];for(let i=0;i<5;i+=1){const d=new Date(monday);d.setDate(monday.getDate()+i);out.push(fmtISO(d));}return Array.from(new Set(out));}
     function loadViewMode(){try{return localStorage.getItem(LS_VIEW_MODE)==="day"?"day":"week";}catch(_){return"week";}}
     function saveViewMode(mode){try{localStorage.setItem(LS_VIEW_MODE,mode);}catch(_){}}
-    function normalizeType(t){if(t==="Anden aftale"||t==="Andre aftaler")return"Aktivitet";if(t==="Fritidsinteresser")return"Fritidsinteresse";return t||"Aktivitet"}
+    function normalizeType(t){if(t==="Anden aftale"||t==="Andre aftaler")return"Aktivitet";if(t==="Fritidsinteresser")return"Fritidsinteresse";if(t==="Mærkedage")return MILESTONE_TYPE;return t||"Aktivitet"}
     function normalizePersonName(name){const raw=(name??"").toString().trim();if(!raw)return"Alle";const pool=(typeof PEOPLE!=="undefined"&&Array.isArray(PEOPLE)&&PEOPLE.length?PEOPLE:DEFAULT_PEOPLE);const lower=raw.toLowerCase();const match=pool.find(p=>(p.name||"").toLowerCase()===lower);return match?match.name:raw}
     function normalizePeopleList(raw){let arr=[];if(Array.isArray(raw)){arr=raw;}else if(raw===undefined||raw===null){arr=[];}else if(typeof raw==="string"){arr=raw.split(/[;,]/).map(s=>s.trim()).filter(Boolean);if(arr.length===0)arr=[raw];}else{arr=[raw];}
       const seen=new Set();let hasAll=false;for(const entry of arr){const normalized=normalizePersonName(entry);if(!normalized)continue;if(normalized==="Alle"){hasAll=true;break;}if(!seen.has(normalized))seen.add(normalized);}if(hasAll||seen.size===0)return["Alle"];return[...seen];}
@@ -374,7 +378,6 @@
         const head=`<div class="head"><div class="name">${name}</div><div class="date">${String(dateObj.getDate()).padStart(2,"0")+". "+String(dateObj.getMonth()+1).padStart(2,"0")+"."}</div></div>`;
         const body=`<div class="list">
           <div class="section" data-section="Aktivitet"><div class="h">Aktiviteter</div><div class="items"></div></div>
-          <div class="section" data-section="Fødselsdag"><div class="h">Fødselsdage</div><div class="items"></div></div>
           <div class="section" data-section="Fritidsinteresse"><div class="h">Fritidsinteresser</div><div class="items"></div></div>
           <div class="section" data-section="Opgave"><div class="h">Opgaver</div><div class="items"></div></div>
         </div>`;
@@ -497,11 +500,13 @@
         if(baseKey&&seenBase.has(baseKey)) continue; if(baseKey) seenBase.add(baseKey);
         const day=document.querySelector(`.day[data-date="${it.date}"]`); if(!day) continue;
         const typeNow=normalizeType(it.type);
-        const sec=day.querySelector(`.section[data-section="${typeNow}"] .items`); if(!sec) continue;
-        const isTask = typeNow==="Opgave";
         const isBirthday = typeNow===BIRTHDAY_TYPE;
+        const isMilestone = typeNow===MILESTONE_TYPE;
+        const sectionType=(isBirthday||isMilestone)?"Aktivitet":typeNow;
+        const sec=day.querySelector(`.section[data-section="${sectionType}"] .items`); if(!sec) continue;
+        const isTask = sectionType==="Opgave";
         let leftContent='';
-        if(isTask){leftContent=`<input type="checkbox" ${it.done?'checked':''} data-opg="${it.id}">`;} else if(isBirthday){leftContent=`<span class="birthday-flag" aria-hidden="true">${BIRTHDAY_FLAG}</span>`;}
+        if(isTask){leftContent=`<input type="checkbox" ${it.done?'checked':''} data-opg="${it.id}">`;} else if(isBirthday){leftContent=`<span class="birthday-flag" aria-hidden="true">${BIRTHDAY_FLAG}</span>`;} else if(isMilestone){leftContent=MILESTONE_ICON;}
         const escapeHtml=s=>s.replace(/[&<>]/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[ch]||ch));
         const timeDetail = it.time ? `<span class="time">${escapeHtml(String(it.time))}</span>` : (!isTask ? `<span class="time muted">Heldag</span>` : '');
         const div=document.createElement("div");
