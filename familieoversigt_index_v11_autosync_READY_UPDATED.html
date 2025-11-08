@@ -29,7 +29,13 @@
     .items{display:flex;flex-direction:column;gap:6px}
     .item{background:#fff;border:1px solid #e5e7eb;border-left:6px solid #64748b;border-radius:12px;padding:clamp(8px,1.3vw,12px);display:flex;gap:clamp(8px,1.2vw,12px);align-items:flex-start;box-shadow:0 4px 14px rgba(2,6,23,.06);cursor:pointer;min-width:0}
     .item .left{display:flex;align-items:center;justify-content:center;min-width:clamp(36px,4.6vw,48px);font-weight:800;color:#0f172a}
-    .item .left .birthday-flag{font-size:clamp(22px,4vw,30px);line-height:1;display:block}
+    .item .left .birthday-flag{display:block;width:clamp(28px,4.6vw,36px)}
+    .birthday-flag .flag{display:block;width:100%}
+    .flag{position:relative;display:block}
+    .flag--dannebrog{aspect-ratio:28/22;background:#c8102e;border-radius:4px;box-shadow:inset 0 0 0 1px rgba(15,23,42,.12)}
+    .flag--dannebrog::before,.flag--dannebrog::after{content:"";position:absolute;background:#fff}
+    .flag--dannebrog::before{top:0;bottom:0;left:32%;width:16%}
+    .flag--dannebrog::after{left:0;right:0;top:44%;height:18%}
     .meta{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1}
     .title-row{display:flex;align-items:baseline;gap:clamp(6px,1vw,10px);min-width:0}
     .titlex{font-weight:800;font-size:clamp(12px,1.5vw,15px);line-height:1.2;min-width:0;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;line-clamp:2;word-break:break-word}
@@ -195,7 +201,8 @@
     const DEFAULT_PEOPLE=[{name:"Alle",color:"#0f172a"},{name:"Far",color:"#ef4444"},{name:"Mor",color:"#8b5cf6"},{name:"Carl",color:"#22c55e"},{name:"Jakob",color:"#0ea5e9"},{name:"Ida",color:"#f59e0b"}];
     const DEFAULT_TASK_PRESETS=["Tøm opvaskemaskine","Lektier","Tøm vaskemaskine","Rydde op på værelset","Handle ind","Dæk bordet","Tøm tasker"];
     const BIRTHDAY_TYPE="Fødselsdag";
-    const BIRTHDAY_FLAG="🇩🇰";
+    const FLAG_DANNEBROG='<span class="flag flag--dannebrog"></span>';
+    const BIRTHDAY_FLAG=FLAG_DANNEBROG;
 
     const WEEK_DAY_NAMES=["mandag","tirsdag","onsdag","torsdag","fredag","lørdag","søndag"];
     const $ = (id)=>document.getElementById(id);
