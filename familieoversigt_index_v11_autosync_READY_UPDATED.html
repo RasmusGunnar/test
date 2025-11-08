@@ -29,6 +29,10 @@
     .items{display:flex;flex-direction:column;gap:6px}
     .item{background:#fff;border:1px solid #e5e7eb;border-left:6px solid #64748b;border-radius:12px;padding:clamp(8px,1.3vw,12px);display:flex;gap:clamp(8px,1.2vw,12px);align-items:flex-start;box-shadow:0 4px 14px rgba(2,6,23,.06);cursor:pointer;min-width:0}
     .item .left{display:flex;align-items:center;justify-content:center;min-width:clamp(36px,4.6vw,48px);font-weight:800;color:#0f172a}
+    .item .left .birthday-flag{display:block;width:clamp(28px,4.4vw,34px);aspect-ratio:4/3;position:relative;border-radius:4px;background:#c8102e;box-shadow:0 2px 6px rgba(15,23,42,.18);overflow:hidden}
+    .item .left .birthday-flag::before,.item .left .birthday-flag::after{content:"";position:absolute;background:#fff}
+    .item .left .birthday-flag::before{left:0;right:0;top:50%;height:18%;transform:translateY(-50%)}
+    .item .left .birthday-flag::after{top:0;bottom:0;left:34%;width:16%;transform:translateX(-50%)}
     .meta{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1}
     .title-row{display:flex;align-items:baseline;gap:clamp(6px,1vw,10px);min-width:0}
     .titlex{font-weight:800;font-size:clamp(12px,1.5vw,15px);line-height:1.2;min-width:0;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;line-clamp:2;word-break:break-word}
@@ -50,6 +54,7 @@
     .personList{display:flex;flex-wrap:wrap;gap:8px}
     .personList label{display:flex;align-items:center;gap:6px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:999px;padding:6px 10px;font-weight:700;color:#334155}
     .personList input{margin:0}
+    .hint{font-size:12px;color:#6b7280;margin:4px 0 0}
     .note.people{color:#0f172a;font-weight:700}
     .settings{width:min(860px,92vw);max-height:min(92vh,92dvh);overflow:auto;background:#fff;border-radius:16px;box-shadow:var(--shadow);padding:16px}
     .row-s{display:grid;grid-template-columns:44px 1fr 1fr 64px 32px;gap:12px;align-items:center;padding:8px;border:1px solid #e5e7eb;border-radius:12px;margin-bottom:8px}
@@ -117,11 +122,12 @@
       </div>
       <div class="form">
         <div class="full"><label for="f_title">Titel</label><input id="f_title" type="text" placeholder="Titel"></div>
-        <div><label for="f_type">Type</label><select id="f_type"><option>Aktivitet</option><option>Opgave</option><option>Fritidsinteresse</option></select></div>
+        <div><label for="f_type">Type</label><select id="f_type"><option>Aktivitet</option><option>Opgave</option><option>Fritidsinteresse</option><option>Fødselsdag</option></select></div>
         <div id="taskPresetRow" class="full" style="display:none"><label for="f_taskPreset">Standardopgave</label><select id="f_taskPreset"><option value="">Vælg opgave…</option></select></div>
         <div class="full"><label>Personer</label><div id="f_person" class="personList"></div></div>
         <div><label for="f_date">Dato</label><input id="f_date" type="date"></div>
         <div><label for="f_time">Tid</label><input id="f_time" type="time" step="900" placeholder="--:--"></div>
+        <div id="birthdayFields" class="full" style="display:none"><label for="f_birthYear">Fødselsår (valgfrit)</label><input id="f_birthYear" type="number" min="1900" max="2100" step="1" inputmode="numeric" placeholder="ÅÅÅÅ"><p class="hint">Vi viser automatisk alderen i kalenderen.</p></div>
         <div><label for="f_dur">Varighed (min)</label><input id="f_dur" type="number" min="0" step="5" placeholder="30"></div>
         <div><label for="f_loc">Sted</label><input id="f_loc" type="text" placeholder="Adresse/sted"></div>
         <div class="full"><label for="f_note">Note</label><textarea id="f_note" placeholder="Noter"></textarea></div>
@@ -191,6 +197,8 @@
     const CELEBRATION_MAX_TASKS=6;
     const DEFAULT_PEOPLE=[{name:"Alle",color:"#0f172a"},{name:"Far",color:"#ef4444"},{name:"Mor",color:"#8b5cf6"},{name:"Carl",color:"#22c55e"},{name:"Jakob",color:"#0ea5e9"},{name:"Ida",color:"#f59e0b"}];
     const DEFAULT_TASK_PRESETS=["Tøm opvaskemaskine","Lektier","Tøm vaskemaskine","Rydde op på værelset","Handle ind","Dæk bordet","Tøm tasker"];
+    const BIRTHDAY_TYPE="Fødselsdag";
+    const BIRTHDAY_FLAG_HTML='<span class="birthday-flag" aria-hidden="true"></span>';
 
     const WEEK_DAY_NAMES=["mandag","tirsdag","onsdag","torsdag","fredag","lørdag","søndag"];
     const $ = (id)=>document.getElementById(id);
@@ -227,6 +235,8 @@
     function toISO(dateLike){if(!dateLike)return"";if(dateLike instanceof Date)return fmtISO(dateLike);if(typeof dateLike==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(dateLike))return dateLike;return fromAnyToLocalISO(dateLike)}
     function addDaysISO(iso,days){if(!iso||!Number.isFinite(days))return"";const [y,m,d]=iso.split("-").map(Number);if([y,m,d].some(n=>Number.isNaN(n)))return"";const dt=new Date(y,m-1,d);dt.setDate(dt.getDate()+days);return fmtISO(dt)}
     function uniqueISOList(arr){if(!Array.isArray(arr))return[];const out=[];const seen=new Set();for(const entry of arr){const iso=toISO(entry);if(!iso||seen.has(iso))continue;seen.add(iso);out.push(iso);}return out}
+    function sanitizeBirthYear(value){if(value===undefined||value===null||value==='')return'';const n=parseInt(value,10);if(!Number.isFinite(n))return'';if(n<1900||n>3000)return'';return n;}
+    function birthdayAgeOnDate(birthYear,dateIso){const year=sanitizeBirthYear(birthYear);if(!year)return null;const dt=parseISODate(toISO(dateIso));if(!dt)return null;const age=dt.getFullYear()-year;return age>=0?age:null;}
     function setFocusDate(date){let base=date instanceof Date?date:new Date(date);if(!(base instanceof Date)||Number.isNaN(base.getTime())){base=new Date();}const normalized=new Date(base.getFullYear(),base.getMonth(),base.getDate());if(Number.isNaN(normalized.getTime())){const today=new Date();focusDate=new Date(today.getFullYear(),today.getMonth(),today.getDate());wk=startOfWeek(focusDate);return;}focusDate=normalized;wk=startOfWeek(normalized);}
 
     const celebration=(()=>{
@@ -302,6 +312,8 @@
       const seriesId=safeSeriesId(it)|| (it.id||"");
       const overrideOf=it.overrideOf||it.override_of||"";
       const overrideBaseId=it.overrideBaseId||it.override_base_id||"";
+      const repeatYearly=!!(it.repeatYearly||it.repeat_yearly);
+      const birthYear=sanitizeBirthYear(it.birthYear??it.birth_year??"");
       return {
         ...it,
         id:id||it.id||"",
@@ -310,11 +322,13 @@
         person,
         date,
         repeatWeekly:!!it.repeatWeekly,
+        repeatYearly,
         repeatUntil,
         exceptions,
         seriesId:(seriesId||id||it.id||""),
         overrideOf,
-        overrideBaseId
+        overrideBaseId,
+        birthYear
       };
     }
     function loadItems(){const arr=loadLS(LS_ITEMS,[]).map(normalizeItemShape).filter(Boolean);saveLS(LS_ITEMS,arr);return arr}
@@ -356,6 +370,7 @@
         const head=`<div class="head"><div class="name">${name}</div><div class="date">${String(dateObj.getDate()).padStart(2,"0")+". "+String(dateObj.getMonth()+1).padStart(2,"0")+"."}</div></div>`;
         const body=`<div class="list">
           <div class="section" data-section="Aktivitet"><div class="h">Aktiviteter</div><div class="items"></div></div>
+          <div class="section" data-section="Fødselsdag"><div class="h">Fødselsdage</div><div class="items"></div></div>
           <div class="section" data-section="Fritidsinteresse"><div class="h">Fritidsinteresser</div><div class="items"></div></div>
           <div class="section" data-section="Opgave"><div class="h">Opgaver</div><div class="items"></div></div>
         </div>`;
@@ -376,28 +391,68 @@
       const out=[...base];
       const weekISO=fmtISO(wk);
       for(const it of base){
-        if(!it||!it.repeatWeekly) continue;
-        if(withinWeek(it.date)) continue;
-        if(!it.date||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(it.date)) continue;
-        const [y,m,d]=it.date.split("-").map(Number);
-        if([y,m,d].some(n=>Number.isNaN(n))) continue;
-        const src=new Date(y,m-1,d);
-        if(Number.isNaN(src.getTime())) continue;
-        const srcDow=(src.getDay()+6)%7;
-        const target=new Date(wk);target.setDate(wk.getDate()+srcDow);
-        const targetISO=fmtISO(target);
-        const skipDates=new Set((it.exceptions||[]).map(toISO).filter(Boolean));
-        if(skipDates.has(targetISO)) continue;
-        const untilISO=toISO(it.repeatUntil);
-        if(untilISO){
-          const untilDate=new Date(untilISO+"T00:00:00");
-          if(target>untilDate) continue;
+        if(!it) continue;
+
+        if(it.repeatWeekly){
+          if(withinWeek(it.date)) continue;
+          if(!it.date||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(it.date)) continue;
+          const [y,m,d]=it.date.split("-").map(Number);
+          if([y,m,d].some(n=>Number.isNaN(n))) continue;
+          const src=new Date(y,m-1,d);
+          if(Number.isNaN(src.getTime())) continue;
+          const srcDow=(src.getDay()+6)%7;
+          const target=new Date(wk);target.setDate(wk.getDate()+srcDow);
+          const targetISO=fmtISO(target);
+          const skipDates=new Set((it.exceptions||[]).map(toISO).filter(Boolean));
+          if(skipDates.has(targetISO)) continue;
+          const untilISO=toISO(it.repeatUntil);
+          if(untilISO){
+            const untilDate=new Date(untilISO+"T00:00:00");
+            if(target>untilDate) continue;
+          }
+          const clone={...it};
+          clone.baseId=it.id;
+          clone.id=`rpt|${it.id}|${weekISO}`;
+          clone.date=targetISO;
+          out.push(clone);
         }
-        const clone={...it};
-        clone.baseId=it.id;
-        clone.id=`rpt|${it.id}|${weekISO}`;
-        clone.date=targetISO;
-        out.push(clone);
+
+        if(it.repeatYearly){
+          const baseISO=toISO(it.date);
+          const baseDate=parseISODate(baseISO);
+          if(!baseDate) continue;
+          const baseYear=baseDate.getFullYear();
+          const month=baseDate.getMonth();
+          const day=baseDate.getDate();
+          const candidateYears=new Set([wk.getFullYear()-1,wk.getFullYear(),wk.getFullYear()+1,baseYear]);
+          if(viewMode==="day"){const fy=focusDate.getFullYear();candidateYears.add(fy);candidateYears.add(fy-1);candidateYears.add(fy+1);}
+          const skipDates=new Set((it.exceptions||[]).map(toISO).filter(Boolean));
+          const untilISO=toISO(it.repeatUntil);
+          for(const year of candidateYears){
+            if(!Number.isFinite(year)) continue;
+            if(year<baseYear) continue;
+            let target=new Date(year,month,day);
+            if(Number.isNaN(target.getTime())) continue;
+            if(target.getMonth()!==month){
+              target=new Date(year,month+1,0);
+            }
+            const targetISO=fmtISO(target);
+            if(baseISO && targetISO===baseISO) continue;
+            if(!withinWeek(targetISO)) continue;
+            if(skipDates.has(targetISO)) continue;
+            if(untilISO){
+              const untilDate=new Date(untilISO+"T00:00:00");
+              if(target>untilDate) continue;
+            }
+            const clone={...it};
+            clone.baseId=it.id;
+            clone.id=`rpty|${it.id}|${targetISO}`;
+            clone.date=targetISO;
+            clone.repeatYearly=true;
+            clone.seriesId=safeSeriesId(it)||it.seriesId||it.id;
+            out.push(clone);
+          }
+        }
       }
       return out;
     }
@@ -437,14 +492,15 @@
         const baseKey=baseId(String(it.id||""));
         if(baseKey&&seenBase.has(baseKey)) continue; if(baseKey) seenBase.add(baseKey);
         const day=document.querySelector(`.day[data-date="${it.date}"]`); if(!day) continue;
-        const sec=day.querySelector(`.section[data-section="${normalizeType(it.type)}"] .items`); if(!sec) continue;
-        const isTask = it.type==="Opgave";
-        const left = isTask ? `<input type="checkbox" ${it.done?'checked':''} data-opg="${it.id}">` : '';
+        const typeNow=normalizeType(it.type);
+        const sec=day.querySelector(`.section[data-section="${typeNow}"] .items`); if(!sec) continue;
+        const isTask = typeNow==="Opgave";
+        const isBirthday = typeNow===BIRTHDAY_TYPE;
+        let leftContent='';
+        if(isTask){leftContent=`<input type="checkbox" ${it.done?'checked':''} data-opg="${it.id}">`;} else if(isBirthday){leftContent=BIRTHDAY_FLAG_HTML;}
         const escapeHtml=s=>s.replace(/[&<>]/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[ch]||ch));
         const timeDetail = it.time ? `<span class="time">${escapeHtml(String(it.time))}</span>` : (!isTask ? `<span class="time muted">Heldag</span>` : '');
         const div=document.createElement("div");
-        const repeatTag=it.repeatWeekly?' · <span class="muted">↻ uge</span>':'';
-        const overrideTag=it.overrideOf?' · <span class="muted">tilpasset</span>':'';
         div.className="item"+(it.done?" done":"");
         div.style.borderLeftColor=personColor(it.people||it.person);
         div.dataset.id=it.id;
@@ -456,9 +512,19 @@
         if(peopleDetail) detailParts.push(`<div class="note people">${peopleDetail}</div>`);
         if(it.location) detailParts.push(`<div class="note">${it.location}</div>`);
         if(it.note) detailParts.push(`<div class="note">${it.note}</div>`);
-        const leftBlock = left?`<div class="left">${left}</div>`:'';
+        const leftBlock = leftContent?`<div class="left">${leftContent}</div>`:'';
         const safeTitle = escapeHtml(it.title||"(uden titel)");
-        div.innerHTML=`${leftBlock}<div class="meta"><div class="title-row"><div class="titlex">${safeTitle}${repeatTag}${overrideTag}</div>${timeDetail}</div>${detailParts.join("")}</div>`;
+        const metaLabels=[];
+        if(it.repeatWeekly) metaLabels.push('↻ uge');
+        if(it.repeatYearly) metaLabels.push('↻ år');
+        if(it.overrideOf) metaLabels.push('tilpasset');
+        const metaSuffix=metaLabels.length?' · '+metaLabels.map(label=>`<span class="muted">${label}</span>`).join(' · '):'';
+        let displayTitle=safeTitle;
+        if(isBirthday){
+          const age=birthdayAgeOnDate(it.birthYear,it.date);
+          displayTitle=age!==null?`${safeTitle} bliver ${age} år`:`${safeTitle} har fødselsdag`;
+        }
+        div.innerHTML=`${leftBlock}<div class="meta"><div class="title-row"><div class="titlex">${displayTitle}${metaSuffix}</div>${timeDetail}</div>${detailParts.join("")}</div>`;
         div.onclick=(e)=>{if(e.target && e.target.matches('input[type="checkbox"]'))return; openEditor({id:div.dataset.id,date:div.dataset.date,baseId:div.dataset.baseId,seriesId:div.dataset.seriesId})}
         sec.appendChild(div);
       }
@@ -526,7 +592,8 @@
     function updateRepeatUntil(baseId,lastIso){const base=findById(baseId);if(!base)return;const iso=toISO(lastIso);if(iso){replaceItem(baseId,{repeatUntil:iso});}else{replaceItem(baseId,{repeatUntil:""});}}
 
     // editor
-    const EBD=$("editorBD"), DTitle=$("dlgTitle"), Ftitle=$("f_title"), Ftype=$("f_type"), Fperson=$("f_person"), FtaskRow=$("taskPresetRow"), FtaskPreset=$("f_taskPreset"), Fdate=$("f_date"), Ftime=$("f_time"), Fdur=$("f_dur"), Floc=$("f_loc"), Fnote=$("f_note"), Frep=$("f_rep"), Fweekdays=$("f_weekdays"), FweekdaysWrap=$("weekdayOption"), Fdone=$("f_done");
+    const EBD=$("editorBD"), DTitle=$("dlgTitle"), Ftitle=$("f_title"), Ftype=$("f_type"), Fperson=$("f_person"), FtaskRow=$("taskPresetRow"), FtaskPreset=$("f_taskPreset"), Fdate=$("f_date"), Ftime=$("f_time"), FbirthYear=$("f_birthYear"), FbirthdayWrap=$("birthdayFields"), Fdur=$("f_dur"), Floc=$("f_loc"), Fnote=$("f_note"), Frep=$("f_rep"), Fweekdays=$("f_weekdays"), FweekdaysWrap=$("weekdayOption"), Fdone=$("f_done");
+    const FrepWrap=Frep?Frep.closest('.option'):null;
     const scopeRow=$("repeatScopeRow");
     const scopeRadios=[...document.querySelectorAll('input[name="repeatScope"]')];
     function showScopeRow(){if(scopeRow)scopeRow.style.display="block";}
@@ -549,7 +616,8 @@
     function fillTaskPresetOptions(){if(!FtaskPreset)return;const presets=gatherTaskPresets();const currentValue=FtaskPreset.value||"";FtaskPreset.innerHTML=['<option value="">Vælg opgave…</option>',...presets.map(name=>`<option value="${name}">${name}</option>`)].join("");if(currentValue&&presets.includes(currentValue)){FtaskPreset.value=currentValue;}else if(!presets.includes(currentValue)){FtaskPreset.value="";}}
     function updateTaskPresetVisibility(){if(!FtaskRow||!Ftype)return;const typeNow=normalizeType(Ftype.value);if(typeNow==="Opgave"){FtaskRow.style.display="block";fillTaskPresetOptions();}else{FtaskRow.style.display="none";if(FtaskPreset)FtaskPreset.value="";}}
     function syncTaskPresetWithTitle(){if(!FtaskPreset)return;const title=(Ftitle.value||"").trim().toLowerCase();const options=Array.from(FtaskPreset.options||[]);const match=options.find(opt=>(opt.value||"").toLowerCase()===title);FtaskPreset.value=match?match.value:"";}
-    function openNew(dateISO){editContext=null;resetScopeRadios();hideScopeRow();DTitle.textContent="Tilføj";Ftitle.value="";Ftype.value="Aktivitet";fillPeopleSelect(["Alle"]);Fdate.value=dateISO||fmtISO(new Date());Ftime.value="";Fdur.value="";Floc.value="";Fnote.value="";Frep.checked=false;if(Fweekdays){Fweekdays.checked=false;Fweekdays.disabled=false;}if(FweekdaysWrap){FweekdaysWrap.classList.remove('disabled');}Fdone.checked=false;updateTaskPresetVisibility();syncTaskPresetWithTitle();$("btnDel").style.display="none";EBD.style.display="flex"}
+    function applyTypeUiState(opts={}){if(!Ftype)return;const triggeredByChange=!!opts.triggeredByChange;const typeNow=normalizeType(Ftype.value);updateTaskPresetVisibility();if(triggeredByChange&&typeNow==="Opgave"&&FtaskPreset&&FtaskPreset.options.length>1&&!Ftitle.value.trim()){FtaskPreset.value=FtaskPreset.options[1].value;Ftitle.value=FtaskPreset.value;}const isBirthday=typeNow===BIRTHDAY_TYPE;if(FbirthdayWrap)FbirthdayWrap.style.display=isBirthday?"block":"none";if(FbirthYear){FbirthYear.disabled=!isBirthday;}if(Frep){if(isBirthday){Frep.checked=false;Frep.disabled=true;Frep.dataset.birthdayLock='1';if(FrepWrap)FrepWrap.classList.add('disabled');}else{delete Frep.dataset.birthdayLock;Frep.disabled=false;if(FrepWrap)FrepWrap.classList.remove('disabled');}}if(Fweekdays){if(isBirthday){Fweekdays.checked=false;Fweekdays.dataset.birthdayLock='1';}else{delete Fweekdays.dataset.birthdayLock;}const locked=!!Fweekdays.dataset.birthdayLock||!!Fweekdays.dataset.contextLock;Fweekdays.disabled=locked;if(FweekdaysWrap){FweekdaysWrap.classList.toggle('disabled',locked);}}syncTaskPresetWithTitle();}
+    function openNew(dateISO){editContext=null;resetScopeRadios();hideScopeRow();DTitle.textContent="Tilføj";Ftitle.value="";Ftype.value="Aktivitet";fillPeopleSelect(["Alle"]);Fdate.value=dateISO||fmtISO(new Date());Ftime.value="";if(FbirthYear){FbirthYear.value="";}Fdur.value="";Floc.value="";Fnote.value="";Frep.checked=false;if(Frep){delete Frep.dataset.birthdayLock;Frep.disabled=false;if(FrepWrap)FrepWrap.classList.remove('disabled');}if(Fweekdays){Fweekdays.checked=false;delete Fweekdays.dataset.contextLock;delete Fweekdays.dataset.birthdayLock;Fweekdays.disabled=false;}if(FweekdaysWrap){FweekdaysWrap.classList.remove('disabled');}Fdone.checked=false;applyTypeUiState();$("btnDel").style.display="none";EBD.style.display="flex"}
     function openEditor(ctx){
       const hint=ctx||{};
       const rawId=hint.id;
@@ -587,26 +655,22 @@
       fillPeopleSelect(initial.people&&initial.people.length?initial.people:[initial.person||"Alle"]);
       Fdate.value=initial.date||fmtISO(new Date());
       Ftime.value=initial.time||"";
+      if(FbirthYear){const yr=sanitizeBirthYear(initial.birthYear);FbirthYear.value=yr?String(yr):"";}
       Fdur.value=initial.durationMin||"";
       Floc.value=initial.location||"";
       Fnote.value=initial.note||"";
       Frep.checked=!!initial.repeatWeekly;
-      if(Fweekdays){Fweekdays.checked=false;Fweekdays.disabled=true;}
+      if(Fweekdays){Fweekdays.checked=false;Fweekdays.disabled=true;Fweekdays.dataset.contextLock='1';}
       if(FweekdaysWrap){FweekdaysWrap.classList.add('disabled');}
       Fdone.checked=!!initial.done;
       if(editContext.hasRepeat && !editContext.isOverride){showScopeRow();}else{hideScopeRow();}
       resetScopeRadios();
-      updateTaskPresetVisibility();
-      syncTaskPresetWithTitle();
+      applyTypeUiState();
       $("btnDel").style.display="inline-flex";
       EBD.style.display="flex";
     }
     if(Ftype){
-      Ftype.addEventListener("change",()=>{
-        updateTaskPresetVisibility();
-        if(normalizeType(Ftype.value)==="Opgave"){if(!Ftitle.value.trim()&&FtaskPreset&&FtaskPreset.options.length>1){FtaskPreset.value=FtaskPreset.options[1].value;Ftitle.value=FtaskPreset.value;}}
-        syncTaskPresetWithTitle();
-      });
+      Ftype.addEventListener("change",()=>{applyTypeUiState({triggeredByChange:true});});
     }
     if(FtaskPreset){
       FtaskPreset.addEventListener("change",()=>{const val=FtaskPreset.value||"";if(val){Ftitle.value=val;}});
@@ -679,10 +743,11 @@
       const occOriginal=editContext?toISO(editContext.occurrence||""):"";
       const occFallback=editContext?toISO(existing?.date||base?.date||""):"";
       const occISO=occOriginal||occFallback||"";
+      const typeNormalized=normalizeType(Ftype.value);
       const payload={
         id:existing?.id||"",
         title:(Ftitle.value||"(uden titel)").trim()||"(uden titel)",
-        type:normalizeType(Ftype.value),
+        type:typeNormalized,
         people:selectedPeople,
         person:primaryPersonName(selectedPeople),
         date:chosenDate,
@@ -695,6 +760,15 @@
         source:existing?.source||base?.source||'local',
         seriesId:seriesId
       };
+      if(typeNormalized===BIRTHDAY_TYPE){
+        const yearVal=FbirthYear?sanitizeBirthYear(FbirthYear.value):"";
+        payload.birthYear=yearVal||"";
+        payload.repeatYearly=true;
+        payload.repeatWeekly=false;
+      }else{
+        payload.birthYear="";
+        payload.repeatYearly=false;
+      }
       if(!payload.date) payload.date=fmtISO(new Date());
       if(!payload.repeatWeekly){
         payload.repeatUntil="";
@@ -929,6 +1003,8 @@
         if(fields.manualRepeatWeekly!==undefined&&fields.manualRepeatWeekly!==next.manualRepeatWeekly){next.manualRepeatWeekly=!!fields.manualRepeatWeekly;changed=true;}
         if(fields.autoRepeatWeekly!==undefined&&fields.autoRepeatWeekly!==next.autoRepeatWeekly){next.autoRepeatWeekly=fields.autoRepeatWeekly;changed=true;}
         if(fields.repeatWeekly!==undefined&&fields.repeatWeekly!==next.repeatWeekly){next.repeatWeekly=!!fields.repeatWeekly;changed=true;}
+        if(fields.repeatYearly!==undefined&&fields.repeatYearly!==next.repeatYearly){next.repeatYearly=!!fields.repeatYearly;changed=true;}
+        if(fields.birthYear!==undefined||fields.birth_year!==undefined){const yr=sanitizeBirthYear(fields.birthYear??fields.birth_year);const current=next.birthYear||"";const normalized=yr||"";if(current!==normalized){next.birthYear=normalized;changed=true;}}
       };
       if(seriesId){const info=state.seriesOverrides&&state.seriesOverrides[seriesId];if(info){const fromISO=toISO(info.from||"");const targetISO=toISO(dateISO||next.date||"");if(!fromISO||targetISO&&(targetISO>=fromISO)){applyFields(info);}}}
       if(uid){const perItem=state.itemOverrides&&state.itemOverrides[uid];if(perItem)applyFields(perItem);}
@@ -963,7 +1039,7 @@
         if(seriesIdToUse){item.seriesId=seriesIdToUse;}
         const existingKey=existingItem?peopleKey(existingItem.people&&existingItem.people.length?existingItem.people:existingItem.person):"";
         const newKey=peopleKey(item.people);
-        const needsUpdate=!existingItem||["title","type","date","time","durationMin","location","note","repeatWeekly","done","manualRepeatWeekly","autoRepeatWeekly","seriesId"].some(key=>(existingItem?existingItem[key]:undefined)!==item[key])||existingKey!==newKey;
+        const needsUpdate=!existingItem||["title","type","date","time","durationMin","location","note","repeatWeekly","repeatYearly","done","manualRepeatWeekly","autoRepeatWeekly","seriesId"].some(key=>(existingItem?existingItem[key]:undefined)!==item[key])||existingKey!==newKey;
         if(idx[uid]===ev.updated&&!needsUpdate)continue;upsert(item);idx[uid]=ev.updated;created++}saveGIdx(idx);setBadge(created?`+${created} oprettet`:"ingen ændringer")}catch(e){console.error(e);setBadge("fejl")}}
     $("gSync").onclick=()=>syncNow()
     $("gReset").onclick=()=>{localStorage.removeItem(LS_GIDX);localStorage.removeItem(LS_GSTATE);gStateCache=null;setBadge("nulstiller…");syncNow()}
@@ -1036,6 +1112,8 @@
           location:payload.location||base.location||"",
           note:payload.note||base.note||"",
           repeatWeekly:!!(payload.repeatWeekly||payload.repeat_weekly||base.repeat_weekly),
+          repeatYearly:!!(payload.repeatYearly||payload.repeat_yearly||base.repeat_yearly),
+          birthYear:sanitizeBirthYear(payload.birthYear??payload.birth_year??base.birth_year??"")||"",
           done:!!(payload.done??base.done),
           source:payload.source||base.source||"sb",
           manualRepeatWeekly:!!(payload.manualRepeatWeekly??payload.manual_repeat_weekly??base.manual_repeat_weekly??false),
