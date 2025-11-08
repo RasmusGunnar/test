@@ -445,6 +445,13 @@
   function openSpotify(opts={}){
     const base=(config.spotifyUrl||SPOTIFY_URL_DEFAULT).trim()||SPOTIFY_URL_DEFAULT;
     spotifyOriginalUrl=resolveSpotifyExternalUrl(base);
+    let parsedExternal=null;
+    try{ parsedExternal=new URL(spotifyOriginalUrl); }catch{}
+    if(parsedExternal && !/spotify\.com$/i.test(parsedExternal.hostname)){
+      try{ window.location.href=parsedExternal.toString(); }
+      catch{ try{ window.open(parsedExternal.toString(),'_self'); }catch{} }
+      return;
+    }
     spotifyCurrentUrl=normalizeSpotifyUrl(spotifyOriginalUrl);
     if(opts.forceExternal){
       try{ window.open(spotifyOriginalUrl,'_blank','noopener'); }catch{}
