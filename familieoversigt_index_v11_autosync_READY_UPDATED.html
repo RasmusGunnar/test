@@ -1166,7 +1166,15 @@
     const GAS_URL="https://script.google.com/macros/s/AKfycbyQeS_NvMVv4A3IImB6S3AsRt67aSpeKuaoHHSf8K4xRE9sx3zSZS8zHlvZFL_WDIKl/exec";
     function loadGIdx(){return loadLS(LS_GIDX,{})}function saveGIdx(x){saveLS(LS_GIDX,x)}
     function setBadge(t){gBadge.textContent="Google sync: "+t}
-    async function fetchEvents(){const u=GAS_URL+(GAS_URL.includes("?")?"&":"?")+"t="+Date.now();const r=await fetch(u,{cache:"no-store"});if(!r.ok)throw new Error("GAS "+r.status);const j=await r.json();return Array.isArray(j.items)?j.items:[]}
+    async function fetchEvents(){
+      const url=new URL(GAS_URL,location.href);
+      url.searchParams.set('t',Date.now().toString());
+      if(HID){url.searchParams.set('hid',HID);}
+      const r=await fetch(url.toString(),{cache:"no-store"});
+      if(!r.ok)throw new Error("GAS "+r.status);
+      const j=await r.json();
+      return Array.isArray(j.items)?j.items:[]
+    }
     function containsWeekly(val){if(!val)return false;if(typeof val==="string")return/(WEEKLY|\bWEEK\b|\bUGE\b)/i.test(val);if(Array.isArray(val))return val.some(containsWeekly);if(typeof val==="object")return Object.values(val).some(containsWeekly);return false}
     function recurrenceAnchor(ev){if(!ev||typeof ev!=="object")return"";const id=ev.recurringEventId||ev.recurring_event_id||ev.seriesMasterId||ev.series_master_id||ev.masterEventId||ev.master_event_id||ev.parentId||ev.parent_id; if(id) return"rec:"+id; const title=(ev.summary||ev.title||"").trim().toLowerCase(); const time=(ev.time||ev.startTime||ev.start_time||"").toString().trim(); const rawDur=Number(ev.durationMin??ev.durationMinutes??ev.duration??0); const duration=Number.isFinite(rawDur)?rawDur:0; const location=(ev.location||"").trim().toLowerCase(); if(!title&& !time) return""; return"heur:"+[title,time,duration,location].join("|"); }
     function markLikelyWeekly(events){const groups=new Map();for(const ev of events){if(!ev||typeof ev!=="object")continue;const key=recurrenceAnchor(ev);if(!key)continue;const dateISO=fromAnyToLocalISO(ev.startISO||ev.date);if(!dateISO||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(dateISO))continue;if(!groups.has(key))groups.set(key,[]);groups.get(key).push({ev,dateISO});}
