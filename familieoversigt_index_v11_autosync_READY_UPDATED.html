@@ -231,14 +231,19 @@
             </div>
             <div class="sync-card__form">
               <div>
-                <label for="aulaYearUrl">Årskalender-link</label>
-                <input id="aulaYearUrl" type="url" placeholder="https://.../aula_year.ics">
-                <p class="hint">Kopier linket fra Aula &rarr; Kalendersynkronisering &rarr; Årskalender.</p>
+                <label for="aulaFeedUrl">Kalender-link</label>
+                <input id="aulaFeedUrl" type="url" placeholder="https://kalenderlink.aula.dk/?feed=...">
+                <p class="hint">Kopier linket fra Aula &rarr; Kalendersynkronisering.</p>
               </div>
               <div>
-                <label for="aulaWeekUrl">Ugekalender-link</label>
+                <label for="aulaYearUrl">Årskalender-link (ældre løsning)</label>
+                <input id="aulaYearUrl" type="url" placeholder="https://.../aula_year.ics">
+                <p class="hint">Bruges kun hvis du stadig har separate År/Uge-links i Aula.</p>
+              </div>
+              <div>
+                <label for="aulaWeekUrl">Ugekalender-link (ældre løsning)</label>
                 <input id="aulaWeekUrl" type="url" placeholder="https://.../aula_week.ics">
-                <p class="hint">Kopier linket fra Aula &rarr; Kalendersynkronisering &rarr; Ugekalender.</p>
+                <p class="hint">Bruges kun hvis du stadig har separate År/Uge-links i Aula.</p>
               </div>
               <div class="sync-card__form-actions">
                 <button class="btn ghost small" id="aulaResetLinks" type="button">Ryd links</button>
@@ -381,7 +386,7 @@
       }
       renderSyncMeta(aStatusMeta,meta);
     }
-    const DEFAULT_AULA_CONFIG={yearUrl:"",weekUrl:""};
+    const DEFAULT_AULA_CONFIG={feedUrl:"",yearUrl:"",weekUrl:""};
     function loadAulaConfig(){const raw=loadLS(LS_AULA_CONFIG,DEFAULT_AULA_CONFIG)||{};return {...DEFAULT_AULA_CONFIG,...raw};}
     function saveAulaConfig(cfg){const next={...DEFAULT_AULA_CONFIG,...(cfg||{})};saveLS(LS_AULA_CONFIG,next);return next;}
     function parseISODate(iso){if(typeof iso!=="string")return null;const m=iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);if(!m)return null;const d=new Date(Number(m[1]),Number(m[2])-1,Number(m[3]));return Number.isNaN(d.getTime())?null:d}
@@ -1435,7 +1440,7 @@
       return trimmed;
     }
     function aulaLinks(){
-      const links=[aulaConfig.yearUrl,aulaConfig.weekUrl].map(normalizeAulaUrl).filter(Boolean);
+      const links=[aulaConfig.feedUrl,aulaConfig.yearUrl,aulaConfig.weekUrl].map(normalizeAulaUrl).filter(Boolean);
       return Array.from(new Set(links));
     }
     function hydrateGoogleStatus(){
@@ -1792,8 +1797,9 @@
     const gResetSettingsBtn=$("gResetSettings");
     if(gResetSettingsBtn)gResetSettingsBtn.addEventListener('click',resetGoogleSync);
 
-    const aulaYearInput=$("aulaYearUrl"), aulaWeekInput=$("aulaWeekUrl");
+    const aulaFeedInput=$("aulaFeedUrl"), aulaYearInput=$("aulaYearUrl"), aulaWeekInput=$("aulaWeekUrl");
     function populateAulaInputs(){
+      if(aulaFeedInput)aulaFeedInput.value=aulaConfig.feedUrl||'';
       if(aulaYearInput)aulaYearInput.value=aulaConfig.yearUrl||'';
       if(aulaWeekInput)aulaWeekInput.value=aulaConfig.weekUrl||'';
     }
@@ -1801,12 +1807,14 @@
     const aulaSaveBtn=$("aulaSave");
     if(aulaSaveBtn){
       aulaSaveBtn.addEventListener('click',()=>{
+        const feed=normalizeAulaUrl(aulaFeedInput?aulaFeedInput.value:'');
         const year=normalizeAulaUrl(aulaYearInput?aulaYearInput.value:'');
         const week=normalizeAulaUrl(aulaWeekInput?aulaWeekInput.value:'');
+        const prevFeed=aulaConfig.feedUrl||'';
         const prevYear=aulaConfig.yearUrl||'';
         const prevWeek=aulaConfig.weekUrl||'';
-        const changed=prevYear!==year||prevWeek!==week;
-        aulaConfig=saveAulaConfig({yearUrl:year,weekUrl:week});
+        const changed=prevFeed!==feed||prevYear!==year||prevWeek!==week;
+        aulaConfig=saveAulaConfig({feedUrl:feed,yearUrl:year,weekUrl:week});
         populateAulaInputs();
         if(changed){
           localStorage.removeItem(LS_AULA_SYNC_META);
@@ -1817,14 +1825,14 @@
     const aulaResetLinksBtn=$("aulaResetLinks");
     if(aulaResetLinksBtn){
       aulaResetLinksBtn.addEventListener('click',()=>{
-        aulaConfig=saveAulaConfig({yearUrl:'',weekUrl:''});
+        aulaConfig=saveAulaConfig({feedUrl:'',yearUrl:'',weekUrl:''});
         populateAulaInputs();
         localStorage.removeItem(LS_AULA_SYNC_META);
         ensureAulaBadge();
       });
     }
     const aulaLinksBtn=$("aLinks");
-    if(aulaLinksBtn)aulaLinksBtn.addEventListener('click',()=>openSettings('aulaYearUrl'));
+    if(aulaLinksBtn)aulaLinksBtn.addEventListener('click',()=>openSettings('aulaFeedUrl'));
     const aulaSyncBtn=$("aSync");
     if(aulaSyncBtn)aulaSyncBtn.addEventListener('click',()=>syncAula());
     function resetAulaSync(){
