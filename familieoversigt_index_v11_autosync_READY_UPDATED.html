@@ -1439,6 +1439,16 @@
       }
       return trimmed;
     }
+    function resolveAulaUrl(url){
+      if(!url)return'';
+      try{return new URL(url,location.href).toString();}
+      catch(_){return url;}
+    }
+    const AULA_PROXY_PIPELINES=[
+      {id:'direct',label:'direkte',isProxy:false,resolve:url=>resolveAulaUrl(url)},
+      {id:'jina',label:'jina.ai',isProxy:true,resolve:url=>/^https?:\/\//i.test(url)?`https://r.jina.ai/${url}`:''},
+      {id:'isomorphic',label:'cors.isomorphic-git.org',isProxy:true,resolve:url=>/^https?:\/\//i.test(url)?`https://cors.isomorphic-git.org/${url}`:''}
+    ];
     function aulaLinks(){
       const links=[aulaConfig.feedUrl,aulaConfig.yearUrl,aulaConfig.weekUrl].map(normalizeAulaUrl).filter(Boolean);
       return Array.from(new Set(links));
@@ -1627,16 +1637,58 @@
     }
     function loadAulaIdx(){return loadLS(LS_AULA_IDX,{});}
     function saveAulaIdx(x){saveLS(LS_AULA_IDX,x);}
+    function buildAulaFetchAttempts(url){
+      const attempts=[];
+      const seen=new Set();
+      for(const pipeline of AULA_PROXY_PIPELINES){
+        const resolved=pipeline.resolve(url);
+        if(!resolved||seen.has(resolved))continue;
+        seen.add(resolved);
+        attempts.push({
+          url:resolved,
+          label:pipeline.label,
+          isProxy:!!pipeline.isProxy
+        });
+      }
+      return attempts;
+    }
     async function fetchAulaFeed(url,index){
       const normalized=normalizeAulaUrl(url);
-      if(!normalized)return[];
-      let resolved=normalized;
-      try{resolved=new URL(normalized,location.href).toString();}catch(_){ }
-      const res=await fetch(resolved,{cache:'no-store'});
-      if(!res.ok)throw new Error('HTTP '+res.status);
-      const text=await res.text();
-      const events=parseICSEvents(text);
-      return events.map(ev=>({...ev,__sourceIndex:index}));
+      if(!normalized)return{events:[],usedProxy:false,proxyLabel:''};
+      const attempts=buildAulaFetchAttempts(normalized);
+      let lastErr=null;
+      for(const attempt of attempts){
+        try{
+          const res=await fetch(attempt.url,{cache:'no-store'});
+          if(!res.ok){
+            lastErr=new Error(`[${attempt.label}] HTTP ${res.status}`);
+            continue;
+          }
+          const text=await res.text();
+          const events=parseICSEvents(text);
+          return{events:events.map(ev=>({...ev,__sourceIndex:index})),usedProxy:attempt.isProxy,proxyLabel:attempt.isProxy?attempt.label:''};
+        }catch(err){
+          if(err instanceof TypeError){
+            const msg=attempt.isProxy?`Proxy-fejl (${attempt.label})`:'CORS-blokeret (direkte)';
+            lastErr=new Error(msg);
+          }else if(err instanceof Error){
+            lastErr=err;
+          }else{
+            lastErr=new Error(String(err||'ukendt fejl'));
+          }
+        }
+      }
+      const baseErr=lastErr instanceof Error?lastErr:new Error('Ukendt fejl ved hentning af Aula-feed');
+      let finalErr=baseErr;
+      if(baseErr&&baseErr.message&&!/^Kunne ikke hente Aula-feed/i.test(baseErr.message)){
+        finalErr=new Error(`Kunne ikke hente Aula-feed: ${baseErr.message}`);
+        finalErr.cause=baseErr;
+      }
+      finalErr.__aulaMeta={
+        url:normalized,
+        attempts:attempts.map(a=>({label:a.label,isProxy:a.isProxy,url:a.url}))
+      };
+      throw finalErr;
     }
     function mergeAulaEvents(lists){
       const map=new Map();
@@ -1658,15 +1710,19 @@
       });
       return [...map.values()];
     }
-    async function syncAula(){
+    let aulaSyncTask=null;
+    async function performAulaSync(){
       const links=aulaLinks();
       if(!links.length){updateAulaStatus('mangler links',{state:'warn',persist:true,detail:'Tilføj Aula-links'});return;}
       try{
         updateAulaStatus('henter…',{state:'loading'});
         const all=[];
+        let proxyUsed=false;
+        const proxyLabels=new Set();
         for(let i=0;i<links.length;i+=1){
           const link=links[i];
-          const events=await fetchAulaFeed(link,i);
+          const {events,usedProxy,proxyLabel}=await fetchAulaFeed(link,i);
+          if(usedProxy){proxyUsed=true;if(proxyLabel)proxyLabels.add(proxyLabel);}
           all.push(events);
         }
         const events=mergeAulaEvents(all);
@@ -1736,12 +1792,22 @@
           created++;
         }
         saveAulaIdx(idx);
-        const status=created?`+${created} opdateret`:'ingen ændringer';
+        const proxyNote=proxyUsed&&proxyLabels.size?` · via ${Array.from(proxyLabels).join(', ')}`:'';
+        const status=created?`+${created} opdateret${proxyNote}`:`ingen ændringer${proxyNote}`;
         updateAulaStatus(status,{state:'ok',persist:true,detail:status});
       }catch(err){
         console.error('[Aula sync]',err);
-        updateAulaStatus('fejl',{state:'error',persist:true,detail:'Kunne ikke hente Aula-data'});
+        const detail=err instanceof Error&&err.message?err.message:'Kunne ikke hente Aula-data';
+        updateAulaStatus('fejl',{state:'error',persist:true,detail});
       }
+    }
+    function syncAula(){
+      if(aulaSyncTask)return aulaSyncTask;
+      aulaSyncTask=(async()=>{
+        try{return await performAulaSync();}
+        finally{aulaSyncTask=null;}
+      })();
+      return aulaSyncTask;
     }
 
     /* ---------- Google sync (enkeltforekomster) ---------- */
@@ -1765,21 +1831,82 @@
       });
     }
     function detectWeeklyRepeat(ev){if(!ev||typeof ev!=="object")return false;if(ev.repeatWeekly||ev.repeat_weekly)return true;if(ev.__weeklyHint)return true;const freq=(ev.repeatFrequency||ev.repeat_frequency||ev.frequency||ev.recurrenceFrequency||"").toString();const type=(ev.repeatType||ev.repeat_type||ev.recurrenceType||"").toString();if(containsWeekly(freq)||containsWeekly(type))return true;const interval=Number(ev.repeatInterval||ev.repeat_interval||ev.interval||ev.recurrenceInterval);if((freq||type)&&Number.isFinite(interval)&&interval===1&&/(week|uge)/i.test(freq+" "+type))return true;return containsWeekly(ev.recurrence)||containsWeekly(ev.recurrenceRule)||containsWeekly(ev.recurrence_rule)||containsWeekly(ev.repeat)||containsWeekly(ev.repeatRule)||containsWeekly(ev.pattern)||containsWeekly(ev.schedule)||containsWeekly(ev.recurrenceText)||containsWeekly(ev.recurrence_text)||containsWeekly(ev.repeatText)||containsWeekly(ev.repeat_text)}
-    async function syncNow(){try{updateGoogleStatus('henter…',{state:'loading'});const evs=await fetchEvents();markLikelyWeekly(evs);const idx=loadGIdx();const gState=getGState();let created=0;for(const ev of evs){const date=fromAnyToLocalISO(ev.startISO||ev.date);const id="gcal:"+ev.id;const repeatWeeklyAuto=detectWeeklyRepeat(ev);const seriesAnchor=recurrenceAnchor(ev);const derivedSeriesId=seriesAnchor?`gseries:${seriesAnchor}`:"";let item={id,title:ev.summary||"(uden titel)",type:"Aktivitet",people:["Alle"],person:"Alle",date,time:ev.time||"",durationMin:ev.durationMin||30,location:ev.location||"",note:ev.description||"",repeatWeekly:repeatWeeklyAuto,done:false,source:"google",manualRepeatWeekly:false,autoRepeatWeekly:repeatWeeklyAuto,seriesId:derivedSeriesId||undefined};const uid=uidFor(item);const initialSeriesId=safeSeriesId(item)||derivedSeriesId||"";if(shouldIgnoreGoogleEvent(gState,{uid,seriesId:initialSeriesId,dateISO:date}))continue;const existingIdx=items.findIndex(x=>uidFor(x)===uid);const existingItem=existingIdx>=0?items[existingIdx]:null;if(existingItem){item.seriesId=safeSeriesId(existingItem)||item.seriesId||derivedSeriesId;item.type=normalizeType(existingItem.type)||item.type;const existingPeople=normalizePeopleList(existingItem.people&&existingItem.people.length?existingItem.people:existingItem.person);item.people=existingPeople;item.person=primaryPersonName(existingPeople);item.done=existingItem.done!==undefined?!!existingItem.done:item.done;if(existingItem.note&&existingItem.note.trim()&&existingItem.note!==item.note)item.note=existingItem.note;const autoPrev=existingItem.autoRepeatWeekly;const manualOverride=!!(existingItem.manualRepeatWeekly||(autoPrev!==undefined&&existingItem.repeatWeekly!==autoPrev));item.manualRepeatWeekly=manualOverride;if(manualOverride){item.repeatWeekly=!!existingItem.repeatWeekly}}
-        const seriesIdToUse=safeSeriesId(item)||derivedSeriesId;
-        if(seriesIdToUse&&!existingItem){const seriesCandidates=items.filter(x=>safeSeriesId(x)===seriesIdToUse&&!x.overrideOf);const seriesSource=seriesCandidates.find(x=>x.manualRepeatWeekly||x.repeatWeekly)||seriesCandidates[0]||null;if(seriesSource){item.type=normalizeType(seriesSource.type)||item.type;const rememberedPeople=normalizePeopleList(seriesSource.people&&seriesSource.people.length?seriesSource.people:seriesSource.person);if(rememberedPeople.length){item.people=rememberedPeople;item.person=primaryPersonName(rememberedPeople);}if(seriesSource.note&&(!item.note||item.note.trim()==="")){item.note=seriesSource.note;}if(seriesSource.manualRepeatWeekly!==undefined){item.manualRepeatWeekly=!!seriesSource.manualRepeatWeekly;}if(seriesSource.autoRepeatWeekly!==undefined){item.autoRepeatWeekly=seriesSource.autoRepeatWeekly;}if(seriesSource.repeatWeekly!==undefined){item.repeatWeekly=!!seriesSource.repeatWeekly;}}}
-        item.people=normalizePeopleList(item.people);
-        item.person=primaryPersonName(item.people);
-        const overrideApplied=applyGoogleOverrides(gState,{uid,seriesId:seriesIdToUse,dateISO:date,item});
-        item=overrideApplied.item;
-        item.people=normalizePeopleList(item.people);
-        item.person=primaryPersonName(item.people);
-        if(shouldIgnoreGoogleEvent(gState,{uid,seriesId:seriesIdToUse,dateISO:item.date||date}))continue;
-        if(seriesIdToUse){item.seriesId=seriesIdToUse;}
-        const existingKey=existingItem?peopleKey(existingItem.people&&existingItem.people.length?existingItem.people:existingItem.person):"";
-        const newKey=peopleKey(item.people);
-        const needsUpdate=!existingItem||["title","type","date","time","durationMin","location","note","repeatWeekly","repeatYearly","done","manualRepeatWeekly","autoRepeatWeekly","seriesId"].some(key=>(existingItem?existingItem[key]:undefined)!==item[key])||existingKey!==newKey;
-        if(idx[uid]===ev.updated&&!needsUpdate)continue;upsert(item);idx[uid]=ev.updated;created++}saveGIdx(idx);const status=created?`+${created} oprettet`:'ingen ændringer';updateGoogleStatus(status,{state:'ok',persist:true,detail:status});}catch(e){console.error(e);updateGoogleStatus('fejl',{state:'error',persist:true,detail:'Kunne ikke hente Google-data'});}}
+    async function syncNow(){
+      const shouldCascadeAula=aulaLinks().length>0;
+      try{
+        updateGoogleStatus('henter…',{state:'loading'});
+        const evs=await fetchEvents();
+        markLikelyWeekly(evs);
+        const idx=loadGIdx();
+        const gState=getGState();
+        let created=0;
+        for(const ev of evs){
+          const date=fromAnyToLocalISO(ev.startISO||ev.date);
+          const id="gcal:"+ev.id;
+          const repeatWeeklyAuto=detectWeeklyRepeat(ev);
+          const seriesAnchor=recurrenceAnchor(ev);
+          const derivedSeriesId=seriesAnchor?`gseries:${seriesAnchor}`:"";
+          let item={id,title:ev.summary||"(uden titel)",type:"Aktivitet",people:["Alle"],person:"Alle",date,time:ev.time||"",durationMin:ev.durationMin||30,location:ev.location||"",note:ev.description||"",repeatWeekly:repeatWeeklyAuto,done:false,source:"google",manualRepeatWeekly:false,autoRepeatWeekly:repeatWeeklyAuto,seriesId:derivedSeriesId||undefined};
+          const uid=uidFor(item);
+          const initialSeriesId=safeSeriesId(item)||derivedSeriesId||"";
+          if(shouldIgnoreGoogleEvent(gState,{uid,seriesId:initialSeriesId,dateISO:date}))continue;
+          const existingIdx=items.findIndex(x=>uidFor(x)===uid);
+          const existingItem=existingIdx>=0?items[existingIdx]:null;
+          if(existingItem){
+            item.seriesId=safeSeriesId(existingItem)||item.seriesId||derivedSeriesId;
+            item.type=normalizeType(existingItem.type)||item.type;
+            const existingPeople=normalizePeopleList(existingItem.people&&existingItem.people.length?existingItem.people:existingItem.person);
+            item.people=existingPeople;
+            item.person=primaryPersonName(existingPeople);
+            item.done=existingItem.done!==undefined?!!existingItem.done:item.done;
+            if(existingItem.note&&existingItem.note.trim()&&existingItem.note!==item.note)item.note=existingItem.note;
+            const autoPrev=existingItem.autoRepeatWeekly;
+            const manualOverride=!!(existingItem.manualRepeatWeekly||(autoPrev!==undefined&&existingItem.repeatWeekly!==autoPrev));
+            item.manualRepeatWeekly=manualOverride;
+            if(manualOverride){item.repeatWeekly=!!existingItem.repeatWeekly;}
+          }
+          const seriesIdToUse=safeSeriesId(item)||derivedSeriesId;
+          if(seriesIdToUse&&!existingItem){
+            const seriesCandidates=items.filter(x=>safeSeriesId(x)===seriesIdToUse&&!x.overrideOf);
+            const seriesSource=seriesCandidates.find(x=>x.manualRepeatWeekly||x.repeatWeekly)||seriesCandidates[0]||null;
+            if(seriesSource){
+              item.type=normalizeType(seriesSource.type)||item.type;
+              const rememberedPeople=normalizePeopleList(seriesSource.people&&seriesSource.people.length?seriesSource.people:seriesSource.person);
+              if(rememberedPeople.length){item.people=rememberedPeople;item.person=primaryPersonName(rememberedPeople);}
+              if(seriesSource.note&&(!item.note||item.note.trim()==="")){item.note=seriesSource.note;}
+              if(seriesSource.manualRepeatWeekly!==undefined){item.manualRepeatWeekly=!!seriesSource.manualRepeatWeekly;}
+              if(seriesSource.autoRepeatWeekly!==undefined){item.autoRepeatWeekly=seriesSource.autoRepeatWeekly;}
+              if(seriesSource.repeatWeekly!==undefined){item.repeatWeekly=!!seriesSource.repeatWeekly;}
+            }
+          }
+          item.people=normalizePeopleList(item.people);
+          item.person=primaryPersonName(item.people);
+          const overrideApplied=applyGoogleOverrides(gState,{uid,seriesId:seriesIdToUse,dateISO:date,item});
+          item=overrideApplied.item;
+          item.people=normalizePeopleList(item.people);
+          item.person=primaryPersonName(item.people);
+          if(shouldIgnoreGoogleEvent(gState,{uid,seriesId:seriesIdToUse,dateISO:item.date||date}))continue;
+          if(seriesIdToUse){item.seriesId=seriesIdToUse;}
+          const existingKey=existingItem?peopleKey(existingItem.people&&existingItem.people.length?existingItem.people:existingItem.person):"";
+          const newKey=peopleKey(item.people);
+          const needsUpdate=!existingItem||["title","type","date","time","durationMin","location","note","repeatWeekly","repeatYearly","done","manualRepeatWeekly","autoRepeatWeekly","seriesId"].some(key=>(existingItem?existingItem[key]:undefined)!==item[key])||existingKey!==newKey;
+          if(idx[uid]===ev.updated&&!needsUpdate)continue;
+          upsert(item);
+          idx[uid]=ev.updated;
+          created++;
+        }
+        saveGIdx(idx);
+        const status=created?`+${created} oprettet`:'ingen ændringer';
+        updateGoogleStatus(status,{state:'ok',persist:true,detail:status});
+      }catch(e){
+        console.error(e);
+        updateGoogleStatus('fejl',{state:'error',persist:true,detail:'Kunne ikke hente Google-data'});
+      }finally{
+        if(shouldCascadeAula){
+          syncAula().catch(err=>console.error('[Aula sync efter Google]',err));
+        }
+      }
+    }
     function resetGoogleSync(){
       localStorage.removeItem(LS_GIDX);
       localStorage.removeItem(LS_GSTATE);
