@@ -1439,6 +1439,16 @@
       }
       return trimmed;
     }
+    function resolveAulaUrl(url){
+      if(!url)return'';
+      try{return new URL(url,location.href).toString();}
+      catch(_){return url;}
+    }
+    const AULA_PROXY_PIPELINES=[
+      {id:'direct',label:'direkte',isProxy:false,resolve:url=>resolveAulaUrl(url)},
+      {id:'jina',label:'jina.ai',isProxy:true,resolve:url=>/^https?:\/\//i.test(url)?`https://r.jina.ai/${url}`:''},
+      {id:'isomorphic',label:'cors.isomorphic-git.org',isProxy:true,resolve:url=>/^https?:\/\//i.test(url)?`https://cors.isomorphic-git.org/${url}`:''}
+    ];
     function aulaLinks(){
       const links=[aulaConfig.feedUrl,aulaConfig.yearUrl,aulaConfig.weekUrl].map(normalizeAulaUrl).filter(Boolean);
       return Array.from(new Set(links));
@@ -1627,16 +1637,58 @@
     }
     function loadAulaIdx(){return loadLS(LS_AULA_IDX,{});}
     function saveAulaIdx(x){saveLS(LS_AULA_IDX,x);}
+    function buildAulaFetchAttempts(url){
+      const attempts=[];
+      const seen=new Set();
+      for(const pipeline of AULA_PROXY_PIPELINES){
+        const resolved=pipeline.resolve(url);
+        if(!resolved||seen.has(resolved))continue;
+        seen.add(resolved);
+        attempts.push({
+          url:resolved,
+          label:pipeline.label,
+          isProxy:!!pipeline.isProxy
+        });
+      }
+      return attempts;
+    }
     async function fetchAulaFeed(url,index){
       const normalized=normalizeAulaUrl(url);
-      if(!normalized)return[];
-      let resolved=normalized;
-      try{resolved=new URL(normalized,location.href).toString();}catch(_){ }
-      const res=await fetch(resolved,{cache:'no-store'});
-      if(!res.ok)throw new Error('HTTP '+res.status);
-      const text=await res.text();
-      const events=parseICSEvents(text);
-      return events.map(ev=>({...ev,__sourceIndex:index}));
+      if(!normalized)return{events:[],usedProxy:false,proxyLabel:''};
+      const attempts=buildAulaFetchAttempts(normalized);
+      let lastErr=null;
+      for(const attempt of attempts){
+        try{
+          const res=await fetch(attempt.url,{cache:'no-store'});
+          if(!res.ok){
+            lastErr=new Error(`[${attempt.label}] HTTP ${res.status}`);
+            continue;
+          }
+          const text=await res.text();
+          const events=parseICSEvents(text);
+          return{events:events.map(ev=>({...ev,__sourceIndex:index})),usedProxy:attempt.isProxy,proxyLabel:attempt.isProxy?attempt.label:''};
+        }catch(err){
+          if(err instanceof TypeError){
+            const msg=attempt.isProxy?`Proxy-fejl (${attempt.label})`:'CORS-blokeret (direkte)';
+            lastErr=new Error(msg);
+          }else if(err instanceof Error){
+            lastErr=err;
+          }else{
+            lastErr=new Error(String(err||'ukendt fejl'));
+          }
+        }
+      }
+      const baseErr=lastErr instanceof Error?lastErr:new Error('Ukendt fejl ved hentning af Aula-feed');
+      let finalErr=baseErr;
+      if(baseErr&&baseErr.message&&!/^Kunne ikke hente Aula-feed/i.test(baseErr.message)){
+        finalErr=new Error(`Kunne ikke hente Aula-feed: ${baseErr.message}`);
+        finalErr.cause=baseErr;
+      }
+      finalErr.__aulaMeta={
+        url:normalized,
+        attempts:attempts.map(a=>({label:a.label,isProxy:a.isProxy,url:a.url}))
+      };
+      throw finalErr;
     }
     function mergeAulaEvents(lists){
       const map=new Map();
@@ -1665,9 +1717,12 @@
       try{
         updateAulaStatus('henter…',{state:'loading'});
         const all=[];
+        let proxyUsed=false;
+        const proxyLabels=new Set();
         for(let i=0;i<links.length;i+=1){
           const link=links[i];
-          const events=await fetchAulaFeed(link,i);
+          const {events,usedProxy,proxyLabel}=await fetchAulaFeed(link,i);
+          if(usedProxy){proxyUsed=true;if(proxyLabel)proxyLabels.add(proxyLabel);}
           all.push(events);
         }
         const events=mergeAulaEvents(all);
@@ -1737,11 +1792,13 @@
           created++;
         }
         saveAulaIdx(idx);
-        const status=created?`+${created} opdateret`:'ingen ændringer';
+        const proxyNote=proxyUsed&&proxyLabels.size?` · via ${Array.from(proxyLabels).join(', ')}`:'';
+        const status=created?`+${created} opdateret${proxyNote}`:`ingen ændringer${proxyNote}`;
         updateAulaStatus(status,{state:'ok',persist:true,detail:status});
       }catch(err){
         console.error('[Aula sync]',err);
-        updateAulaStatus('fejl',{state:'error',persist:true,detail:'Kunne ikke hente Aula-data'});
+        const detail=err instanceof Error&&err.message?err.message:'Kunne ikke hente Aula-data';
+        updateAulaStatus('fejl',{state:'error',persist:true,detail});
       }
     }
     function syncAula(){
