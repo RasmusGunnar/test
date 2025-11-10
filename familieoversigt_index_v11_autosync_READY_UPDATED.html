@@ -143,12 +143,6 @@
       <button class="btn small" id="gSync">Sync nu</button>
       <button class="btn small ghost" id="gReset">Nulstil &amp; sync</button>
     </div>
-    <div class="sync-group">
-      <div id="aBadge" class="badge">Aula sync: —</div>
-      <button class="btn small" id="aSync">Sync nu</button>
-      <button class="btn small ghost" id="aLinks" title="Åbn indstillinger for Aula">Rediger links</button>
-      <button class="btn small ghost" id="aReset">Nulstil</button>
-    </div>
   </div>
 
   <!-- Editor -->
@@ -201,7 +195,7 @@
         <section class="settings-block" aria-labelledby="calendarSyncHeading">
           <div>
             <h4 id="calendarSyncHeading">Kalendersynkronisering</h4>
-            <span class="subtitle">Se status og opdater Aula-links</span>
+            <span class="subtitle">Se status for Google Kalender-synkronisering</span>
           </div>
           <div class="sync-card">
             <div class="sync-card__header">
@@ -216,40 +210,6 @@
               </div>
             </div>
             <p class="hint" style="margin-top:10px">Henter begivenheder fra den delte Google Kalender via Apps Script.</p>
-          </div>
-          <div class="sync-card">
-            <div class="sync-card__header">
-              <div>
-                <div class="sync-card__title">Aula</div>
-                <div id="aStatusText" class="sync-card__status" data-state="idle">—</div>
-                <div id="aStatusMeta" class="sync-card__meta">Ingen synkronisering endnu.</div>
-              </div>
-              <div class="sync-card__actions">
-                <button class="btn small" id="aSyncSettings" type="button">Sync nu</button>
-                <button class="btn small ghost" id="aResetSettings" type="button">Nulstil &amp; sync</button>
-              </div>
-            </div>
-            <div class="sync-card__form">
-              <div>
-                <label for="aulaFeedUrl">Kalender-link</label>
-                <input id="aulaFeedUrl" type="url" placeholder="https://kalenderlink.aula.dk/?feed=...">
-                <p class="hint">Kopier linket fra Aula &rarr; Kalendersynkronisering.</p>
-              </div>
-              <div>
-                <label for="aulaYearUrl">Årskalender-link (ældre løsning)</label>
-                <input id="aulaYearUrl" type="url" placeholder="https://.../aula_year.ics">
-                <p class="hint">Bruges kun hvis du stadig har separate År/Uge-links i Aula.</p>
-              </div>
-              <div>
-                <label for="aulaWeekUrl">Ugekalender-link (ældre løsning)</label>
-                <input id="aulaWeekUrl" type="url" placeholder="https://.../aula_week.ics">
-                <p class="hint">Bruges kun hvis du stadig har separate År/Uge-links i Aula.</p>
-              </div>
-              <div class="sync-card__form-actions">
-                <button class="btn ghost small" id="aulaResetLinks" type="button">Ryd links</button>
-                <button class="btn primary small" id="aulaSave" type="button">Gem links</button>
-              </div>
-            </div>
           </div>
         </section>
         <section class="settings-block" aria-labelledby="peopleHeading">
@@ -290,7 +250,7 @@
     /* ---------- core utils ---------- */
     const RAW_HID=(new URLSearchParams(location.search).get("hid")||"").trim();
     const HID=(RAW_HID||"DEFAULT").toUpperCase();
-    const LS_ITEMS="fam_items_v1", LS_PREFS="fam_people_prefs_v1", LS_GIDX="gcal_index", LS_GSTATE="gcal_state_v1", LS_GSYNC_META="gcal_sync_meta_v1", LS_AULA_IDX="aula_index_v1", LS_AULA_STATE="aula_state_v1", LS_AULA_CONFIG="aula_config_v1", LS_AULA_SYNC_META="aula_sync_meta_v1";
+    const LS_ITEMS="fam_items_v1", LS_PREFS="fam_people_prefs_v1", LS_GIDX="gcal_index", LS_GSTATE="gcal_state_v1", LS_GSYNC_META="gcal_sync_meta_v1";
     const LS_VIEW_MODE="fam_view_mode";
     const CELEBRATION_LS="fam_celebrations_v1";
     const CELEBRATION_THRESHOLD=6;
@@ -336,7 +296,7 @@
     const WEEK_DAY_NAMES=["mandag","tirsdag","onsdag","torsdag","fredag","lørdag","søndag"];
     const $ = (id)=>document.getElementById(id);
     const grid = $("grid"), peopleBar = $("peopleBar"), weekNo = $("weekNo"), weekBtn = $("weekBtn"), viewToggle=$("viewToggle");
-    const gBadge=$("gBadge"), aBadge=$("aBadge"), gStatusText=$("gStatusText"), gStatusMeta=$("gStatusMeta"), aStatusText=$("aStatusText"), aStatusMeta=$("aStatusMeta");
+    const gBadge=$("gBadge"), gStatusText=$("gStatusText"), gStatusMeta=$("gStatusMeta");
 
     function fmtISO(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
     function fromAnyToLocalISO(x){
@@ -375,20 +335,6 @@
       }
       renderSyncMeta(gStatusMeta,meta);
     }
-    function updateAulaStatus(text,opts={}){
-      if(aBadge)aBadge.textContent='Aula sync: '+text;
-      if(aStatusText){aStatusText.textContent=text;aStatusText.dataset.state=opts.state||aStatusText.dataset.state||'idle';}
-      let meta;
-      if(Object.prototype.hasOwnProperty.call(opts,'meta')){meta=opts.meta;}else{meta=loadLS(LS_AULA_SYNC_META,null);}
-      if(opts.persist){
-        meta={status:text,state:opts.state||'info',detail:opts.detail||'',ts:Date.now()};
-        saveLS(LS_AULA_SYNC_META,meta);
-      }
-      renderSyncMeta(aStatusMeta,meta);
-    }
-    const DEFAULT_AULA_CONFIG={feedUrl:"",yearUrl:"",weekUrl:""};
-    function loadAulaConfig(){const raw=loadLS(LS_AULA_CONFIG,DEFAULT_AULA_CONFIG)||{};return {...DEFAULT_AULA_CONFIG,...raw};}
-    function saveAulaConfig(cfg){const next={...DEFAULT_AULA_CONFIG,...(cfg||{})};saveLS(LS_AULA_CONFIG,next);return next;}
     function parseISODate(iso){if(typeof iso!=="string")return null;const m=iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);if(!m)return null;const d=new Date(Number(m[1]),Number(m[2])-1,Number(m[3]));return Number.isNaN(d.getTime())?null:d}
     function weekdayDatesFor(dateIso){const base=parseISODate(dateIso);if(!base){return dateIso?[dateIso]:[];}const monday=startOfWeek(base);const out=[];for(let i=0;i<5;i+=1){const d=new Date(monday);d.setDate(monday.getDate()+i);out.push(fmtISO(d));}return Array.from(new Set(out));}
     function loadViewMode(){try{return localStorage.getItem(LS_VIEW_MODE)==="day"?"day":"week";}catch(_){return"week";}}
@@ -457,12 +403,10 @@
       if(it.id && it.id.startsWith("gcal:")) return "g:"+it.id.slice(5)+"|"+date;     // id fra GAS, per forekomst
       if(it.id && it.id.startsWith("gcalr:"))return "gr:"+it.id.slice(6);             // hvis du senere bruger ugentlige ankre
       if(it.source==="google") return "g:"+(it.id||djb2(keyOf(it)))+"|"+date;
-      if(it.source==="aula") return "a:"+(it.id||djb2(keyOf(it)))+"|"+date;
       return "l:"+djb2(keyOf(it));                                                    // lokale
     }
 
     /* ---------- state ---------- */
-    let aulaConfig=loadAulaConfig();
     let PEOPLE, items, current="Alle", editContext=null;
     let focusDate=new Date();
     let wk=startOfWeek(focusDate);
@@ -970,7 +914,6 @@
       const scope=(editContext.hasRepeat && !editContext.isOverride)?currentScope():'series';
       const occISO=toISO(editContext.occurrence||base?.date||"");
       rememberGoogleDeletion({scope,seriesId,occurrenceISO:occISO,existingItem:existing,baseItem:base});
-      rememberAulaDeletion({scope,seriesId,occurrenceISO:occISO,existingItem:existing,baseItem:base});
       if(editContext.isOverride || !editContext.hasRepeat){
         dropItem(editContext.id,{commit:true});
         EBD.style.display="none";
@@ -1083,32 +1026,6 @@
         payload.manualRepeatWeekly=manualOverride;
         if(prevAuto!==undefined) payload.autoRepeatWeekly=prevAuto;
         payload.source=base.source||'google';
-      }else if(existing && (existing.source||'').toLowerCase()==='aula'){
-        const prevAuto=existing.autoRepeatWeekly;
-        let manualOverride=false;
-        if(prevAuto!==undefined){
-          manualOverride=newRepeat!==prevAuto;
-        }else if(existing.repeatWeekly!==newRepeat){
-          manualOverride=true;
-        }else{
-          manualOverride=!!existing.manualRepeatWeekly;
-        }
-        payload.manualRepeatWeekly=manualOverride;
-        if(prevAuto!==undefined) payload.autoRepeatWeekly=prevAuto;
-        payload.source='aula';
-      }else if(base && (base.source||'').toLowerCase()==='aula'){
-        const prevAuto=base.autoRepeatWeekly;
-        let manualOverride=false;
-        if(prevAuto!==undefined){
-          manualOverride=newRepeat!==prevAuto;
-        }else if(base.repeatWeekly!==newRepeat){
-          manualOverride=true;
-        }else{
-          manualOverride=!!base.manualRepeatWeekly;
-        }
-        payload.manualRepeatWeekly=manualOverride;
-        if(prevAuto!==undefined) payload.autoRepeatWeekly=prevAuto;
-        payload.source='aula';
       }else if(existing && existing.manualRepeatWeekly!==undefined){
         payload.manualRepeatWeekly=existing.manualRepeatWeekly;
         if(existing.autoRepeatWeekly!==undefined) payload.autoRepeatWeekly=existing.autoRepeatWeekly;
@@ -1166,7 +1083,6 @@
       const seriesKey=safeSeriesId(baseItem)||seriesId||baseItem.id;
       const baseDate=toISO(baseItem.date);
       rememberGoogleEdit({scope:scope,seriesId:seriesKey,occurrenceISO:occISO||chosenDate,payload,existingItem:existing,baseItem:baseItem});
-      rememberAulaEdit({scope:scope,seriesId:seriesKey,occurrenceISO:occISO||chosenDate,payload,existingItem:existing,baseItem:baseItem});
 
       if(scope==='series'){
         const updated={...baseItem,...payload,id:baseItem.id,seriesId:seriesKey,overrideOf:"",overrideBaseId:""};
@@ -1217,7 +1133,7 @@
     $("newBtn").onclick=()=>openNew()
     const settingsBackdrop=$("settBD");
     function refreshSyncSettings(){
-      populateAulaInputs();
+      hydrateGoogleStatus();
     }
     function openSettings(focusId){
       buildSettings();
@@ -1351,108 +1267,6 @@
       return{item:changed?next:item};
     }
 
-    const defaultAulaState=()=>({itemOverrides:{},seriesOverrides:{},deletedUids:{},deletedSeries:{}});
-    let aulaStateCache=null;
-    function normalizeAulaState(base){const clean=defaultAulaState();if(base&&typeof base==='object'){if(base.itemOverrides&&typeof base.itemOverrides==='object')clean.itemOverrides={...base.itemOverrides};if(base.seriesOverrides&&typeof base.seriesOverrides==='object')clean.seriesOverrides={...base.seriesOverrides};if(base.deletedUids&&typeof base.deletedUids==='object')clean.deletedUids={...base.deletedUids};if(base.deletedSeries&&typeof base.deletedSeries==='object')clean.deletedSeries={...base.deletedSeries};}return clean;}
-    function getAulaState(){if(!aulaStateCache){aulaStateCache=normalizeAulaState(loadLS(LS_AULA_STATE,defaultAulaState()));}return aulaStateCache;}
-    function saveAulaState(state){aulaStateCache=normalizeAulaState(state||defaultAulaState());saveLS(LS_AULA_STATE,aulaStateCache);return aulaStateCache;}
-    function updateAulaState(mutator){const current=getAulaState();const next={itemOverrides:{...current.itemOverrides},seriesOverrides:{...current.seriesOverrides},deletedUids:{...current.deletedUids},deletedSeries:{...current.deletedSeries}};const maybe=mutator&&mutator(next);return saveAulaState(maybe||next);}
-    function aulaBase(existingItem,baseItem){const hasAulaId=obj=>obj&&typeof obj.id==='string'&&obj.id.startsWith('aula:');const isAula=obj=>(obj?.source||'').toString().toLowerCase()==='aula';if(hasAulaId(existingItem))return existingItem;if(hasAulaId(baseItem))return baseItem;if(isAula(existingItem))return existingItem;if(isAula(baseItem))return baseItem;return existingItem||baseItem||null;}
-    function aulaCloneForUid({existingItem,baseItem,payload,occurrenceISO}){const ref=aulaBase(existingItem,baseItem);const source=ref||existingItem||baseItem||{};const clone={...source,...(payload||{})};if(ref?.id)clone.id=ref.id;if(ref?.source)clone.source=ref.source;if(!clone.source)clone.source='aula';clone.date=toISO((payload&&payload.date)||occurrenceISO||source.date||'');return clone;}
-    function rememberAulaEdit({scope,seriesId,occurrenceISO,payload,existingItem,baseItem}){
-      const source=(existingItem&&existingItem.source)||(baseItem&&baseItem.source)||payload?.source;
-      if((source||'').toLowerCase()!=='aula')return;
-      const fields=captureRemoteFields(payload);
-      if(Object.keys(fields).length===0)return;
-      const effectiveSeries=seriesId||safeSeriesId(existingItem)||safeSeriesId(baseItem)||"";
-      updateAulaState(state=>{
-        if(scope==="series"||scope==="future"){
-          if(!effectiveSeries)return state;
-          const fromISO=scope==="future"?toISO(occurrenceISO||payload?.date||existingItem?.date||baseItem?.date||""):"";
-          state.seriesOverrides[effectiveSeries]={fields,...(fromISO?{from:fromISO}:{} )};
-          delete state.deletedSeries[effectiveSeries];
-          return state;
-        }
-        const reference=aulaCloneForUid({existingItem,baseItem,payload,occurrenceISO});
-        if(!reference)return state;
-        const uid=uidFor(reference);
-        if(!uid.startsWith("a:"))return state;
-        state.itemOverrides[uid]={fields};
-        delete state.deletedUids[uid];
-        return state;
-      });
-    }
-    function rememberAulaDeletion({scope,seriesId,occurrenceISO,existingItem,baseItem}){
-      const source=(existingItem&&existingItem.source)||(baseItem&&baseItem.source)||"";
-      if((source||'').toLowerCase()!=='aula')return;
-      const effectiveSeries=seriesId||safeSeriesId(existingItem)||safeSeriesId(baseItem)||"";
-      updateAulaState(state=>{
-        if(scope==="series"||scope==="future"){
-          if(!effectiveSeries)return state;
-          const fromISO=scope==="future"?toISO(occurrenceISO||existingItem?.date||baseItem?.date||""):"";
-          state.deletedSeries[effectiveSeries]=fromISO?{from:fromISO}:{};
-          delete state.seriesOverrides[effectiveSeries];
-          return state;
-        }
-        const reference=aulaCloneForUid({existingItem,baseItem,occurrenceISO});
-        if(!reference)return state;
-        const uid=uidFor(reference);
-        if(!uid.startsWith("a:"))return state;
-        state.deletedUids[uid]=true;
-        delete state.itemOverrides[uid];
-        return state;
-      });
-    }
-    function shouldIgnoreAulaEvent(state,{uid,seriesId,dateISO}){
-      if(!state)return false;
-      if(uid&&state.deletedUids&&state.deletedUids[uid])return true;
-      if(seriesId){const info=state.deletedSeries&&state.deletedSeries[seriesId];if(info){const cutoff=toISO(info.from||"");if(!cutoff)return true;const target=toISO(dateISO||"");if(!target)return true;if(target>=cutoff)return true;}}
-      return false;
-    }
-    function applyAulaOverrides(state,{uid,seriesId,dateISO,item}){
-      if(!state||!item)return{item};
-      let changed=false;
-      const next={...item};
-      const applyFields=entry=>{
-        if(!entry||typeof entry!=='object')return;
-        const fields=entry.fields||entry;
-        if(!fields||typeof fields!=='object')return;
-        if(fields.type!==undefined&&fields.type!==next.type){next.type=normalizeType(fields.type);changed=true;}
-        if(fields.people!==undefined){const norm=normalizePeopleList(fields.people);if(norm.length){next.people=norm;next.person=primaryPersonName(norm);changed=true;}}
-        if(fields.manualRepeatWeekly!==undefined&&fields.manualRepeatWeekly!==next.manualRepeatWeekly){next.manualRepeatWeekly=!!fields.manualRepeatWeekly;changed=true;}
-        if(fields.autoRepeatWeekly!==undefined&&fields.autoRepeatWeekly!==next.autoRepeatWeekly){next.autoRepeatWeekly=fields.autoRepeatWeekly;changed=true;}
-        if(fields.repeatWeekly!==undefined&&fields.repeatWeekly!==next.repeatWeekly){next.repeatWeekly=!!fields.repeatWeekly;changed=true;}
-      };
-      if(seriesId){const info=state.seriesOverrides&&state.seriesOverrides[seriesId];if(info){const fromISO=toISO(info.from||"");const targetISO=toISO(dateISO||next.date||"");if(!fromISO||targetISO&&(targetISO>=fromISO)){applyFields(info);}}}
-      if(uid){const perItem=state.itemOverrides&&state.itemOverrides[uid];if(perItem)applyFields(perItem);}
-      if(changed){next.people=normalizePeopleList(next.people);next.person=primaryPersonName(next.people);}
-      return{item:changed?next:item};
-    }
-
-    /* ---------- Aula sync ---------- */
-    function normalizeAulaUrl(url){
-      if(!url)return'';
-      const trimmed=(url||'').trim();
-      if(!trimmed)return'';
-      if(/^webcals?:\/\//i.test(trimmed)){
-        return trimmed.replace(/^webcals?:\/\//i,'https://');
-      }
-      return trimmed;
-    }
-    function resolveAulaUrl(url){
-      if(!url)return'';
-      try{return new URL(url,location.href).toString();}
-      catch(_){return url;}
-    }
-    const AULA_PROXY_PIPELINES=[
-      {id:'direct',label:'direkte',isProxy:false,resolve:url=>resolveAulaUrl(url)},
-      {id:'jina',label:'jina.ai',isProxy:true,resolve:url=>/^https?:\/\//i.test(url)?`https://r.jina.ai/${url}`:''},
-      {id:'isomorphic',label:'cors.isomorphic-git.org',isProxy:true,resolve:url=>/^https?:\/\//i.test(url)?`https://cors.isomorphic-git.org/${url}`:''}
-    ];
-    function aulaLinks(){
-      const links=[aulaConfig.feedUrl,aulaConfig.yearUrl,aulaConfig.weekUrl].map(normalizeAulaUrl).filter(Boolean);
-      return Array.from(new Set(links));
-    }
     function hydrateGoogleStatus(){
       const stored=loadLS(LS_GSYNC_META,null);
       if(stored){
@@ -1461,378 +1275,24 @@
         updateGoogleStatus('—',{state:'idle',meta:null});
       }
     }
-    function ensureAulaBadge(){
-      const stored=loadLS(LS_AULA_SYNC_META,null);
-      const hasLinks=aulaLinks().length>0;
-      if(hasLinks){
-        if(stored){
-          updateAulaStatus(stored.status||'klar',{state:stored.state||'info',meta:stored});
-        }else{
-          updateAulaStatus('klar',{state:'idle',meta:null});
-        }
-      }else{
-        updateAulaStatus('tilføj links',{state:'warn',meta:null});
-      }
-    }
-    hydrateGoogleStatus();
-    ensureAulaBadge();
-    function decodeICSValue(value){
-      if(typeof value!=='string')return'';
-      return value.replace(/\\\\/g,'\\').replace(/\\n/g,'\n').replace(/\\,/g,',').replace(/\\;/g,';');
-    }
-    function unfoldICSLines(text){
-      const raw=String(text||'').split(/\r?\n/);
-      const lines=[];
-      for(const line of raw){
-        if(!lines.length){lines.push(line.trimEnd());continue;}
-        if(/^\s/.test(line)){lines[lines.length-1]+=line.slice(1);}else{lines.push(line.trimEnd());}
-      }
-      return lines;
-    }
-    function parseICSTimestamp(value,params){
-      if(!value)return null;
-      const upper={};
-      if(params&&typeof params==='object'){Object.keys(params).forEach(k=>{upper[k.toUpperCase()]=params[k];});}
-      const isDateOnly=upper.VALUE==='DATE'||!value.includes('T');
-      if(isDateOnly){
-        const m=value.match(/^(\d{4})(\d{2})(\d{2})$/);
-        if(!m)return null;
-        const dt=new Date(Number(m[1]),Number(m[2])-1,Number(m[3]));
-        if(Number.isNaN(dt.getTime()))return null;
-        return{date:dt,isDateOnly:true,tz:upper.TZID||''};
-      }
-      const m=value.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})?(Z)?$/);
-      if(m){
-        const year=Number(m[1]);
-        const month=Number(m[2])-1;
-        const day=Number(m[3]);
-        const hour=Number(m[4]);
-        const minute=Number(m[5]);
-        const second=Number(m[6]||'0');
-        const isUtc=!!m[7];
-        const dt=isUtc?new Date(Date.UTC(year,month,day,hour,minute,second)):new Date(year,month,day,hour,minute,second);
-        if(Number.isNaN(dt.getTime()))return null;
-        return{date:dt,isDateOnly:false,tz:upper.TZID||'',isUTC:isUtc};
-      }
-      const guess=new Date(value);
-      if(Number.isNaN(guess.getTime()))return null;
-      return{date:guess,isDateOnly:false,tz:upper.TZID||''};
-    }
-    function parseICSDuration(value){
-      if(typeof value!=='string')return 0;
-      const m=value.match(/^P(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?)?$/i);
-      if(!m)return 0;
-      let minutes=0;
-      if(m[1])minutes+=Number(m[1])*24*60;
-      if(m[2])minutes+=Number(m[2])*60;
-      if(m[3])minutes+=Number(m[3]);
-      if(m[4])minutes+=Math.round(Number(m[4])/60);
-      return minutes;
-    }
-    function parseRRule(value){
-      const out={};
-      if(typeof value!=='string')return out;
-      value.split(';').forEach(part=>{const [k,v='']=part.split('=');if(k)out[k.toUpperCase()]=v;});
-      return out;
-    }
-    function finalizeAulaEvent(raw){
-      if(!raw)return null;
-      const status=(raw.status||'').toUpperCase();
-      if(status==='CANCELLED')return null;
-      const startInfo=raw.start;
-      if(!startInfo||!startInfo.date)return null;
-      const startDate=new Date(startInfo.date.getTime());
-      if(Number.isNaN(startDate.getTime()))return null;
-      const dateISO=fmtISO(startDate);
-      const allDay=!!startInfo.isDateOnly;
-      const hh=String(startDate.getHours()).padStart(2,'0');
-      const mm=String(startDate.getMinutes()).padStart(2,'0');
-      let time=allDay?'':`${hh}:${mm}`;
-      let durationMin=0;
-      if(raw.end&&raw.end.date){
-        const diff=Math.round((raw.end.date.getTime()-startDate.getTime())/60000);
-        if(Number.isFinite(diff)&&diff>0)durationMin=diff;
-      }else if(raw.duration){
-        const dur=parseICSDuration(raw.duration);
-        if(Number.isFinite(dur)&&dur>0)durationMin=dur;
-      }
-      if(allDay){time='';durationMin=0;}else if(!durationMin)durationMin=60;
-      const recurrenceParts=raw.rruleParts||{};
-      const recurrenceDate=raw.recurrenceId&&raw.recurrenceId.date?new Date(raw.recurrenceId.date.getTime()):null;
-      const recurrenceIdISO=recurrenceDate?recurrenceDate.toISOString():'';
-      const updatedDate=raw.lastModified?.date||raw.dtstamp?.date||null;
-      const updated=updatedDate?updatedDate.toISOString():'';
-      const intervalRaw=recurrenceParts.INTERVAL?Number(recurrenceParts.INTERVAL):undefined;
-      const repeatInterval=Number.isFinite(intervalRaw)?intervalRaw:undefined;
-      const baseUid=(raw.uid||'').trim();
-      const seriesId=(raw.rrule||recurrenceIdISO)?`aseries:${baseUid||djb2(raw.summary||'')}`:'';
-      return{
-        uid:baseUid,
-        summary:raw.summary||'',
-        description:raw.description||'',
-        location:raw.location||'',
-        date:dateISO,
-        startISO:dateISO,
-        startDateTime:startDate.toISOString(),
-        time,
-        durationMin,
-        allDay,
-        updated,
-        sequence:(raw.sequence||'').toString(),
-        recurrence:raw.rrule||'',
-        recurrenceRule:raw.rrule||'',
-        repeatRule:raw.rrule||'',
-        repeatFrequency:recurrenceParts.FREQ||'',
-        repeatType:recurrenceParts.FREQ||'',
-        repeatInterval,
-        recurrenceText:raw.rrule||'',
-        repeatText:raw.rrule||'',
-        recurrenceIdISO:recurrenceIdISO,
-        recurringEventId:recurrenceIdISO?(baseUid||''):(raw.rrule?(baseUid||''):''),
-        seriesId,
-        categories:raw.categories||''
-      };
-    }
-    function parseICSEvents(text){
-      if(typeof text!=="string"||!text.trim())return[];
-      const lines=unfoldICSLines(text);
-      const events=[];
-      let current=null;
-      for(const rawLine of lines){
-        const line=rawLine.trim();
-        if(line==='BEGIN:VEVENT'){current={};continue;}
-        if(line==='END:VEVENT'){if(current){const ev=finalizeAulaEvent(current);if(ev)events.push(ev);}current=null;continue;}
-        if(!current)continue;
-        const idx=line.indexOf(':');
-        if(idx<0)continue;
-        const namePart=line.slice(0,idx);
-        const valuePart=decodeICSValue(line.slice(idx+1));
-        const parts=namePart.split(';');
-        const propName=parts[0].toUpperCase();
-        const paramMap={};
-        for(let i=1;i<parts.length;i+=1){const [key,val='']=parts[i].split('=');if(key)paramMap[key.toUpperCase()]=val;}
-        switch(propName){
-          case 'UID':current.uid=valuePart;break;
-          case 'SUMMARY':current.summary=valuePart;break;
-          case 'DESCRIPTION':current.description=valuePart;break;
-          case 'LOCATION':current.location=valuePart;break;
-          case 'CATEGORIES':current.categories=valuePart;break;
-          case 'STATUS':current.status=valuePart;break;
-          case 'SEQUENCE':current.sequence=valuePart;break;
-          case 'DTSTART':current.start=parseICSTimestamp(valuePart,paramMap);break;
-          case 'DTEND':current.end=parseICSTimestamp(valuePart,paramMap);break;
-          case 'DURATION':current.duration=valuePart;break;
-          case 'DTSTAMP':current.dtstamp=parseICSTimestamp(valuePart,paramMap);break;
-          case 'LAST-MODIFIED':current.lastModified=parseICSTimestamp(valuePart,paramMap);break;
-          case 'RRULE':current.rrule=valuePart;current.rruleParts=parseRRule(valuePart);break;
-          case 'RECURRENCE-ID':current.recurrenceId=parseICSTimestamp(valuePart,paramMap);break;
-          default:break;
-        }
-      }
-      return events;
-    }
-    function aulaRemoteFingerprint(ev){
-      const parts=[ev.updated||'',ev.sequence||'',ev.summary||'',ev.date||'',ev.time||'',String(ev.durationMin||''),ev.location||'',ev.description||'',ev.recurrence||'',ev.recurrenceIdISO||''];
-      return djb2(parts.join('|'));
-    }
-    function loadAulaIdx(){return loadLS(LS_AULA_IDX,{});}
-    function saveAulaIdx(x){saveLS(LS_AULA_IDX,x);}
-    function buildAulaFetchAttempts(url){
-      const attempts=[];
-      const seen=new Set();
-      for(const pipeline of AULA_PROXY_PIPELINES){
-        const resolved=pipeline.resolve(url);
-        if(!resolved||seen.has(resolved))continue;
-        seen.add(resolved);
-        attempts.push({
-          url:resolved,
-          label:pipeline.label,
-          isProxy:!!pipeline.isProxy
-        });
-      }
-      return attempts;
-    }
-    async function fetchAulaFeed(url,index){
-      const normalized=normalizeAulaUrl(url);
-      if(!normalized)return{events:[],usedProxy:false,proxyLabel:''};
-      const attempts=buildAulaFetchAttempts(normalized);
-      let lastErr=null;
-      for(const attempt of attempts){
-        try{
-          const res=await fetch(attempt.url,{cache:'no-store'});
-          if(!res.ok){
-            lastErr=new Error(`[${attempt.label}] HTTP ${res.status}`);
-            continue;
-          }
-          const text=await res.text();
-          const events=parseICSEvents(text);
-          return{events:events.map(ev=>({...ev,__sourceIndex:index})),usedProxy:attempt.isProxy,proxyLabel:attempt.isProxy?attempt.label:''};
-        }catch(err){
-          if(err instanceof TypeError){
-            const msg=attempt.isProxy?`Proxy-fejl (${attempt.label})`:'CORS-blokeret (direkte)';
-            lastErr=new Error(msg);
-          }else if(err instanceof Error){
-            lastErr=err;
-          }else{
-            lastErr=new Error(String(err||'ukendt fejl'));
-          }
-        }
-      }
-      const baseErr=lastErr instanceof Error?lastErr:new Error('Ukendt fejl ved hentning af Aula-feed');
-      let finalErr=baseErr;
-      if(baseErr&&baseErr.message&&!/^Kunne ikke hente Aula-feed/i.test(baseErr.message)){
-        finalErr=new Error(`Kunne ikke hente Aula-feed: ${baseErr.message}`);
-        finalErr.cause=baseErr;
-      }
-      finalErr.__aulaMeta={
-        url:normalized,
-        attempts:attempts.map(a=>({label:a.label,isProxy:a.isProxy,url:a.url}))
-      };
-      throw finalErr;
-    }
-    function mergeAulaEvents(lists){
-      const map=new Map();
-      lists.forEach(list=>{
-        (list||[]).forEach(ev=>{
-          if(!ev)return;
-          const key=`${ev.uid||''}|${ev.recurrenceIdISO||''}|${ev.startISO||ev.date||''}|${ev.time||''}`;
-          const existing=map.get(key);
-          if(existing){
-            const aTime=Date.parse(ev.updated||'')||0;
-            const bTime=Date.parse(existing.updated||'')||0;
-            if(aTime>bTime){map.set(key,ev);return;}
-            if(aTime<bTime)return;
-            if((ev.__sourceIndex||0)>=(existing.__sourceIndex||0))map.set(key,ev);
-          }else{
-            map.set(key,ev);
-          }
-        });
-      });
-      return [...map.values()];
-    }
-    let aulaSyncTask=null;
-    async function performAulaSync(){
-      const links=aulaLinks();
-      if(!links.length){updateAulaStatus('mangler links',{state:'warn',persist:true,detail:'Tilføj Aula-links'});return;}
-      try{
-        updateAulaStatus('henter…',{state:'loading'});
-        const all=[];
-        let proxyUsed=false;
-        const proxyLabels=new Set();
-        for(let i=0;i<links.length;i+=1){
-          const link=links[i];
-          const {events,usedProxy,proxyLabel}=await fetchAulaFeed(link,i);
-          if(usedProxy){proxyUsed=true;if(proxyLabel)proxyLabels.add(proxyLabel);}
-          all.push(events);
-        }
-        const events=mergeAulaEvents(all);
-        const idx=loadAulaIdx();
-        const aState=getAulaState();
-        let created=0;
-        for(const ev of events){
-          const date=fromAnyToLocalISO(ev.startISO||ev.date||'');
-          if(!date)continue;
-          const repeatWeeklyAuto=detectWeeklyRepeat(ev);
-          const derivedSeriesId=ev.seriesId||'';
-          let baseId=(ev.uid||'').trim();
-          if(!baseId)baseId=djb2([ev.summary||'',date,ev.time||''].join('|'));
-          let itemId=`aula:${baseId}`;
-          if(ev.recurrenceIdISO)itemId+=`#${ev.recurrenceIdISO}`;
-          const note=(ev.description||'').trim();
-          let item={id:itemId,title:ev.summary||"(uden titel)",type:"Aktivitet",people:["Alle"],person:"Alle",date,time:ev.time||"",durationMin:ev.allDay?0:(ev.durationMin||60),location:ev.location||"",note,repeatWeekly:repeatWeeklyAuto,done:false,source:"aula",manualRepeatWeekly:false,autoRepeatWeekly:repeatWeeklyAuto,seriesId:derivedSeriesId||undefined};
-          if(ev.allDay){item.time="";item.durationMin=0;}
-          const uid=uidFor(item);
-          const initialSeriesId=safeSeriesId(item)||derivedSeriesId||"";
-          if(shouldIgnoreAulaEvent(aState,{uid,seriesId:initialSeriesId,dateISO:date}))continue;
-          const existingIdx=items.findIndex(x=>uidFor(x)===uid);
-          const existingItem=existingIdx>=0?items[existingIdx]:null;
-          if(existingItem){
-            item.seriesId=safeSeriesId(existingItem)||item.seriesId||derivedSeriesId;
-            item.type=normalizeType(existingItem.type)||item.type;
-            const existingPeople=normalizePeopleList(existingItem.people&&existingItem.people.length?existingItem.people:existingItem.person);
-            item.people=existingPeople;
-            item.person=primaryPersonName(existingPeople);
-            item.done=existingItem.done!==undefined?!!existingItem.done:item.done;
-            if(existingItem.note&&existingItem.note.trim()&&existingItem.note!==item.note)item.note=existingItem.note;
-            const autoPrev=existingItem.autoRepeatWeekly;
-            const manualOverride=!!(existingItem.manualRepeatWeekly||(autoPrev!==undefined&&existingItem.repeatWeekly!==autoPrev));
-            item.manualRepeatWeekly=manualOverride;
-            if(manualOverride)item.repeatWeekly=!!existingItem.repeatWeekly;
-            if(autoPrev!==undefined)item.autoRepeatWeekly=autoPrev;
-          }
-          const seriesIdToUse=safeSeriesId(item)||derivedSeriesId;
-          if(seriesIdToUse&&!existingItem){
-            const seriesCandidates=items.filter(x=>safeSeriesId(x)===seriesIdToUse&&!x.overrideOf);
-            const seriesSource=seriesCandidates.find(x=>x.manualRepeatWeekly||x.repeatWeekly)||seriesCandidates[0]||null;
-            if(seriesSource){
-              item.type=normalizeType(seriesSource.type)||item.type;
-              const rememberedPeople=normalizePeopleList(seriesSource.people&&seriesSource.people.length?seriesSource.people:seriesSource.person);
-              if(rememberedPeople.length){item.people=rememberedPeople;item.person=primaryPersonName(rememberedPeople);}
-              if(seriesSource.note&&(!item.note||item.note.trim()===""))item.note=seriesSource.note;
-              if(seriesSource.manualRepeatWeekly!==undefined)item.manualRepeatWeekly=!!seriesSource.manualRepeatWeekly;
-              if(seriesSource.autoRepeatWeekly!==undefined)item.autoRepeatWeekly=seriesSource.autoRepeatWeekly;
-              if(seriesSource.repeatWeekly!==undefined)item.repeatWeekly=!!seriesSource.repeatWeekly;
-            }
-          }
-          item.people=normalizePeopleList(item.people);
-          item.person=primaryPersonName(item.people);
-          const overrideApplied=applyAulaOverrides(aState,{uid,seriesId:seriesIdToUse,dateISO:date,item});
-          item=overrideApplied.item;
-          item.people=normalizePeopleList(item.people);
-          item.person=primaryPersonName(item.people);
-          if(shouldIgnoreAulaEvent(aState,{uid,seriesId:seriesIdToUse,dateISO:item.date||date}))continue;
-          if(seriesIdToUse)item.seriesId=seriesIdToUse;
-          const existingKey=existingItem?peopleKey(existingItem.people&&existingItem.people.length?existingItem.people:existingItem.person):"";
-          const newKey=peopleKey(item.people);
-          const needsUpdate=!existingItem||["title","type","date","time","durationMin","location","note","repeatWeekly","repeatYearly","done","manualRepeatWeekly","autoRepeatWeekly","seriesId"].some(key=>(existingItem?existingItem[key]:undefined)!==item[key])||existingKey!==newKey;
-          const fingerprint=aulaRemoteFingerprint(ev);
-          if(idx[uid]===fingerprint&&!needsUpdate)continue;
-          upsert(item);
-          idx[uid]=fingerprint;
-          created++;
-        }
-        saveAulaIdx(idx);
-        const proxyNote=proxyUsed&&proxyLabels.size?` · via ${Array.from(proxyLabels).join(', ')}`:'';
-        const status=created?`+${created} opdateret${proxyNote}`:`ingen ændringer${proxyNote}`;
-        updateAulaStatus(status,{state:'ok',persist:true,detail:status});
-      }catch(err){
-        console.error('[Aula sync]',err);
-        const detail=err instanceof Error&&err.message?err.message:'Kunne ikke hente Aula-data';
-        updateAulaStatus('fejl',{state:'error',persist:true,detail});
-      }
-    }
-    function syncAula(){
-      if(aulaSyncTask)return aulaSyncTask;
-      aulaSyncTask=(async()=>{
-        try{return await performAulaSync();}
-        finally{aulaSyncTask=null;}
-      })();
-      return aulaSyncTask;
-    }
-
     /* ---------- Google sync (enkeltforekomster) ---------- */
     const GAS_URL="https://script.google.com/macros/s/AKfycbyQeS_NvMVv4A3IImB6S3AsRt67aSpeKuaoHHSf8K4xRE9sx3zSZS8zHlvZFL_WDIKl/exec";
-    function loadGIdx(){return loadLS(LS_GIDX,{})}function saveGIdx(x){saveLS(LS_GIDX,x)}
+    function loadGIdx(){return loadLS(LS_GIDX,{})}
+    function saveGIdx(x){saveLS(LS_GIDX,x)}
     async function fetchEvents(){
       const url=new URL(GAS_URL,location.href);
       url.searchParams.set('t',Date.now().toString());
-
+      url.searchParams.set('include','all');
       const r=await fetch(url.toString(),{cache:"no-store"});
       if(!r.ok)throw new Error("GAS "+r.status);
       const j=await r.json();
       return Array.isArray(j.items)?j.items:[]
     }
     function containsWeekly(val){if(!val)return false;if(typeof val==="string")return/(WEEKLY|\bWEEK\b|\bUGE\b)/i.test(val);if(Array.isArray(val))return val.some(containsWeekly);if(typeof val==="object")return Object.values(val).some(containsWeekly);return false}
-    function recurrenceAnchor(ev){if(!ev||typeof ev!=="object")return"";const id=ev.recurringEventId||ev.recurring_event_id||ev.seriesMasterId||ev.series_master_id||ev.masterEventId||ev.master_event_id||ev.parentId||ev.parent_id; if(id) return"rec:"+id; const title=(ev.summary||ev.title||"").trim().toLowerCase(); const time=(ev.time||ev.startTime||ev.start_time||"").toString().trim(); const rawDur=Number(ev.durationMin??ev.durationMinutes??ev.duration??0); const duration=Number.isFinite(rawDur)?rawDur:0; const location=(ev.location||"").trim().toLowerCase(); if(!title&& !time) return""; return"heur:"+[title,time,duration,location].join("|"); }
-    function markLikelyWeekly(events){const groups=new Map();for(const ev of events){if(!ev||typeof ev!=="object")continue;const key=recurrenceAnchor(ev);if(!key)continue;const dateISO=fromAnyToLocalISO(ev.startISO||ev.date);if(!dateISO||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(dateISO))continue;if(!groups.has(key))groups.set(key,[]);groups.get(key).push({ev,dateISO});}
-      const WEEK_MS=7*24*60*60*1000;
-      groups.forEach(list=>{if(list.length<2)return;list.sort((a,b)=>a.dateISO.localeCompare(b.dateISO));let weekly=false;for(let i=1;i<list.length;i++){const prev=list[i-1].dateISO,curr=list[i].dateISO;const diff=Math.abs(new Date(curr).getTime()-new Date(prev).getTime());if(diff===0)continue;const ratio=diff/WEEK_MS;const rounded=Math.round(ratio);if(rounded>=1&&Math.abs(ratio-rounded)<=0.15){weekly=true;break;}}
-        if(weekly){list.forEach(x=>{x.ev.__weeklyHint=true;});}
-      });
-    }
+    function recurrenceAnchor(ev){if(!ev||typeof ev!=="object")return"";const id=ev.recurringEventId||ev.recurring_event_id||ev.seriesMasterId||ev.series_master_id||ev.masterEventId||ev.master_event_id||ev.parentId||ev.parent_id;if(id)return"rec:"+id;const title=(ev.summary||ev.title||"").trim().toLowerCase();const time=(ev.time||ev.startTime||ev.start_time||"").toString().trim();const rawDur=Number(ev.durationMin??ev.durationMinutes??ev.duration??0);const duration=Number.isFinite(rawDur)?rawDur:0;const location=(ev.location||"").trim().toLowerCase();if(!title&&!time)return"";return"heur:"+[title,time,duration,location].join("|");}
+    function markLikelyWeekly(events){const groups=new Map();for(const ev of events){if(!ev||typeof ev!=="object")continue;const key=recurrenceAnchor(ev);if(!key)continue;const dateISO=fromAnyToLocalISO(ev.startISO||ev.date);if(!dateISO||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(dateISO))continue;if(!groups.has(key))groups.set(key,[]);groups.get(key).push({ev,dateISO});}const WEEK_MS=7*24*60*60*1000;groups.forEach(list=>{if(list.length<2)return;list.sort((a,b)=>a.dateISO.localeCompare(b.dateISO));let weekly=false;for(let i=1;i<list.length;i++){const prev=list[i-1].dateISO,curr=list[i].dateISO;const diff=Math.abs(new Date(curr).getTime()-new Date(prev).getTime());if(diff===0)continue;const ratio=diff/WEEK_MS;const rounded=Math.round(ratio);if(rounded>=1&&Math.abs(ratio-rounded)<=0.15){weekly=true;break;}}if(weekly){list.forEach(x=>{x.ev.__weeklyHint=true;});}});}
     function detectWeeklyRepeat(ev){if(!ev||typeof ev!=="object")return false;if(ev.repeatWeekly||ev.repeat_weekly)return true;if(ev.__weeklyHint)return true;const freq=(ev.repeatFrequency||ev.repeat_frequency||ev.frequency||ev.recurrenceFrequency||"").toString();const type=(ev.repeatType||ev.repeat_type||ev.recurrenceType||"").toString();if(containsWeekly(freq)||containsWeekly(type))return true;const interval=Number(ev.repeatInterval||ev.repeat_interval||ev.interval||ev.recurrenceInterval);if((freq||type)&&Number.isFinite(interval)&&interval===1&&/(week|uge)/i.test(freq+" "+type))return true;return containsWeekly(ev.recurrence)||containsWeekly(ev.recurrenceRule)||containsWeekly(ev.recurrence_rule)||containsWeekly(ev.repeat)||containsWeekly(ev.repeatRule)||containsWeekly(ev.pattern)||containsWeekly(ev.schedule)||containsWeekly(ev.recurrenceText)||containsWeekly(ev.recurrence_text)||containsWeekly(ev.repeatText)||containsWeekly(ev.repeat_text)}
     async function syncNow(){
-      const shouldCascadeAula=aulaLinks().length>0;
       try{
         updateGoogleStatus('henter…',{state:'loading'});
         const evs=await fetchEvents();
@@ -1842,11 +1302,19 @@
         let created=0;
         for(const ev of evs){
           const date=fromAnyToLocalISO(ev.startISO||ev.date);
-          const id="gcal:"+ev.id;
+          const calendarId=(ev.calendarId||ev.calendar_id||ev.calendar||ev.calendarID||"").toString().trim();
+          const rawRemoteId=(ev.id||ev.uid||"").toString().trim();
+          const compositeParts=[calendarId,rawRemoteId].filter(Boolean);
+          let idBody=compositeParts.join('#');
+          if(!idBody){
+            const fallbackKey=[ev.summary||"",date||"",ev.time||"",ev.location||""].join('|');
+            idBody=djb2(fallbackKey);
+          }
+          const id="gcal:"+idBody;
           const repeatWeeklyAuto=detectWeeklyRepeat(ev);
           const seriesAnchor=recurrenceAnchor(ev);
           const derivedSeriesId=seriesAnchor?`gseries:${seriesAnchor}`:"";
-          let item={id,title:ev.summary||"(uden titel)",type:"Aktivitet",people:["Alle"],person:"Alle",date,time:ev.time||"",durationMin:ev.durationMin||30,location:ev.location||"",note:ev.description||"",repeatWeekly:repeatWeeklyAuto,done:false,source:"google",manualRepeatWeekly:false,autoRepeatWeekly:repeatWeeklyAuto,seriesId:derivedSeriesId||undefined};
+          let item={id,title:ev.summary||"(uden titel)",type:"Aktivitet",people:["Alle"],person:"Alle",date,time:ev.time||"",durationMin:ev.durationMin||30,location:ev.location||"",note:ev.description||"",repeatWeekly:repeatWeeklyAuto,done:false,source:"google",manualRepeatWeekly:false,autoRepeatWeekly:repeatWeeklyAuto,seriesId:derivedSeriesId||undefined,calendarId:calendarId||undefined};
           const uid=uidFor(item);
           const initialSeriesId=safeSeriesId(item)||derivedSeriesId||"";
           if(shouldIgnoreGoogleEvent(gState,{uid,seriesId:initialSeriesId,dateISO:date}))continue;
@@ -1864,6 +1332,7 @@
             const manualOverride=!!(existingItem.manualRepeatWeekly||(autoPrev!==undefined&&existingItem.repeatWeekly!==autoPrev));
             item.manualRepeatWeekly=manualOverride;
             if(manualOverride){item.repeatWeekly=!!existingItem.repeatWeekly;}
+            if(existingItem.calendarId&&!item.calendarId){item.calendarId=existingItem.calendarId;}
           }
           const seriesIdToUse=safeSeriesId(item)||derivedSeriesId;
           if(seriesIdToUse&&!existingItem){
@@ -1877,6 +1346,7 @@
               if(seriesSource.manualRepeatWeekly!==undefined){item.manualRepeatWeekly=!!seriesSource.manualRepeatWeekly;}
               if(seriesSource.autoRepeatWeekly!==undefined){item.autoRepeatWeekly=seriesSource.autoRepeatWeekly;}
               if(seriesSource.repeatWeekly!==undefined){item.repeatWeekly=!!seriesSource.repeatWeekly;}
+              if(seriesSource.calendarId&&!item.calendarId){item.calendarId=seriesSource.calendarId;}
             }
           }
           item.people=normalizePeopleList(item.people);
@@ -1889,7 +1359,7 @@
           if(seriesIdToUse){item.seriesId=seriesIdToUse;}
           const existingKey=existingItem?peopleKey(existingItem.people&&existingItem.people.length?existingItem.people:existingItem.person):"";
           const newKey=peopleKey(item.people);
-          const needsUpdate=!existingItem||["title","type","date","time","durationMin","location","note","repeatWeekly","repeatYearly","done","manualRepeatWeekly","autoRepeatWeekly","seriesId"].some(key=>(existingItem?existingItem[key]:undefined)!==item[key])||existingKey!==newKey;
+          const needsUpdate=!existingItem||["title","type","date","time","durationMin","location","note","repeatWeekly","repeatYearly","done","manualRepeatWeekly","autoRepeatWeekly","seriesId","calendarId"].some(key=>(existingItem?existingItem[key]:undefined)!==item[key])||existingKey!==newKey;
           if(idx[uid]===ev.updated&&!needsUpdate)continue;
           upsert(item);
           idx[uid]=ev.updated;
@@ -1901,12 +1371,9 @@
       }catch(e){
         console.error(e);
         updateGoogleStatus('fejl',{state:'error',persist:true,detail:'Kunne ikke hente Google-data'});
-      }finally{
-        if(shouldCascadeAula){
-          syncAula().catch(err=>console.error('[Aula sync efter Google]',err));
-        }
       }
     }
+    hydrateGoogleStatus();
     function resetGoogleSync(){
       localStorage.removeItem(LS_GIDX);
       localStorage.removeItem(LS_GSTATE);
@@ -1923,59 +1390,6 @@
     if(gSyncSettingsBtn)gSyncSettingsBtn.addEventListener('click',()=>syncNow());
     const gResetSettingsBtn=$("gResetSettings");
     if(gResetSettingsBtn)gResetSettingsBtn.addEventListener('click',resetGoogleSync);
-
-    const aulaFeedInput=$("aulaFeedUrl"), aulaYearInput=$("aulaYearUrl"), aulaWeekInput=$("aulaWeekUrl");
-    function populateAulaInputs(){
-      if(aulaFeedInput)aulaFeedInput.value=aulaConfig.feedUrl||'';
-      if(aulaYearInput)aulaYearInput.value=aulaConfig.yearUrl||'';
-      if(aulaWeekInput)aulaWeekInput.value=aulaConfig.weekUrl||'';
-    }
-    populateAulaInputs();
-    const aulaSaveBtn=$("aulaSave");
-    if(aulaSaveBtn){
-      aulaSaveBtn.addEventListener('click',()=>{
-        const feed=normalizeAulaUrl(aulaFeedInput?aulaFeedInput.value:'');
-        const year=normalizeAulaUrl(aulaYearInput?aulaYearInput.value:'');
-        const week=normalizeAulaUrl(aulaWeekInput?aulaWeekInput.value:'');
-        const prevFeed=aulaConfig.feedUrl||'';
-        const prevYear=aulaConfig.yearUrl||'';
-        const prevWeek=aulaConfig.weekUrl||'';
-        const changed=prevFeed!==feed||prevYear!==year||prevWeek!==week;
-        aulaConfig=saveAulaConfig({feedUrl:feed,yearUrl:year,weekUrl:week});
-        populateAulaInputs();
-        if(changed){
-          localStorage.removeItem(LS_AULA_SYNC_META);
-        }
-        ensureAulaBadge();
-      });
-    }
-    const aulaResetLinksBtn=$("aulaResetLinks");
-    if(aulaResetLinksBtn){
-      aulaResetLinksBtn.addEventListener('click',()=>{
-        aulaConfig=saveAulaConfig({feedUrl:'',yearUrl:'',weekUrl:''});
-        populateAulaInputs();
-        localStorage.removeItem(LS_AULA_SYNC_META);
-        ensureAulaBadge();
-      });
-    }
-    const aulaLinksBtn=$("aLinks");
-    if(aulaLinksBtn)aulaLinksBtn.addEventListener('click',()=>openSettings('aulaFeedUrl'));
-    const aulaSyncBtn=$("aSync");
-    if(aulaSyncBtn)aulaSyncBtn.addEventListener('click',()=>syncAula());
-    function resetAulaSync(){
-      localStorage.removeItem(LS_AULA_IDX);
-      localStorage.removeItem(LS_AULA_STATE);
-      localStorage.removeItem(LS_AULA_SYNC_META);
-      aulaStateCache=null;
-      updateAulaStatus('nulstiller…',{state:'loading'});
-      syncAula();
-    }
-    const aulaResetBtn=$("aReset");
-    if(aulaResetBtn)aulaResetBtn.addEventListener('click',resetAulaSync);
-    const aulaSyncSettingsBtn=$("aSyncSettings");
-    if(aulaSyncSettingsBtn)aulaSyncSettingsBtn.addEventListener('click',()=>syncAula());
-    const aulaResetSettingsBtn=$("aResetSettings");
-    if(aulaResetSettingsBtn)aulaResetSettingsBtn.addEventListener('click',resetAulaSync);
 
     /* ---------- Supabase bridges ---------- */
   </script>
@@ -2033,6 +1447,7 @@
         }
         const rawPeople=payload.people&&payload.people.length?payload.people:(payload.person||base.person);
         const normalizedPeople=normalizePeopleList(rawPeople);
+        const calendarIdVal=(payload.calendarId??payload.calendar_id??base.calendar_id??"").toString().trim();
         const out={
           id:derivedId,
           title:(payload.title||base.title||"(uden titel)").trim()||"(uden titel)",
@@ -2055,7 +1470,8 @@
           repeatUntil:toISO(payload.repeatUntil||payload.repeat_until||base.repeat_until||""),
           seriesId:payload.seriesId||payload.series_id||base.series_id||derivedId,
           overrideOf:payload.overrideOf||payload.override_of||base.override_of||"",
-          overrideBaseId:payload.overrideBaseId||payload.override_base_id||base.override_base_id||""
+          overrideBaseId:payload.overrideBaseId||payload.override_base_id||base.override_base_id||"",
+          calendarId:calendarIdVal
         };
         const uidGuess=ensureGoogleIdFromUid();
         if(uidGuess?.dateHint && !out.date){
