@@ -63,6 +63,30 @@
     .hint{font-size:12px;color:#6b7280;margin:4px 0 0}
     .note.people{color:#0f172a;font-weight:700}
     .settings{width:min(860px,92vw);max-height:min(92vh,92dvh);overflow:auto;background:#fff;border-radius:16px;box-shadow:var(--shadow);padding:16px}
+    .settings-sections{display:grid;gap:18px;margin-top:16px}
+    .settings-block{background:#f8fafc;border-radius:14px;padding:16px;border:1px solid #e2e8f0}
+    .settings-block h4{margin:0;font-size:16px;font-weight:800;color:#0f172a}
+    .settings-block .subtitle{display:block;margin-top:4px;font-size:13px;color:#64748b;font-weight:600}
+    .tip{font-size:12px;color:#64748b;line-height:1.5}
+    .sync-card{margin-top:14px;padding:14px;border-radius:12px;background:#fff;border:1px solid #e5e7eb;box-shadow:0 6px 20px rgba(15,23,42,.06)}
+    .sync-card:first-of-type{margin-top:18px}
+    .sync-card + .sync-card{margin-top:12px}
+    .sync-card__header{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:12px}
+    .sync-card__title{font-weight:800;font-size:15px;color:#0f172a}
+    .sync-card__status{font-weight:700;color:#0f172a;margin-top:4px}
+    .sync-card__status[data-state="error"]{color:#b91c1c}
+    .sync-card__status[data-state="warn"]{color:#b45309}
+    .sync-card__status[data-state="ok"]{color:#047857}
+    .sync-card__status[data-state="loading"]{color:#0f172a}
+    .sync-card__meta{font-size:12px;color:#64748b;margin-top:4px}
+    .sync-card__actions{display:flex;gap:8px;flex-wrap:wrap}
+    .sync-card__actions .btn.small{padding:8px 12px}
+    .sync-card__form{margin-top:12px;display:grid;gap:10px}
+    .sync-card__form label{font-size:12px;font-weight:800;color:#334155}
+    .sync-card__form input{width:100%;border:1px solid #e5e7eb;border-radius:10px;padding:10px 12px;font:inherit;background:#fff}
+    .sync-card__form .hint{margin:0;font-size:12px;color:#6b7280}
+    .sync-card__form-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:4px}
+    @media (max-width:720px){.sync-card__header{flex-direction:column;align-items:flex-start}}
     .row-s{display:grid;grid-template-columns:44px 1fr 1fr 64px 32px;gap:12px;align-items:center;padding:8px;border:1px solid #e5e7eb;border-radius:12px;margin-bottom:8px}
     .initial{width:36px;height:36px;border-radius:999px;display:grid;place-items:center;background:#eef2ff;font-weight:800;overflow:hidden}.initial img{width:100%;height:100%;object-fit:cover;border-radius:inherit}.swatch{width:14px;height:14px;border-radius:999px;border:1px solid #e5e7eb;justify-self:end}
     @media (max-width:980px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media (max-width:640px){.grid{grid-template-columns:1fr}}
@@ -122,7 +146,7 @@
     <div class="sync-group">
       <div id="aBadge" class="badge">Aula sync: —</div>
       <button class="btn small" id="aSync">Sync nu</button>
-      <button class="btn small ghost" id="aLinks">Links…</button>
+      <button class="btn small ghost" id="aLinks" title="Åbn indstillinger for Aula">Rediger links</button>
       <button class="btn small ghost" id="aReset">Nulstil</button>
     </div>
   </div>
@@ -167,42 +191,73 @@
   </div>
 
   <!-- Settings -->
-  <div id="settBD" class="backdrop">
-    <div class="settings">
+  <div id="settBD" class="backdrop" aria-hidden="true">
+    <div class="settings" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
       <div style="display:flex;justify-content:space-between;align-items:center">
-        <h3>Indstillinger · Familie</h3>
-        <button class="btn ghost" id="settClose">Luk</button>
+        <h3 id="settingsTitle">Indstillinger · Familie</h3>
+        <button class="btn ghost" id="settClose" type="button">Luk</button>
       </div>
-      <div id="settRows"></div>
-      <div class="tip">Farver og avatar-billeder synkroniseres via Supabase til alle enheder, så ændringer vises overalt.</div>
-      <div class="actions" style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px">
-        <button class="btn primary" id="settSave">Gem ændringer</button>
+      <div class="settings-sections">
+        <section class="settings-block" aria-labelledby="calendarSyncHeading">
+          <div>
+            <h4 id="calendarSyncHeading">Kalendersynkronisering</h4>
+            <span class="subtitle">Se status og opdater Aula-links</span>
+          </div>
+          <div class="sync-card">
+            <div class="sync-card__header">
+              <div>
+                <div class="sync-card__title">Google Kalender</div>
+                <div id="gStatusText" class="sync-card__status" data-state="idle">—</div>
+                <div id="gStatusMeta" class="sync-card__meta">Ingen synkronisering endnu.</div>
+              </div>
+              <div class="sync-card__actions">
+                <button class="btn small" id="gSyncSettings" type="button">Sync nu</button>
+                <button class="btn small ghost" id="gResetSettings" type="button">Nulstil &amp; sync</button>
+              </div>
+            </div>
+            <p class="hint" style="margin-top:10px">Henter begivenheder fra den delte Google Kalender via Apps Script.</p>
+          </div>
+          <div class="sync-card">
+            <div class="sync-card__header">
+              <div>
+                <div class="sync-card__title">Aula</div>
+                <div id="aStatusText" class="sync-card__status" data-state="idle">—</div>
+                <div id="aStatusMeta" class="sync-card__meta">Ingen synkronisering endnu.</div>
+              </div>
+              <div class="sync-card__actions">
+                <button class="btn small" id="aSyncSettings" type="button">Sync nu</button>
+                <button class="btn small ghost" id="aResetSettings" type="button">Nulstil &amp; sync</button>
+              </div>
+            </div>
+            <div class="sync-card__form">
+              <div>
+                <label for="aulaYearUrl">Årskalender-link</label>
+                <input id="aulaYearUrl" type="url" placeholder="https://.../aula_year.ics">
+                <p class="hint">Kopier linket fra Aula &rarr; Kalendersynkronisering &rarr; Årskalender.</p>
+              </div>
+              <div>
+                <label for="aulaWeekUrl">Ugekalender-link</label>
+                <input id="aulaWeekUrl" type="url" placeholder="https://.../aula_week.ics">
+                <p class="hint">Kopier linket fra Aula &rarr; Kalendersynkronisering &rarr; Ugekalender.</p>
+              </div>
+              <div class="sync-card__form-actions">
+                <button class="btn ghost small" id="aulaResetLinks" type="button">Ryd links</button>
+                <button class="btn primary small" id="aulaSave" type="button">Gem links</button>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="settings-block" aria-labelledby="peopleHeading">
+          <div>
+            <h4 id="peopleHeading">Personer</h4>
+            <span class="subtitle">Opdater navne, farver og avatarer</span>
+          </div>
+          <div id="settRows"></div>
+          <div class="tip" style="margin-top:12px">Farver og avatar-billeder synkroniseres via Supabase til alle enheder, så ændringer vises overalt.</div>
+        </section>
       </div>
-    </div>
-  </div>
-
-  <!-- Aula links -->
-  <div id="aulaBD" class="backdrop" aria-hidden="true">
-    <div class="modal">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <h3 style="margin:0">Aula kalendersynk</h3>
-        <button class="btn ghost" id="aulaClose">Luk</button>
-      </div>
-      <div class="form">
-        <div class="full">
-          <label for="aulaYearUrl">Årskalender-link</label>
-          <input id="aulaYearUrl" type="url" placeholder="https://.../aula_year.ics">
-          <p class="hint">Kopier linket fra Aula &rarr; Kalendersynkronisering &rarr; Årskalender.</p>
-        </div>
-        <div class="full">
-          <label for="aulaWeekUrl">Ugekalender-link</label>
-          <input id="aulaWeekUrl" type="url" placeholder="https://.../aula_week.ics">
-          <p class="hint">Kopier linket fra Aula &rarr; Kalendersynkronisering &rarr; Ugekalender.</p>
-        </div>
-      </div>
-      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px">
-        <button class="btn ghost" id="aulaCancel">Annuller</button>
-        <button class="btn primary" id="aulaSave">Gem</button>
+      <div class="actions" style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px">
+        <button class="btn primary" id="settSave" type="button">Gem ændringer</button>
       </div>
     </div>
   </div>
@@ -230,7 +285,7 @@
     /* ---------- core utils ---------- */
     const RAW_HID=(new URLSearchParams(location.search).get("hid")||"").trim();
     const HID=(RAW_HID||"DEFAULT").toUpperCase();
-    const LS_ITEMS="fam_items_v1", LS_PREFS="fam_people_prefs_v1", LS_GIDX="gcal_index", LS_GSTATE="gcal_state_v1", LS_AULA_IDX="aula_index_v1", LS_AULA_STATE="aula_state_v1", LS_AULA_CONFIG="aula_config_v1";
+    const LS_ITEMS="fam_items_v1", LS_PREFS="fam_people_prefs_v1", LS_GIDX="gcal_index", LS_GSTATE="gcal_state_v1", LS_GSYNC_META="gcal_sync_meta_v1", LS_AULA_IDX="aula_index_v1", LS_AULA_STATE="aula_state_v1", LS_AULA_CONFIG="aula_config_v1", LS_AULA_SYNC_META="aula_sync_meta_v1";
     const LS_VIEW_MODE="fam_view_mode";
     const CELEBRATION_LS="fam_celebrations_v1";
     const CELEBRATION_THRESHOLD=6;
@@ -276,7 +331,7 @@
     const WEEK_DAY_NAMES=["mandag","tirsdag","onsdag","torsdag","fredag","lørdag","søndag"];
     const $ = (id)=>document.getElementById(id);
     const grid = $("grid"), peopleBar = $("peopleBar"), weekNo = $("weekNo"), weekBtn = $("weekBtn"), viewToggle=$("viewToggle");
-    const gBadge=$("gBadge"), aBadge=$("aBadge");
+    const gBadge=$("gBadge"), aBadge=$("aBadge"), gStatusText=$("gStatusText"), gStatusMeta=$("gStatusMeta"), aStatusText=$("aStatusText"), aStatusMeta=$("aStatusMeta");
 
     function fmtISO(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
     function fromAnyToLocalISO(x){
@@ -293,6 +348,39 @@
 
     function loadLS(k,fallback){try{const v=localStorage.getItem(k);return v?JSON.parse(v):fallback}catch(_){return fallback}}
     function saveLS(k,v){localStorage.setItem(k,JSON.stringify(v))}
+    function renderSyncMeta(el,meta){
+      if(!el)return;
+      if(!meta||!meta.ts){el.textContent="Ingen synkronisering endnu.";return;}
+      const dt=new Date(meta.ts);
+      if(Number.isNaN(dt.getTime())){el.textContent=meta.status||"Ingen synkronisering endnu.";return;}
+      const dateStr=dt.toLocaleDateString('da-DK',{day:'2-digit',month:'short',year:'numeric'});
+      const timeStr=dt.toLocaleTimeString('da-DK',{hour:'2-digit',minute:'2-digit'});
+      const detail=(meta.detail||"").trim();
+      const base=(detail||meta.status||"").trim();
+      el.textContent=base?`${base} · ${dateStr} kl. ${timeStr}`:`${dateStr} kl. ${timeStr}`;
+    }
+    function updateGoogleStatus(text,opts={}){
+      if(gBadge)gBadge.textContent='Google sync: '+text;
+      if(gStatusText){gStatusText.textContent=text;gStatusText.dataset.state=opts.state||gStatusText.dataset.state||'idle';}
+      let meta;
+      if(Object.prototype.hasOwnProperty.call(opts,'meta')){meta=opts.meta;}else{meta=loadLS(LS_GSYNC_META,null);}
+      if(opts.persist){
+        meta={status:text,state:opts.state||'info',detail:opts.detail||'',ts:Date.now()};
+        saveLS(LS_GSYNC_META,meta);
+      }
+      renderSyncMeta(gStatusMeta,meta);
+    }
+    function updateAulaStatus(text,opts={}){
+      if(aBadge)aBadge.textContent='Aula sync: '+text;
+      if(aStatusText){aStatusText.textContent=text;aStatusText.dataset.state=opts.state||aStatusText.dataset.state||'idle';}
+      let meta;
+      if(Object.prototype.hasOwnProperty.call(opts,'meta')){meta=opts.meta;}else{meta=loadLS(LS_AULA_SYNC_META,null);}
+      if(opts.persist){
+        meta={status:text,state:opts.state||'info',detail:opts.detail||'',ts:Date.now()};
+        saveLS(LS_AULA_SYNC_META,meta);
+      }
+      renderSyncMeta(aStatusMeta,meta);
+    }
     const DEFAULT_AULA_CONFIG={yearUrl:"",weekUrl:""};
     function loadAulaConfig(){const raw=loadLS(LS_AULA_CONFIG,DEFAULT_AULA_CONFIG)||{};return {...DEFAULT_AULA_CONFIG,...raw};}
     function saveAulaConfig(cfg){const next={...DEFAULT_AULA_CONFIG,...(cfg||{})};saveLS(LS_AULA_CONFIG,next);return next;}
@@ -1122,8 +1210,36 @@
     $("next").onclick=()=>{shiftRange(viewMode==="day"?1:7)}
     weekBtn.onclick=()=>{setFocusDate(new Date());render()}
     $("newBtn").onclick=()=>openNew()
-    $("settingsBtn").onclick=()=>{buildSettings();$("settBD").style.display="flex"}
-    $("settClose").onclick=()=>{$("settBD").style.display="none"}
+    const settingsBackdrop=$("settBD");
+    function refreshSyncSettings(){
+      populateAulaInputs();
+    }
+    function openSettings(focusId){
+      buildSettings();
+      refreshSyncSettings();
+      if(!settingsBackdrop)return;
+      settingsBackdrop.style.display='flex';
+      settingsBackdrop.setAttribute('aria-hidden','false');
+      if(focusId){
+        const target=document.getElementById(focusId);
+        if(target){
+          requestAnimationFrame(()=>{
+            target.focus();
+            target.scrollIntoView({behavior:'smooth',block:'center'});
+          });
+        }
+      }
+    }
+    function closeSettings(){
+      if(!settingsBackdrop)return;
+      settingsBackdrop.style.display='none';
+      settingsBackdrop.setAttribute('aria-hidden','true');
+    }
+    $("settingsBtn").onclick=()=>openSettings();
+    $("settClose").onclick=()=>closeSettings();
+    if(settingsBackdrop){
+      settingsBackdrop.addEventListener('click',e=>{if(e.target===settingsBackdrop)closeSettings();});
+    }
     if(viewToggle){
       viewToggle.onclick=()=>{
         viewMode=viewMode==="week"?"day":"week";
@@ -1322,15 +1438,28 @@
       const links=[aulaConfig.yearUrl,aulaConfig.weekUrl].map(normalizeAulaUrl).filter(Boolean);
       return Array.from(new Set(links));
     }
-    function setAulaBadge(text){
-      if(!aBadge)return;
-      aBadge.textContent='Aula sync: '+text;
+    function hydrateGoogleStatus(){
+      const stored=loadLS(LS_GSYNC_META,null);
+      if(stored){
+        updateGoogleStatus(stored.status||'—',{state:stored.state||'info',meta:stored});
+      }else{
+        updateGoogleStatus('—',{state:'idle',meta:null});
+      }
     }
     function ensureAulaBadge(){
-      if(!aBadge)return;
-      if(aulaLinks().length){setAulaBadge('klar');}
-      else setAulaBadge('tilføj links');
+      const stored=loadLS(LS_AULA_SYNC_META,null);
+      const hasLinks=aulaLinks().length>0;
+      if(hasLinks){
+        if(stored){
+          updateAulaStatus(stored.status||'klar',{state:stored.state||'info',meta:stored});
+        }else{
+          updateAulaStatus('klar',{state:'idle',meta:null});
+        }
+      }else{
+        updateAulaStatus('tilføj links',{state:'warn',meta:null});
+      }
     }
+    hydrateGoogleStatus();
     ensureAulaBadge();
     function decodeICSValue(value){
       if(typeof value!=='string')return'';
@@ -1526,9 +1655,9 @@
     }
     async function syncAula(){
       const links=aulaLinks();
-      if(!links.length){setAulaBadge('mangler links');return;}
+      if(!links.length){updateAulaStatus('mangler links',{state:'warn',persist:true,detail:'Tilføj Aula-links'});return;}
       try{
-        setAulaBadge('henter…');
+        updateAulaStatus('henter…',{state:'loading'});
         const all=[];
         for(let i=0;i<links.length;i+=1){
           const link=links[i];
@@ -1602,17 +1731,17 @@
           created++;
         }
         saveAulaIdx(idx);
-        setAulaBadge(created?`+${created} opdateret`:'ingen ændringer');
+        const status=created?`+${created} opdateret`:'ingen ændringer';
+        updateAulaStatus(status,{state:'ok',persist:true,detail:status});
       }catch(err){
         console.error('[Aula sync]',err);
-        setAulaBadge('fejl');
+        updateAulaStatus('fejl',{state:'error',persist:true,detail:'Kunne ikke hente Aula-data'});
       }
     }
 
     /* ---------- Google sync (enkeltforekomster) ---------- */
     const GAS_URL="https://script.google.com/macros/s/AKfycbyQeS_NvMVv4A3IImB6S3AsRt67aSpeKuaoHHSf8K4xRE9sx3zSZS8zHlvZFL_WDIKl/exec";
     function loadGIdx(){return loadLS(LS_GIDX,{})}function saveGIdx(x){saveLS(LS_GIDX,x)}
-    function setBadge(t){gBadge.textContent="Google sync: "+t}
     async function fetchEvents(){
       const url=new URL(GAS_URL,location.href);
       url.searchParams.set('t',Date.now().toString());
@@ -1631,7 +1760,7 @@
       });
     }
     function detectWeeklyRepeat(ev){if(!ev||typeof ev!=="object")return false;if(ev.repeatWeekly||ev.repeat_weekly)return true;if(ev.__weeklyHint)return true;const freq=(ev.repeatFrequency||ev.repeat_frequency||ev.frequency||ev.recurrenceFrequency||"").toString();const type=(ev.repeatType||ev.repeat_type||ev.recurrenceType||"").toString();if(containsWeekly(freq)||containsWeekly(type))return true;const interval=Number(ev.repeatInterval||ev.repeat_interval||ev.interval||ev.recurrenceInterval);if((freq||type)&&Number.isFinite(interval)&&interval===1&&/(week|uge)/i.test(freq+" "+type))return true;return containsWeekly(ev.recurrence)||containsWeekly(ev.recurrenceRule)||containsWeekly(ev.recurrence_rule)||containsWeekly(ev.repeat)||containsWeekly(ev.repeatRule)||containsWeekly(ev.pattern)||containsWeekly(ev.schedule)||containsWeekly(ev.recurrenceText)||containsWeekly(ev.recurrence_text)||containsWeekly(ev.repeatText)||containsWeekly(ev.repeat_text)}
-    async function syncNow(){try{setBadge("henter…");const evs=await fetchEvents();markLikelyWeekly(evs);const idx=loadGIdx();const gState=getGState();let created=0;for(const ev of evs){const date=fromAnyToLocalISO(ev.startISO||ev.date);const id="gcal:"+ev.id;const repeatWeeklyAuto=detectWeeklyRepeat(ev);const seriesAnchor=recurrenceAnchor(ev);const derivedSeriesId=seriesAnchor?`gseries:${seriesAnchor}`:"";let item={id,title:ev.summary||"(uden titel)",type:"Aktivitet",people:["Alle"],person:"Alle",date,time:ev.time||"",durationMin:ev.durationMin||30,location:ev.location||"",note:ev.description||"",repeatWeekly:repeatWeeklyAuto,done:false,source:"google",manualRepeatWeekly:false,autoRepeatWeekly:repeatWeeklyAuto,seriesId:derivedSeriesId||undefined};const uid=uidFor(item);const initialSeriesId=safeSeriesId(item)||derivedSeriesId||"";if(shouldIgnoreGoogleEvent(gState,{uid,seriesId:initialSeriesId,dateISO:date}))continue;const existingIdx=items.findIndex(x=>uidFor(x)===uid);const existingItem=existingIdx>=0?items[existingIdx]:null;if(existingItem){item.seriesId=safeSeriesId(existingItem)||item.seriesId||derivedSeriesId;item.type=normalizeType(existingItem.type)||item.type;const existingPeople=normalizePeopleList(existingItem.people&&existingItem.people.length?existingItem.people:existingItem.person);item.people=existingPeople;item.person=primaryPersonName(existingPeople);item.done=existingItem.done!==undefined?!!existingItem.done:item.done;if(existingItem.note&&existingItem.note.trim()&&existingItem.note!==item.note)item.note=existingItem.note;const autoPrev=existingItem.autoRepeatWeekly;const manualOverride=!!(existingItem.manualRepeatWeekly||(autoPrev!==undefined&&existingItem.repeatWeekly!==autoPrev));item.manualRepeatWeekly=manualOverride;if(manualOverride){item.repeatWeekly=!!existingItem.repeatWeekly}}
+    async function syncNow(){try{updateGoogleStatus('henter…',{state:'loading'});const evs=await fetchEvents();markLikelyWeekly(evs);const idx=loadGIdx();const gState=getGState();let created=0;for(const ev of evs){const date=fromAnyToLocalISO(ev.startISO||ev.date);const id="gcal:"+ev.id;const repeatWeeklyAuto=detectWeeklyRepeat(ev);const seriesAnchor=recurrenceAnchor(ev);const derivedSeriesId=seriesAnchor?`gseries:${seriesAnchor}`:"";let item={id,title:ev.summary||"(uden titel)",type:"Aktivitet",people:["Alle"],person:"Alle",date,time:ev.time||"",durationMin:ev.durationMin||30,location:ev.location||"",note:ev.description||"",repeatWeekly:repeatWeeklyAuto,done:false,source:"google",manualRepeatWeekly:false,autoRepeatWeekly:repeatWeeklyAuto,seriesId:derivedSeriesId||undefined};const uid=uidFor(item);const initialSeriesId=safeSeriesId(item)||derivedSeriesId||"";if(shouldIgnoreGoogleEvent(gState,{uid,seriesId:initialSeriesId,dateISO:date}))continue;const existingIdx=items.findIndex(x=>uidFor(x)===uid);const existingItem=existingIdx>=0?items[existingIdx]:null;if(existingItem){item.seriesId=safeSeriesId(existingItem)||item.seriesId||derivedSeriesId;item.type=normalizeType(existingItem.type)||item.type;const existingPeople=normalizePeopleList(existingItem.people&&existingItem.people.length?existingItem.people:existingItem.person);item.people=existingPeople;item.person=primaryPersonName(existingPeople);item.done=existingItem.done!==undefined?!!existingItem.done:item.done;if(existingItem.note&&existingItem.note.trim()&&existingItem.note!==item.note)item.note=existingItem.note;const autoPrev=existingItem.autoRepeatWeekly;const manualOverride=!!(existingItem.manualRepeatWeekly||(autoPrev!==undefined&&existingItem.repeatWeekly!==autoPrev));item.manualRepeatWeekly=manualOverride;if(manualOverride){item.repeatWeekly=!!existingItem.repeatWeekly}}
         const seriesIdToUse=safeSeriesId(item)||derivedSeriesId;
         if(seriesIdToUse&&!existingItem){const seriesCandidates=items.filter(x=>safeSeriesId(x)===seriesIdToUse&&!x.overrideOf);const seriesSource=seriesCandidates.find(x=>x.manualRepeatWeekly||x.repeatWeekly)||seriesCandidates[0]||null;if(seriesSource){item.type=normalizeType(seriesSource.type)||item.type;const rememberedPeople=normalizePeopleList(seriesSource.people&&seriesSource.people.length?seriesSource.people:seriesSource.person);if(rememberedPeople.length){item.people=rememberedPeople;item.person=primaryPersonName(rememberedPeople);}if(seriesSource.note&&(!item.note||item.note.trim()==="")){item.note=seriesSource.note;}if(seriesSource.manualRepeatWeekly!==undefined){item.manualRepeatWeekly=!!seriesSource.manualRepeatWeekly;}if(seriesSource.autoRepeatWeekly!==undefined){item.autoRepeatWeekly=seriesSource.autoRepeatWeekly;}if(seriesSource.repeatWeekly!==undefined){item.repeatWeekly=!!seriesSource.repeatWeekly;}}}
         item.people=normalizePeopleList(item.people);
@@ -1645,47 +1774,73 @@
         const existingKey=existingItem?peopleKey(existingItem.people&&existingItem.people.length?existingItem.people:existingItem.person):"";
         const newKey=peopleKey(item.people);
         const needsUpdate=!existingItem||["title","type","date","time","durationMin","location","note","repeatWeekly","repeatYearly","done","manualRepeatWeekly","autoRepeatWeekly","seriesId"].some(key=>(existingItem?existingItem[key]:undefined)!==item[key])||existingKey!==newKey;
-        if(idx[uid]===ev.updated&&!needsUpdate)continue;upsert(item);idx[uid]=ev.updated;created++}saveGIdx(idx);setBadge(created?`+${created} oprettet`:"ingen ændringer")}catch(e){console.error(e);setBadge("fejl")}}
-    $("gSync").onclick=()=>syncNow()
-    $("gReset").onclick=()=>{localStorage.removeItem(LS_GIDX);localStorage.removeItem(LS_GSTATE);gStateCache=null;setBadge("nulstiller…");syncNow()}
+        if(idx[uid]===ev.updated&&!needsUpdate)continue;upsert(item);idx[uid]=ev.updated;created++}saveGIdx(idx);const status=created?`+${created} oprettet`:'ingen ændringer';updateGoogleStatus(status,{state:'ok',persist:true,detail:status});}catch(e){console.error(e);updateGoogleStatus('fejl',{state:'error',persist:true,detail:'Kunne ikke hente Google-data'});}}
+    function resetGoogleSync(){
+      localStorage.removeItem(LS_GIDX);
+      localStorage.removeItem(LS_GSTATE);
+      localStorage.removeItem(LS_GSYNC_META);
+      gStateCache=null;
+      updateGoogleStatus('nulstiller…',{state:'loading'});
+      syncNow();
+    }
+    const gSyncBtn=$("gSync");
+    if(gSyncBtn)gSyncBtn.addEventListener('click',()=>syncNow());
+    const gResetBtn=$("gReset");
+    if(gResetBtn)gResetBtn.addEventListener('click',resetGoogleSync);
+    const gSyncSettingsBtn=$("gSyncSettings");
+    if(gSyncSettingsBtn)gSyncSettingsBtn.addEventListener('click',()=>syncNow());
+    const gResetSettingsBtn=$("gResetSettings");
+    if(gResetSettingsBtn)gResetSettingsBtn.addEventListener('click',resetGoogleSync);
 
-    const aulaYearInput=$("aulaYearUrl"), aulaWeekInput=$("aulaWeekUrl"), aulaModal=$("aulaBD");
-    function openAulaModal(){
-      if(!aulaModal)return;
+    const aulaYearInput=$("aulaYearUrl"), aulaWeekInput=$("aulaWeekUrl");
+    function populateAulaInputs(){
       if(aulaYearInput)aulaYearInput.value=aulaConfig.yearUrl||'';
       if(aulaWeekInput)aulaWeekInput.value=aulaConfig.weekUrl||'';
-      aulaModal.style.display='flex';
-      aulaModal.setAttribute('aria-hidden','false');
     }
-    function closeAulaModal(){
-      if(!aulaModal)return;
-      aulaModal.style.display='none';
-      aulaModal.setAttribute('aria-hidden','true');
-    }
-    if(aulaModal){
-      aulaModal.addEventListener('click',e=>{if(e.target===aulaModal)closeAulaModal();});
-    }
+    populateAulaInputs();
     const aulaSaveBtn=$("aulaSave");
     if(aulaSaveBtn){
       aulaSaveBtn.addEventListener('click',()=>{
         const year=normalizeAulaUrl(aulaYearInput?aulaYearInput.value:'');
         const week=normalizeAulaUrl(aulaWeekInput?aulaWeekInput.value:'');
+        const prevYear=aulaConfig.yearUrl||'';
+        const prevWeek=aulaConfig.weekUrl||'';
+        const changed=prevYear!==year||prevWeek!==week;
         aulaConfig=saveAulaConfig({yearUrl:year,weekUrl:week});
-        if(aulaYearInput)aulaYearInput.value=aulaConfig.yearUrl||'';
-        if(aulaWeekInput)aulaWeekInput.value=aulaConfig.weekUrl||'';
+        populateAulaInputs();
+        if(changed){
+          localStorage.removeItem(LS_AULA_SYNC_META);
+        }
         ensureAulaBadge();
-        closeAulaModal();
       });
     }
-    const aulaCancelBtn=$("aulaCancel"), aulaCloseBtn=$("aulaClose");
-    if(aulaCancelBtn)aulaCancelBtn.addEventListener('click',closeAulaModal);
-    if(aulaCloseBtn)aulaCloseBtn.addEventListener('click',closeAulaModal);
+    const aulaResetLinksBtn=$("aulaResetLinks");
+    if(aulaResetLinksBtn){
+      aulaResetLinksBtn.addEventListener('click',()=>{
+        aulaConfig=saveAulaConfig({yearUrl:'',weekUrl:''});
+        populateAulaInputs();
+        localStorage.removeItem(LS_AULA_SYNC_META);
+        ensureAulaBadge();
+      });
+    }
     const aulaLinksBtn=$("aLinks");
-    if(aulaLinksBtn)aulaLinksBtn.addEventListener('click',openAulaModal);
+    if(aulaLinksBtn)aulaLinksBtn.addEventListener('click',()=>openSettings('aulaYearUrl'));
     const aulaSyncBtn=$("aSync");
     if(aulaSyncBtn)aulaSyncBtn.addEventListener('click',()=>syncAula());
+    function resetAulaSync(){
+      localStorage.removeItem(LS_AULA_IDX);
+      localStorage.removeItem(LS_AULA_STATE);
+      localStorage.removeItem(LS_AULA_SYNC_META);
+      aulaStateCache=null;
+      updateAulaStatus('nulstiller…',{state:'loading'});
+      syncAula();
+    }
     const aulaResetBtn=$("aReset");
-    if(aulaResetBtn)aulaResetBtn.addEventListener('click',()=>{localStorage.removeItem(LS_AULA_IDX);localStorage.removeItem(LS_AULA_STATE);aulaStateCache=null;setAulaBadge('nulstiller…');syncAula();});
+    if(aulaResetBtn)aulaResetBtn.addEventListener('click',resetAulaSync);
+    const aulaSyncSettingsBtn=$("aSyncSettings");
+    if(aulaSyncSettingsBtn)aulaSyncSettingsBtn.addEventListener('click',()=>syncAula());
+    const aulaResetSettingsBtn=$("aResetSettings");
+    if(aulaResetSettingsBtn)aulaResetSettingsBtn.addEventListener('click',resetAulaSync);
 
     /* ---------- Supabase bridges ---------- */
   </script>
