@@ -45,7 +45,8 @@
     .muted{color:var(--muted)}
     .note{color:var(--muted);font-size:clamp(11px,1.3vw,13px);line-height:1.2;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;line-clamp:2;word-break:break-word}
     .done{background:var(--done)}.done .titlex{text-decoration:line-through}
-    .floating{position:fixed;right:16px;bottom:16px;display:flex;gap:8px;z-index:999;flex-wrap:wrap;justify-content:flex-end}
+    .floating{position:fixed;right:16px;bottom:16px;display:flex;flex-direction:column;gap:8px;z-index:999;align-items:flex-end}
+    .sync-group{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:flex-end;max-width:320px}
     .badge{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:8px 12px;font-weight:700;color:#334155;box-shadow:var(--shadow)}
     .backdrop{position:fixed;inset:0;background:rgba(2,6,23,.28);display:none;align-items:flex-start;justify-content:center;padding:32px;z-index:2000}
     .modal{width:min(860px,92vw);max-height:min(92vh,92dvh);overflow:auto;background:#fff;border-radius:16px;box-shadow:var(--shadow);padding:16px 16px 12px}
@@ -113,9 +114,17 @@
   </div>
 
   <div class="floating">
-    <div id="gBadge" class="badge">Google sync: —</div>
-    <button class="btn small" id="gSync">Sync nu</button>
-    <button class="btn small ghost" id="gReset">Nulstil &amp; sync</button>
+    <div class="sync-group">
+      <div id="gBadge" class="badge">Google sync: —</div>
+      <button class="btn small" id="gSync">Sync nu</button>
+      <button class="btn small ghost" id="gReset">Nulstil &amp; sync</button>
+    </div>
+    <div class="sync-group">
+      <div id="aBadge" class="badge">Aula sync: —</div>
+      <button class="btn small" id="aSync">Sync nu</button>
+      <button class="btn small ghost" id="aLinks">Links…</button>
+      <button class="btn small ghost" id="aReset">Nulstil</button>
+    </div>
   </div>
 
   <!-- Editor -->
@@ -172,6 +181,31 @@
     </div>
   </div>
 
+  <!-- Aula links -->
+  <div id="aulaBD" class="backdrop" aria-hidden="true">
+    <div class="modal">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <h3 style="margin:0">Aula kalendersynk</h3>
+        <button class="btn ghost" id="aulaClose">Luk</button>
+      </div>
+      <div class="form">
+        <div class="full">
+          <label for="aulaYearUrl">Årskalender-link</label>
+          <input id="aulaYearUrl" type="url" placeholder="https://.../aula_year.ics">
+          <p class="hint">Kopier linket fra Aula &rarr; Kalendersynkronisering &rarr; Årskalender.</p>
+        </div>
+        <div class="full">
+          <label for="aulaWeekUrl">Ugekalender-link</label>
+          <input id="aulaWeekUrl" type="url" placeholder="https://.../aula_week.ics">
+          <p class="hint">Kopier linket fra Aula &rarr; Kalendersynkronisering &rarr; Ugekalender.</p>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px">
+        <button class="btn ghost" id="aulaCancel">Annuller</button>
+        <button class="btn primary" id="aulaSave">Gem</button>
+      </div>
+    </div>
+  </div>
   <div id="celebrationPopup" class="celebration-overlay" role="dialog" aria-modal="true" aria-label="Fejring">
     <div class="celebration-modal" role="document">
       <button id="celebrationClose" class="celebration-close" aria-label="Luk pop-up">✕</button>
@@ -196,7 +230,7 @@
     /* ---------- core utils ---------- */
     const RAW_HID=(new URLSearchParams(location.search).get("hid")||"").trim();
     const HID=(RAW_HID||"DEFAULT").toUpperCase();
-    const LS_ITEMS="fam_items_v1", LS_PREFS="fam_people_prefs_v1", LS_GIDX="gcal_index", LS_GSTATE="gcal_state_v1";
+    const LS_ITEMS="fam_items_v1", LS_PREFS="fam_people_prefs_v1", LS_GIDX="gcal_index", LS_GSTATE="gcal_state_v1", LS_AULA_IDX="aula_index_v1", LS_AULA_STATE="aula_state_v1", LS_AULA_CONFIG="aula_config_v1";
     const LS_VIEW_MODE="fam_view_mode";
     const CELEBRATION_LS="fam_celebrations_v1";
     const CELEBRATION_THRESHOLD=6;
@@ -242,7 +276,7 @@
     const WEEK_DAY_NAMES=["mandag","tirsdag","onsdag","torsdag","fredag","lørdag","søndag"];
     const $ = (id)=>document.getElementById(id);
     const grid = $("grid"), peopleBar = $("peopleBar"), weekNo = $("weekNo"), weekBtn = $("weekBtn"), viewToggle=$("viewToggle");
-    const gBadge=$("gBadge");
+    const gBadge=$("gBadge"), aBadge=$("aBadge");
 
     function fmtISO(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
     function fromAnyToLocalISO(x){
@@ -259,6 +293,9 @@
 
     function loadLS(k,fallback){try{const v=localStorage.getItem(k);return v?JSON.parse(v):fallback}catch(_){return fallback}}
     function saveLS(k,v){localStorage.setItem(k,JSON.stringify(v))}
+    const DEFAULT_AULA_CONFIG={yearUrl:"",weekUrl:""};
+    function loadAulaConfig(){const raw=loadLS(LS_AULA_CONFIG,DEFAULT_AULA_CONFIG)||{};return {...DEFAULT_AULA_CONFIG,...raw};}
+    function saveAulaConfig(cfg){const next={...DEFAULT_AULA_CONFIG,...(cfg||{})};saveLS(LS_AULA_CONFIG,next);return next;}
     function parseISODate(iso){if(typeof iso!=="string")return null;const m=iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);if(!m)return null;const d=new Date(Number(m[1]),Number(m[2])-1,Number(m[3]));return Number.isNaN(d.getTime())?null:d}
     function weekdayDatesFor(dateIso){const base=parseISODate(dateIso);if(!base){return dateIso?[dateIso]:[];}const monday=startOfWeek(base);const out=[];for(let i=0;i<5;i+=1){const d=new Date(monday);d.setDate(monday.getDate()+i);out.push(fmtISO(d));}return Array.from(new Set(out));}
     function loadViewMode(){try{return localStorage.getItem(LS_VIEW_MODE)==="day"?"day":"week";}catch(_){return"week";}}
@@ -327,10 +364,12 @@
       if(it.id && it.id.startsWith("gcal:")) return "g:"+it.id.slice(5)+"|"+date;     // id fra GAS, per forekomst
       if(it.id && it.id.startsWith("gcalr:"))return "gr:"+it.id.slice(6);             // hvis du senere bruger ugentlige ankre
       if(it.source==="google") return "g:"+(it.id||djb2(keyOf(it)))+"|"+date;
+      if(it.source==="aula") return "a:"+(it.id||djb2(keyOf(it)))+"|"+date;
       return "l:"+djb2(keyOf(it));                                                    // lokale
     }
 
     /* ---------- state ---------- */
+    let aulaConfig=loadAulaConfig();
     let PEOPLE, items, current="Alle", editContext=null;
     let focusDate=new Date();
     let wk=startOfWeek(focusDate);
@@ -838,6 +877,7 @@
       const scope=(editContext.hasRepeat && !editContext.isOverride)?currentScope():'series';
       const occISO=toISO(editContext.occurrence||base?.date||"");
       rememberGoogleDeletion({scope,seriesId,occurrenceISO:occISO,existingItem:existing,baseItem:base});
+      rememberAulaDeletion({scope,seriesId,occurrenceISO:occISO,existingItem:existing,baseItem:base});
       if(editContext.isOverride || !editContext.hasRepeat){
         dropItem(editContext.id,{commit:true});
         EBD.style.display="none";
@@ -950,6 +990,32 @@
         payload.manualRepeatWeekly=manualOverride;
         if(prevAuto!==undefined) payload.autoRepeatWeekly=prevAuto;
         payload.source=base.source||'google';
+      }else if(existing && (existing.source||'').toLowerCase()==='aula'){
+        const prevAuto=existing.autoRepeatWeekly;
+        let manualOverride=false;
+        if(prevAuto!==undefined){
+          manualOverride=newRepeat!==prevAuto;
+        }else if(existing.repeatWeekly!==newRepeat){
+          manualOverride=true;
+        }else{
+          manualOverride=!!existing.manualRepeatWeekly;
+        }
+        payload.manualRepeatWeekly=manualOverride;
+        if(prevAuto!==undefined) payload.autoRepeatWeekly=prevAuto;
+        payload.source='aula';
+      }else if(base && (base.source||'').toLowerCase()==='aula'){
+        const prevAuto=base.autoRepeatWeekly;
+        let manualOverride=false;
+        if(prevAuto!==undefined){
+          manualOverride=newRepeat!==prevAuto;
+        }else if(base.repeatWeekly!==newRepeat){
+          manualOverride=true;
+        }else{
+          manualOverride=!!base.manualRepeatWeekly;
+        }
+        payload.manualRepeatWeekly=manualOverride;
+        if(prevAuto!==undefined) payload.autoRepeatWeekly=prevAuto;
+        payload.source='aula';
       }else if(existing && existing.manualRepeatWeekly!==undefined){
         payload.manualRepeatWeekly=existing.manualRepeatWeekly;
         if(existing.autoRepeatWeekly!==undefined) payload.autoRepeatWeekly=existing.autoRepeatWeekly;
@@ -1007,6 +1073,7 @@
       const seriesKey=safeSeriesId(baseItem)||seriesId||baseItem.id;
       const baseDate=toISO(baseItem.date);
       rememberGoogleEdit({scope:scope,seriesId:seriesKey,occurrenceISO:occISO||chosenDate,payload,existingItem:existing,baseItem:baseItem});
+      rememberAulaEdit({scope:scope,seriesId:seriesKey,occurrenceISO:occISO||chosenDate,payload,existingItem:existing,baseItem:baseItem});
 
       if(scope==='series'){
         const updated={...baseItem,...payload,id:baseItem.id,seriesId:seriesKey,overrideOf:"",overrideBaseId:""};
@@ -1090,11 +1157,11 @@
       };const maybe=mutator&&mutator(next);return saveGState(maybe||next);}
     function googleBase(existingItem,baseItem){const hasGoogleId=obj=>obj&&typeof obj.id==='string'&&obj.id.startsWith('gcal:');const isGoogle=obj=>(obj?.source||'').toString().toLowerCase()==='google';if(hasGoogleId(existingItem))return existingItem;if(hasGoogleId(baseItem))return baseItem;if(isGoogle(existingItem))return existingItem;if(isGoogle(baseItem))return baseItem;return existingItem||baseItem||null;}
     function googleCloneForUid({existingItem,baseItem,payload,occurrenceISO}){const ref=googleBase(existingItem,baseItem);const source=ref||existingItem||baseItem||{};const clone={...source,...(payload||{})};if(ref?.id)clone.id=ref.id;if(ref?.source)clone.source=ref.source;if(!clone.source)clone.source='google';clone.date=toISO((payload&&payload.date)||occurrenceISO||source.date||'');return clone;}
-    function captureGoogleFields(payload){if(!payload||typeof payload!=="object")return{};const out={};if(payload.type!==undefined)out.type=normalizeType(payload.type);if(payload.people!==undefined){const norm=normalizePeopleList(payload.people);if(norm.length){out.people=norm.slice();out.person=primaryPersonName(norm);}}if(payload.manualRepeatWeekly!==undefined)out.manualRepeatWeekly=!!payload.manualRepeatWeekly;if(payload.autoRepeatWeekly!==undefined)out.autoRepeatWeekly=payload.autoRepeatWeekly;if(payload.repeatWeekly!==undefined)out.repeatWeekly=!!payload.repeatWeekly;return out;}
+    function captureRemoteFields(payload){if(!payload||typeof payload!=="object")return{};const out={};if(payload.type!==undefined)out.type=normalizeType(payload.type);if(payload.people!==undefined){const norm=normalizePeopleList(payload.people);if(norm.length){out.people=norm.slice();out.person=primaryPersonName(norm);}}if(payload.manualRepeatWeekly!==undefined)out.manualRepeatWeekly=!!payload.manualRepeatWeekly;if(payload.autoRepeatWeekly!==undefined)out.autoRepeatWeekly=payload.autoRepeatWeekly;if(payload.repeatWeekly!==undefined)out.repeatWeekly=!!payload.repeatWeekly;return out;}
     function rememberGoogleEdit({scope,seriesId,occurrenceISO,payload,existingItem,baseItem}){
       const source=(existingItem&&existingItem.source)||(baseItem&&baseItem.source)||payload?.source;
       if(source!=="google")return;
-      const fields=captureGoogleFields(payload);
+      const fields=captureRemoteFields(payload);
       if(Object.keys(fields).length===0)return;
       const effectiveSeries=seriesId||safeSeriesId(existingItem)||safeSeriesId(baseItem)||"";
       updateGState(state=>{
@@ -1163,6 +1230,385 @@
       return{item:changed?next:item};
     }
 
+    const defaultAulaState=()=>({itemOverrides:{},seriesOverrides:{},deletedUids:{},deletedSeries:{}});
+    let aulaStateCache=null;
+    function normalizeAulaState(base){const clean=defaultAulaState();if(base&&typeof base==='object'){if(base.itemOverrides&&typeof base.itemOverrides==='object')clean.itemOverrides={...base.itemOverrides};if(base.seriesOverrides&&typeof base.seriesOverrides==='object')clean.seriesOverrides={...base.seriesOverrides};if(base.deletedUids&&typeof base.deletedUids==='object')clean.deletedUids={...base.deletedUids};if(base.deletedSeries&&typeof base.deletedSeries==='object')clean.deletedSeries={...base.deletedSeries};}return clean;}
+    function getAulaState(){if(!aulaStateCache){aulaStateCache=normalizeAulaState(loadLS(LS_AULA_STATE,defaultAulaState()));}return aulaStateCache;}
+    function saveAulaState(state){aulaStateCache=normalizeAulaState(state||defaultAulaState());saveLS(LS_AULA_STATE,aulaStateCache);return aulaStateCache;}
+    function updateAulaState(mutator){const current=getAulaState();const next={itemOverrides:{...current.itemOverrides},seriesOverrides:{...current.seriesOverrides},deletedUids:{...current.deletedUids},deletedSeries:{...current.deletedSeries}};const maybe=mutator&&mutator(next);return saveAulaState(maybe||next);}
+    function aulaBase(existingItem,baseItem){const hasAulaId=obj=>obj&&typeof obj.id==='string'&&obj.id.startsWith('aula:');const isAula=obj=>(obj?.source||'').toString().toLowerCase()==='aula';if(hasAulaId(existingItem))return existingItem;if(hasAulaId(baseItem))return baseItem;if(isAula(existingItem))return existingItem;if(isAula(baseItem))return baseItem;return existingItem||baseItem||null;}
+    function aulaCloneForUid({existingItem,baseItem,payload,occurrenceISO}){const ref=aulaBase(existingItem,baseItem);const source=ref||existingItem||baseItem||{};const clone={...source,...(payload||{})};if(ref?.id)clone.id=ref.id;if(ref?.source)clone.source=ref.source;if(!clone.source)clone.source='aula';clone.date=toISO((payload&&payload.date)||occurrenceISO||source.date||'');return clone;}
+    function rememberAulaEdit({scope,seriesId,occurrenceISO,payload,existingItem,baseItem}){
+      const source=(existingItem&&existingItem.source)||(baseItem&&baseItem.source)||payload?.source;
+      if((source||'').toLowerCase()!=='aula')return;
+      const fields=captureRemoteFields(payload);
+      if(Object.keys(fields).length===0)return;
+      const effectiveSeries=seriesId||safeSeriesId(existingItem)||safeSeriesId(baseItem)||"";
+      updateAulaState(state=>{
+        if(scope==="series"||scope==="future"){
+          if(!effectiveSeries)return state;
+          const fromISO=scope==="future"?toISO(occurrenceISO||payload?.date||existingItem?.date||baseItem?.date||""):"";
+          state.seriesOverrides[effectiveSeries]={fields,...(fromISO?{from:fromISO}:{} )};
+          delete state.deletedSeries[effectiveSeries];
+          return state;
+        }
+        const reference=aulaCloneForUid({existingItem,baseItem,payload,occurrenceISO});
+        if(!reference)return state;
+        const uid=uidFor(reference);
+        if(!uid.startsWith("a:"))return state;
+        state.itemOverrides[uid]={fields};
+        delete state.deletedUids[uid];
+        return state;
+      });
+    }
+    function rememberAulaDeletion({scope,seriesId,occurrenceISO,existingItem,baseItem}){
+      const source=(existingItem&&existingItem.source)||(baseItem&&baseItem.source)||"";
+      if((source||'').toLowerCase()!=='aula')return;
+      const effectiveSeries=seriesId||safeSeriesId(existingItem)||safeSeriesId(baseItem)||"";
+      updateAulaState(state=>{
+        if(scope==="series"||scope==="future"){
+          if(!effectiveSeries)return state;
+          const fromISO=scope==="future"?toISO(occurrenceISO||existingItem?.date||baseItem?.date||""):"";
+          state.deletedSeries[effectiveSeries]=fromISO?{from:fromISO}:{};
+          delete state.seriesOverrides[effectiveSeries];
+          return state;
+        }
+        const reference=aulaCloneForUid({existingItem,baseItem,occurrenceISO});
+        if(!reference)return state;
+        const uid=uidFor(reference);
+        if(!uid.startsWith("a:"))return state;
+        state.deletedUids[uid]=true;
+        delete state.itemOverrides[uid];
+        return state;
+      });
+    }
+    function shouldIgnoreAulaEvent(state,{uid,seriesId,dateISO}){
+      if(!state)return false;
+      if(uid&&state.deletedUids&&state.deletedUids[uid])return true;
+      if(seriesId){const info=state.deletedSeries&&state.deletedSeries[seriesId];if(info){const cutoff=toISO(info.from||"");if(!cutoff)return true;const target=toISO(dateISO||"");if(!target)return true;if(target>=cutoff)return true;}}
+      return false;
+    }
+    function applyAulaOverrides(state,{uid,seriesId,dateISO,item}){
+      if(!state||!item)return{item};
+      let changed=false;
+      const next={...item};
+      const applyFields=entry=>{
+        if(!entry||typeof entry!=='object')return;
+        const fields=entry.fields||entry;
+        if(!fields||typeof fields!=='object')return;
+        if(fields.type!==undefined&&fields.type!==next.type){next.type=normalizeType(fields.type);changed=true;}
+        if(fields.people!==undefined){const norm=normalizePeopleList(fields.people);if(norm.length){next.people=norm;next.person=primaryPersonName(norm);changed=true;}}
+        if(fields.manualRepeatWeekly!==undefined&&fields.manualRepeatWeekly!==next.manualRepeatWeekly){next.manualRepeatWeekly=!!fields.manualRepeatWeekly;changed=true;}
+        if(fields.autoRepeatWeekly!==undefined&&fields.autoRepeatWeekly!==next.autoRepeatWeekly){next.autoRepeatWeekly=fields.autoRepeatWeekly;changed=true;}
+        if(fields.repeatWeekly!==undefined&&fields.repeatWeekly!==next.repeatWeekly){next.repeatWeekly=!!fields.repeatWeekly;changed=true;}
+      };
+      if(seriesId){const info=state.seriesOverrides&&state.seriesOverrides[seriesId];if(info){const fromISO=toISO(info.from||"");const targetISO=toISO(dateISO||next.date||"");if(!fromISO||targetISO&&(targetISO>=fromISO)){applyFields(info);}}}
+      if(uid){const perItem=state.itemOverrides&&state.itemOverrides[uid];if(perItem)applyFields(perItem);}
+      if(changed){next.people=normalizePeopleList(next.people);next.person=primaryPersonName(next.people);}
+      return{item:changed?next:item};
+    }
+
+    /* ---------- Aula sync ---------- */
+    function normalizeAulaUrl(url){
+      if(!url)return'';
+      const trimmed=(url||'').trim();
+      if(!trimmed)return'';
+      if(/^webcals?:\/\//i.test(trimmed)){
+        return trimmed.replace(/^webcals?:\/\//i,'https://');
+      }
+      return trimmed;
+    }
+    function aulaLinks(){
+      const links=[aulaConfig.yearUrl,aulaConfig.weekUrl].map(normalizeAulaUrl).filter(Boolean);
+      return Array.from(new Set(links));
+    }
+    function setAulaBadge(text){
+      if(!aBadge)return;
+      aBadge.textContent='Aula sync: '+text;
+    }
+    function ensureAulaBadge(){
+      if(!aBadge)return;
+      if(aulaLinks().length){setAulaBadge('klar');}
+      else setAulaBadge('tilføj links');
+    }
+    ensureAulaBadge();
+    function decodeICSValue(value){
+      if(typeof value!=='string')return'';
+      return value.replace(/\\\\/g,'\\').replace(/\\n/g,'\n').replace(/\\,/g,',').replace(/\\;/g,';');
+    }
+    function unfoldICSLines(text){
+      const raw=String(text||'').split(/\r?\n/);
+      const lines=[];
+      for(const line of raw){
+        if(!lines.length){lines.push(line.trimEnd());continue;}
+        if(/^\s/.test(line)){lines[lines.length-1]+=line.slice(1);}else{lines.push(line.trimEnd());}
+      }
+      return lines;
+    }
+    function parseICSTimestamp(value,params){
+      if(!value)return null;
+      const upper={};
+      if(params&&typeof params==='object'){Object.keys(params).forEach(k=>{upper[k.toUpperCase()]=params[k];});}
+      const isDateOnly=upper.VALUE==='DATE'||!value.includes('T');
+      if(isDateOnly){
+        const m=value.match(/^(\d{4})(\d{2})(\d{2})$/);
+        if(!m)return null;
+        const dt=new Date(Number(m[1]),Number(m[2])-1,Number(m[3]));
+        if(Number.isNaN(dt.getTime()))return null;
+        return{date:dt,isDateOnly:true,tz:upper.TZID||''};
+      }
+      const m=value.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})?(Z)?$/);
+      if(m){
+        const year=Number(m[1]);
+        const month=Number(m[2])-1;
+        const day=Number(m[3]);
+        const hour=Number(m[4]);
+        const minute=Number(m[5]);
+        const second=Number(m[6]||'0');
+        const isUtc=!!m[7];
+        const dt=isUtc?new Date(Date.UTC(year,month,day,hour,minute,second)):new Date(year,month,day,hour,minute,second);
+        if(Number.isNaN(dt.getTime()))return null;
+        return{date:dt,isDateOnly:false,tz:upper.TZID||'',isUTC:isUtc};
+      }
+      const guess=new Date(value);
+      if(Number.isNaN(guess.getTime()))return null;
+      return{date:guess,isDateOnly:false,tz:upper.TZID||''};
+    }
+    function parseICSDuration(value){
+      if(typeof value!=='string')return 0;
+      const m=value.match(/^P(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?)?$/i);
+      if(!m)return 0;
+      let minutes=0;
+      if(m[1])minutes+=Number(m[1])*24*60;
+      if(m[2])minutes+=Number(m[2])*60;
+      if(m[3])minutes+=Number(m[3]);
+      if(m[4])minutes+=Math.round(Number(m[4])/60);
+      return minutes;
+    }
+    function parseRRule(value){
+      const out={};
+      if(typeof value!=='string')return out;
+      value.split(';').forEach(part=>{const [k,v='']=part.split('=');if(k)out[k.toUpperCase()]=v;});
+      return out;
+    }
+    function finalizeAulaEvent(raw){
+      if(!raw)return null;
+      const status=(raw.status||'').toUpperCase();
+      if(status==='CANCELLED')return null;
+      const startInfo=raw.start;
+      if(!startInfo||!startInfo.date)return null;
+      const startDate=new Date(startInfo.date.getTime());
+      if(Number.isNaN(startDate.getTime()))return null;
+      const dateISO=fmtISO(startDate);
+      const allDay=!!startInfo.isDateOnly;
+      const hh=String(startDate.getHours()).padStart(2,'0');
+      const mm=String(startDate.getMinutes()).padStart(2,'0');
+      let time=allDay?'':`${hh}:${mm}`;
+      let durationMin=0;
+      if(raw.end&&raw.end.date){
+        const diff=Math.round((raw.end.date.getTime()-startDate.getTime())/60000);
+        if(Number.isFinite(diff)&&diff>0)durationMin=diff;
+      }else if(raw.duration){
+        const dur=parseICSDuration(raw.duration);
+        if(Number.isFinite(dur)&&dur>0)durationMin=dur;
+      }
+      if(allDay){time='';durationMin=0;}else if(!durationMin)durationMin=60;
+      const recurrenceParts=raw.rruleParts||{};
+      const recurrenceDate=raw.recurrenceId&&raw.recurrenceId.date?new Date(raw.recurrenceId.date.getTime()):null;
+      const recurrenceIdISO=recurrenceDate?recurrenceDate.toISOString():'';
+      const updatedDate=raw.lastModified?.date||raw.dtstamp?.date||null;
+      const updated=updatedDate?updatedDate.toISOString():'';
+      const intervalRaw=recurrenceParts.INTERVAL?Number(recurrenceParts.INTERVAL):undefined;
+      const repeatInterval=Number.isFinite(intervalRaw)?intervalRaw:undefined;
+      const baseUid=(raw.uid||'').trim();
+      const seriesId=(raw.rrule||recurrenceIdISO)?`aseries:${baseUid||djb2(raw.summary||'')}`:'';
+      return{
+        uid:baseUid,
+        summary:raw.summary||'',
+        description:raw.description||'',
+        location:raw.location||'',
+        date:dateISO,
+        startISO:dateISO,
+        startDateTime:startDate.toISOString(),
+        time,
+        durationMin,
+        allDay,
+        updated,
+        sequence:(raw.sequence||'').toString(),
+        recurrence:raw.rrule||'',
+        recurrenceRule:raw.rrule||'',
+        repeatRule:raw.rrule||'',
+        repeatFrequency:recurrenceParts.FREQ||'',
+        repeatType:recurrenceParts.FREQ||'',
+        repeatInterval,
+        recurrenceText:raw.rrule||'',
+        repeatText:raw.rrule||'',
+        recurrenceIdISO:recurrenceIdISO,
+        recurringEventId:recurrenceIdISO?(baseUid||''):(raw.rrule?(baseUid||''):''),
+        seriesId,
+        categories:raw.categories||''
+      };
+    }
+    function parseICSEvents(text){
+      if(typeof text!=="string"||!text.trim())return[];
+      const lines=unfoldICSLines(text);
+      const events=[];
+      let current=null;
+      for(const rawLine of lines){
+        const line=rawLine.trim();
+        if(line==='BEGIN:VEVENT'){current={};continue;}
+        if(line==='END:VEVENT'){if(current){const ev=finalizeAulaEvent(current);if(ev)events.push(ev);}current=null;continue;}
+        if(!current)continue;
+        const idx=line.indexOf(':');
+        if(idx<0)continue;
+        const namePart=line.slice(0,idx);
+        const valuePart=decodeICSValue(line.slice(idx+1));
+        const parts=namePart.split(';');
+        const propName=parts[0].toUpperCase();
+        const paramMap={};
+        for(let i=1;i<parts.length;i+=1){const [key,val='']=parts[i].split('=');if(key)paramMap[key.toUpperCase()]=val;}
+        switch(propName){
+          case 'UID':current.uid=valuePart;break;
+          case 'SUMMARY':current.summary=valuePart;break;
+          case 'DESCRIPTION':current.description=valuePart;break;
+          case 'LOCATION':current.location=valuePart;break;
+          case 'CATEGORIES':current.categories=valuePart;break;
+          case 'STATUS':current.status=valuePart;break;
+          case 'SEQUENCE':current.sequence=valuePart;break;
+          case 'DTSTART':current.start=parseICSTimestamp(valuePart,paramMap);break;
+          case 'DTEND':current.end=parseICSTimestamp(valuePart,paramMap);break;
+          case 'DURATION':current.duration=valuePart;break;
+          case 'DTSTAMP':current.dtstamp=parseICSTimestamp(valuePart,paramMap);break;
+          case 'LAST-MODIFIED':current.lastModified=parseICSTimestamp(valuePart,paramMap);break;
+          case 'RRULE':current.rrule=valuePart;current.rruleParts=parseRRule(valuePart);break;
+          case 'RECURRENCE-ID':current.recurrenceId=parseICSTimestamp(valuePart,paramMap);break;
+          default:break;
+        }
+      }
+      return events;
+    }
+    function aulaRemoteFingerprint(ev){
+      const parts=[ev.updated||'',ev.sequence||'',ev.summary||'',ev.date||'',ev.time||'',String(ev.durationMin||''),ev.location||'',ev.description||'',ev.recurrence||'',ev.recurrenceIdISO||''];
+      return djb2(parts.join('|'));
+    }
+    function loadAulaIdx(){return loadLS(LS_AULA_IDX,{});}
+    function saveAulaIdx(x){saveLS(LS_AULA_IDX,x);}
+    async function fetchAulaFeed(url,index){
+      const normalized=normalizeAulaUrl(url);
+      if(!normalized)return[];
+      let resolved=normalized;
+      try{resolved=new URL(normalized,location.href).toString();}catch(_){ }
+      const res=await fetch(resolved,{cache:'no-store'});
+      if(!res.ok)throw new Error('HTTP '+res.status);
+      const text=await res.text();
+      const events=parseICSEvents(text);
+      return events.map(ev=>({...ev,__sourceIndex:index}));
+    }
+    function mergeAulaEvents(lists){
+      const map=new Map();
+      lists.forEach(list=>{
+        (list||[]).forEach(ev=>{
+          if(!ev)return;
+          const key=`${ev.uid||''}|${ev.recurrenceIdISO||''}|${ev.startISO||ev.date||''}|${ev.time||''}`;
+          const existing=map.get(key);
+          if(existing){
+            const aTime=Date.parse(ev.updated||'')||0;
+            const bTime=Date.parse(existing.updated||'')||0;
+            if(aTime>bTime){map.set(key,ev);return;}
+            if(aTime<bTime)return;
+            if((ev.__sourceIndex||0)>=(existing.__sourceIndex||0))map.set(key,ev);
+          }else{
+            map.set(key,ev);
+          }
+        });
+      });
+      return [...map.values()];
+    }
+    async function syncAula(){
+      const links=aulaLinks();
+      if(!links.length){setAulaBadge('mangler links');return;}
+      try{
+        setAulaBadge('henter…');
+        const all=[];
+        for(let i=0;i<links.length;i+=1){
+          const link=links[i];
+          const events=await fetchAulaFeed(link,i);
+          all.push(events);
+        }
+        const events=mergeAulaEvents(all);
+        const idx=loadAulaIdx();
+        const aState=getAulaState();
+        let created=0;
+        for(const ev of events){
+          const date=fromAnyToLocalISO(ev.startISO||ev.date||'');
+          if(!date)continue;
+          const repeatWeeklyAuto=detectWeeklyRepeat(ev);
+          const derivedSeriesId=ev.seriesId||'';
+          let baseId=(ev.uid||'').trim();
+          if(!baseId)baseId=djb2([ev.summary||'',date,ev.time||''].join('|'));
+          let itemId=`aula:${baseId}`;
+          if(ev.recurrenceIdISO)itemId+=`#${ev.recurrenceIdISO}`;
+          const note=(ev.description||'').trim();
+          let item={id:itemId,title:ev.summary||"(uden titel)",type:"Aktivitet",people:["Alle"],person:"Alle",date,time:ev.time||"",durationMin:ev.allDay?0:(ev.durationMin||60),location:ev.location||"",note,repeatWeekly:repeatWeeklyAuto,done:false,source:"aula",manualRepeatWeekly:false,autoRepeatWeekly:repeatWeeklyAuto,seriesId:derivedSeriesId||undefined};
+          if(ev.allDay){item.time="";item.durationMin=0;}
+          const uid=uidFor(item);
+          const initialSeriesId=safeSeriesId(item)||derivedSeriesId||"";
+          if(shouldIgnoreAulaEvent(aState,{uid,seriesId:initialSeriesId,dateISO:date}))continue;
+          const existingIdx=items.findIndex(x=>uidFor(x)===uid);
+          const existingItem=existingIdx>=0?items[existingIdx]:null;
+          if(existingItem){
+            item.seriesId=safeSeriesId(existingItem)||item.seriesId||derivedSeriesId;
+            item.type=normalizeType(existingItem.type)||item.type;
+            const existingPeople=normalizePeopleList(existingItem.people&&existingItem.people.length?existingItem.people:existingItem.person);
+            item.people=existingPeople;
+            item.person=primaryPersonName(existingPeople);
+            item.done=existingItem.done!==undefined?!!existingItem.done:item.done;
+            if(existingItem.note&&existingItem.note.trim()&&existingItem.note!==item.note)item.note=existingItem.note;
+            const autoPrev=existingItem.autoRepeatWeekly;
+            const manualOverride=!!(existingItem.manualRepeatWeekly||(autoPrev!==undefined&&existingItem.repeatWeekly!==autoPrev));
+            item.manualRepeatWeekly=manualOverride;
+            if(manualOverride)item.repeatWeekly=!!existingItem.repeatWeekly;
+            if(autoPrev!==undefined)item.autoRepeatWeekly=autoPrev;
+          }
+          const seriesIdToUse=safeSeriesId(item)||derivedSeriesId;
+          if(seriesIdToUse&&!existingItem){
+            const seriesCandidates=items.filter(x=>safeSeriesId(x)===seriesIdToUse&&!x.overrideOf);
+            const seriesSource=seriesCandidates.find(x=>x.manualRepeatWeekly||x.repeatWeekly)||seriesCandidates[0]||null;
+            if(seriesSource){
+              item.type=normalizeType(seriesSource.type)||item.type;
+              const rememberedPeople=normalizePeopleList(seriesSource.people&&seriesSource.people.length?seriesSource.people:seriesSource.person);
+              if(rememberedPeople.length){item.people=rememberedPeople;item.person=primaryPersonName(rememberedPeople);}
+              if(seriesSource.note&&(!item.note||item.note.trim()===""))item.note=seriesSource.note;
+              if(seriesSource.manualRepeatWeekly!==undefined)item.manualRepeatWeekly=!!seriesSource.manualRepeatWeekly;
+              if(seriesSource.autoRepeatWeekly!==undefined)item.autoRepeatWeekly=seriesSource.autoRepeatWeekly;
+              if(seriesSource.repeatWeekly!==undefined)item.repeatWeekly=!!seriesSource.repeatWeekly;
+            }
+          }
+          item.people=normalizePeopleList(item.people);
+          item.person=primaryPersonName(item.people);
+          const overrideApplied=applyAulaOverrides(aState,{uid,seriesId:seriesIdToUse,dateISO:date,item});
+          item=overrideApplied.item;
+          item.people=normalizePeopleList(item.people);
+          item.person=primaryPersonName(item.people);
+          if(shouldIgnoreAulaEvent(aState,{uid,seriesId:seriesIdToUse,dateISO:item.date||date}))continue;
+          if(seriesIdToUse)item.seriesId=seriesIdToUse;
+          const existingKey=existingItem?peopleKey(existingItem.people&&existingItem.people.length?existingItem.people:existingItem.person):"";
+          const newKey=peopleKey(item.people);
+          const needsUpdate=!existingItem||["title","type","date","time","durationMin","location","note","repeatWeekly","repeatYearly","done","manualRepeatWeekly","autoRepeatWeekly","seriesId"].some(key=>(existingItem?existingItem[key]:undefined)!==item[key])||existingKey!==newKey;
+          const fingerprint=aulaRemoteFingerprint(ev);
+          if(idx[uid]===fingerprint&&!needsUpdate)continue;
+          upsert(item);
+          idx[uid]=fingerprint;
+          created++;
+        }
+        saveAulaIdx(idx);
+        setAulaBadge(created?`+${created} opdateret`:'ingen ændringer');
+      }catch(err){
+        console.error('[Aula sync]',err);
+        setAulaBadge('fejl');
+      }
+    }
+
     /* ---------- Google sync (enkeltforekomster) ---------- */
     const GAS_URL="https://script.google.com/macros/s/AKfycbyQeS_NvMVv4A3IImB6S3AsRt67aSpeKuaoHHSf8K4xRE9sx3zSZS8zHlvZFL_WDIKl/exec";
     function loadGIdx(){return loadLS(LS_GIDX,{})}function saveGIdx(x){saveLS(LS_GIDX,x)}
@@ -1202,6 +1648,44 @@
         if(idx[uid]===ev.updated&&!needsUpdate)continue;upsert(item);idx[uid]=ev.updated;created++}saveGIdx(idx);setBadge(created?`+${created} oprettet`:"ingen ændringer")}catch(e){console.error(e);setBadge("fejl")}}
     $("gSync").onclick=()=>syncNow()
     $("gReset").onclick=()=>{localStorage.removeItem(LS_GIDX);localStorage.removeItem(LS_GSTATE);gStateCache=null;setBadge("nulstiller…");syncNow()}
+
+    const aulaYearInput=$("aulaYearUrl"), aulaWeekInput=$("aulaWeekUrl"), aulaModal=$("aulaBD");
+    function openAulaModal(){
+      if(!aulaModal)return;
+      if(aulaYearInput)aulaYearInput.value=aulaConfig.yearUrl||'';
+      if(aulaWeekInput)aulaWeekInput.value=aulaConfig.weekUrl||'';
+      aulaModal.style.display='flex';
+      aulaModal.setAttribute('aria-hidden','false');
+    }
+    function closeAulaModal(){
+      if(!aulaModal)return;
+      aulaModal.style.display='none';
+      aulaModal.setAttribute('aria-hidden','true');
+    }
+    if(aulaModal){
+      aulaModal.addEventListener('click',e=>{if(e.target===aulaModal)closeAulaModal();});
+    }
+    const aulaSaveBtn=$("aulaSave");
+    if(aulaSaveBtn){
+      aulaSaveBtn.addEventListener('click',()=>{
+        const year=normalizeAulaUrl(aulaYearInput?aulaYearInput.value:'');
+        const week=normalizeAulaUrl(aulaWeekInput?aulaWeekInput.value:'');
+        aulaConfig=saveAulaConfig({yearUrl:year,weekUrl:week});
+        if(aulaYearInput)aulaYearInput.value=aulaConfig.yearUrl||'';
+        if(aulaWeekInput)aulaWeekInput.value=aulaConfig.weekUrl||'';
+        ensureAulaBadge();
+        closeAulaModal();
+      });
+    }
+    const aulaCancelBtn=$("aulaCancel"), aulaCloseBtn=$("aulaClose");
+    if(aulaCancelBtn)aulaCancelBtn.addEventListener('click',closeAulaModal);
+    if(aulaCloseBtn)aulaCloseBtn.addEventListener('click',closeAulaModal);
+    const aulaLinksBtn=$("aLinks");
+    if(aulaLinksBtn)aulaLinksBtn.addEventListener('click',openAulaModal);
+    const aulaSyncBtn=$("aSync");
+    if(aulaSyncBtn)aulaSyncBtn.addEventListener('click',()=>syncAula());
+    const aulaResetBtn=$("aReset");
+    if(aulaResetBtn)aulaResetBtn.addEventListener('click',()=>{localStorage.removeItem(LS_AULA_IDX);localStorage.removeItem(LS_AULA_STATE);aulaStateCache=null;setAulaBadge('nulstiller…');syncAula();});
 
     /* ---------- Supabase bridges ---------- */
   </script>
