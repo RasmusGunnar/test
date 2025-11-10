@@ -194,7 +194,8 @@
 
   <script>
     /* ---------- core utils ---------- */
-    const HID=(new URLSearchParams(location.search).get("hid")||"DEFAULT").toUpperCase();
+    const RAW_HID=(new URLSearchParams(location.search).get("hid")||"").trim();
+    const HID=(RAW_HID||"DEFAULT").toUpperCase();
     const LS_ITEMS="fam_items_v1", LS_PREFS="fam_people_prefs_v1", LS_GIDX="gcal_index", LS_GSTATE="gcal_state_v1";
     const LS_VIEW_MODE="fam_view_mode";
     const CELEBRATION_LS="fam_celebrations_v1";
@@ -1169,7 +1170,6 @@
     async function fetchEvents(){
       const url=new URL(GAS_URL,location.href);
       url.searchParams.set('t',Date.now().toString());
-      if(HID){url.searchParams.set('hid',HID);}
       const r=await fetch(url.toString(),{cache:"no-store"});
       if(!r.ok)throw new Error("GAS "+r.status);
       const j=await r.json();
