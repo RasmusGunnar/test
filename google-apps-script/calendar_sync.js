@@ -103,7 +103,7 @@ function collectCalendars(opts) {
       pageToken: token,
       showDeleted: false,
       showHidden: true,
-      minAccessRole: 'freeBusyReader',
+
     });
     const items = (response && response.items) || [];
     items.forEach(function (calendar) {
