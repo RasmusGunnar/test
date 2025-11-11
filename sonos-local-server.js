@@ -2,6 +2,7 @@
 const express = require('express');
 const cors = require('cors');
 const { AsyncDeviceDiscovery, Sonos } = require('sonos');
+const { CalendarFeed, normalizeFeedUrl } = require('./calendar-feed');
 
 // Enkel lokal Sonos-controller der eksponerer et JSON-API til Webkiosk.
 // Kør `npm install` og derefter `npm start` for at starte tjenesten på port 8789.
@@ -9,16 +10,81 @@ const { AsyncDeviceDiscovery, Sonos } = require('sonos');
 const PORT = process.env.PORT || 8789;
 const DISCOVERY_INTERVAL_MS = Number(process.env.SONOS_DISCOVERY_INTERVAL || 15000);
 const POLL_TIMEOUT_MS = Number(process.env.SONOS_POLL_TIMEOUT || 5000);
+const DEFAULT_CALENDAR_REFRESH_HOURS = (() => {
+  const value = Number(process.env.CALENDAR_REFRESH_INTERVAL_HOURS);
+  return Number.isFinite(value) && value > 0 ? value : 6;
+})();
+const DEFAULT_CALENDAR_LOOKAHEAD_DAYS = (() => {
+  const value = Number(process.env.CALENDAR_LOOKAHEAD_DAYS);
+  return Number.isFinite(value) && value >= 0 ? value : 90;
+})();
+const DEFAULT_CALENDAR_LOOKBEHIND_DAYS = (() => {
+  const value = Number(process.env.CALENDAR_LOOKBEHIND_DAYS);
+  return Number.isFinite(value) && value >= 0 ? value : 7;
+})();
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+let calendarFeed = null;
+
+if (process.env.CALENDAR_FEED_URL) {
+  setupCalendarFeed(process.env.CALENDAR_FEED_URL).catch((err) => {
+    console.error('[calendar] init-fejl', err);
+  });
+}
 
 const discovery = new AsyncDeviceDiscovery();
 let topologyCache = new Map();
 let lastDiscovery = 0;
 let favoritesCache = [];
 let favoritesUpdated = 0;
+
+function parsePositiveNumber(value, fieldName) {
+  if (value == null) {
+    return undefined;
+  }
+  const number = Number(value);
+  if (!Number.isFinite(number) || number <= 0) {
+    throw new Error(`${fieldName} skal være et positivt tal`);
+  }
+  return number;
+}
+
+function parseNonNegativeNumber(value, fieldName) {
+  if (value == null) {
+    return undefined;
+  }
+  const number = Number(value);
+  if (!Number.isFinite(number) || number < 0) {
+    throw new Error(`${fieldName} skal være et ikke-negativt tal`);
+  }
+  return number;
+}
+
+async function setupCalendarFeed(feedUrl, options = {}) {
+  const normalizedUrl = normalizeFeedUrl(feedUrl);
+  const refreshIntervalHours = options.refreshIntervalHours ?? DEFAULT_CALENDAR_REFRESH_HOURS;
+  const lookAheadDays = options.lookAheadDays ?? DEFAULT_CALENDAR_LOOKAHEAD_DAYS;
+  const lookBehindDays = options.lookBehindDays ?? DEFAULT_CALENDAR_LOOKBEHIND_DAYS;
+  if (calendarFeed) {
+    calendarFeed.stop();
+  }
+  calendarFeed = new CalendarFeed({
+    feedUrl: normalizedUrl,
+    refreshIntervalHours,
+    lookAheadDays,
+    lookBehindDays
+  });
+  try {
+    await calendarFeed.start();
+    console.log(`[calendar] Hentede kalender-feed ${normalizedUrl}`);
+  } catch (err) {
+    console.error('[calendar] kunne ikke starte kalender-feed', err);
+    throw err;
+  }
+}
 
 function pick(val, ...keys) {
   if (!val) return undefined;
@@ -175,6 +241,101 @@ async function buildGroupState(groupId) {
   };
 }
 
+function ensureCalendarConfigured(res) {
+  if (!calendarFeed) {
+    res.status(404).json({ error: 'Kalender-feed er ikke konfigureret' });
+    return false;
+  }
+  return true;
+}
+
+function parseDateQuery(value, fieldName) {
+  if (value == null) {
+    return undefined;
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    throw new Error(`${fieldName} skal være en gyldig dato`);
+  }
+  return date;
+}
+
+app.get('/api/calendar/status', (req, res) => {
+  if (!ensureCalendarConfigured(res)) {
+    return;
+  }
+  res.json({ info: calendarFeed.info });
+});
+
+app.get('/api/calendar/events', async (req, res) => {
+  if (!ensureCalendarConfigured(res)) {
+    return;
+  }
+  try {
+    const start = parseDateQuery(req.query.start, 'start');
+    const end = parseDateQuery(req.query.end, 'end');
+    const includeCancelled = String(req.query.includeCancelled).toLowerCase() === 'true';
+    await calendarFeed.refresh(false);
+    const events = calendarFeed.getEvents({ start, end, includeCancelled });
+    res.json({
+      feedUrl: calendarFeed.feedUrl,
+      updatedAt: calendarFeed.lastUpdatedAt,
+      fetchedAt: calendarFeed.lastFetchedAt,
+      events
+    });
+  } catch (err) {
+    console.error('[calendar] events-fejl', err);
+    res.status(400).json({ error: err.message || 'Kunne ikke hente kalender-hændelser' });
+  }
+});
+
+app.post('/api/calendar/config', async (req, res) => {
+  try {
+    const { feedUrl, refreshHours, refreshIntervalHours, lookAheadDays, lookBehindDays } = req.body || {};
+    const refreshValue = refreshHours ?? refreshIntervalHours;
+    const refreshInterval = parsePositiveNumber(refreshValue, 'refreshIntervalHours');
+    const ahead = parseNonNegativeNumber(lookAheadDays, 'lookAheadDays');
+    const behind = parseNonNegativeNumber(lookBehindDays, 'lookBehindDays');
+
+    if (feedUrl) {
+      await setupCalendarFeed(feedUrl, {
+        refreshIntervalHours: refreshInterval ?? DEFAULT_CALENDAR_REFRESH_HOURS,
+        lookAheadDays: ahead ?? DEFAULT_CALENDAR_LOOKAHEAD_DAYS,
+        lookBehindDays: behind ?? DEFAULT_CALENDAR_LOOKBEHIND_DAYS
+      });
+    } else {
+      if (!ensureCalendarConfigured(res)) {
+        return;
+      }
+      if (refreshInterval != null) {
+        calendarFeed.setRefreshIntervalHours(refreshInterval);
+      }
+      calendarFeed.setRangeDays({
+        lookAheadDays: ahead,
+        lookBehindDays: behind
+      });
+    }
+
+    res.json({ ok: true, info: calendarFeed ? calendarFeed.info : null });
+  } catch (err) {
+    console.error('[calendar] konfigurations-fejl', err);
+    res.status(400).json({ error: err.message || 'Ugyldig kalender-konfiguration' });
+  }
+});
+
+app.post('/api/calendar/refresh', async (req, res) => {
+  if (!ensureCalendarConfigured(res)) {
+    return;
+  }
+  try {
+    await calendarFeed.refresh(true);
+    res.json({ ok: true, info: calendarFeed.info });
+  } catch (err) {
+    console.error('[calendar] refresh-fejl', err);
+    res.status(500).json({ error: err.message || 'Kalender-opdatering mislykkedes' });
+  }
+});
+
 app.get('/api/state', async (req, res) => {
   try {
     const topology = await discoverTopology(false);
@@ -269,7 +430,8 @@ app.get('/', (req, res) => {
     service: 'WAP Sonos Local Controller',
     status: 'ok',
     groups: Array.from(topologyCache.keys()),
-    lastDiscovery
+    lastDiscovery,
+    calendar: calendarFeed ? calendarFeed.info : null
   });
 });
 
