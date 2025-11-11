@@ -103,6 +103,7 @@ function collectCalendars(opts) {
       pageToken: token,
       showDeleted: false,
       showHidden: true,
+
     });
     const items = (response && response.items) || [];
     items.forEach(function (calendar) {
