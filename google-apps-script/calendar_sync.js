@@ -30,15 +30,27 @@ function doGet(e) {
     requestedIds,
   });
 
+  console.log('Calendars used:', calendars.map(function (calendar) {
+    return {
+      id: calendar.id,
+      accessRole: calendar.accessRole,
+      primary: !!calendar.primary,
+      selected: calendar.selected,
+    };
+  }));
+
   const events = [];
   let total = 0;
   calendars.forEach(function (calendar) {
-    const fetched = fetchCalendarEvents({
-      calendar,
+    const fetchOpts = {
+      calendar: calendar,
       timeMin: rangeStart.toISOString(),
       timeMax: rangeEnd.toISOString(),
       maxResults: clamp(intParam(params.maxResults, MAX_RESULTS_PER_CALENDAR), 1, MAX_RESULTS_PER_CALENDAR),
-    });
+    };
+    const fetched = calendar.accessRole === 'freeBusyReader'
+      ? fetchFreeBusyBlocks(fetchOpts)
+      : fetchCalendarEvents(fetchOpts);
     fetched.forEach(function (event) {
       if (total < MAX_TOTAL_RESULTS) {
         events.push(event);
@@ -80,7 +92,7 @@ function doGet(e) {
 }
 
 function collectCalendars(opts) {
-  const includeAll = !!opts.includeAll;
+  opts = opts || {};
   const requestedIds = opts.requestedIds || new Set();
   const selectedIds = new Set();
   const result = [];
@@ -90,17 +102,11 @@ function collectCalendars(opts) {
       maxResults: MAX_CALENDAR_RESULTS,
       pageToken: token,
       showDeleted: false,
-      showHidden: includeAll,
+      showHidden: true,
     });
     const items = (response && response.items) || [];
     items.forEach(function (calendar) {
       if (!calendar || !calendar.id) {
-        return;
-      }
-      if (calendar.accessRole === 'freeBusyReader') {
-        return;
-      }
-      if (!includeAll && !calendar.primary && !requestedIds.has(calendar.id) && calendar.selected === false) {
         return;
       }
       if (isUtilityCalendar(calendar.id)) {
@@ -114,8 +120,11 @@ function collectCalendars(opts) {
     token = response && response.nextPageToken;
   } while (token);
 
-  if (requestedIds.size && result.length === 0) {
+  if (requestedIds.size) {
     requestedIds.forEach(function (id) {
+      if (selectedIds.has(id)) {
+        return;
+      }
       try {
         const calendar = Calendar.CalendarList.get(id);
         if (calendar && !selectedIds.has(calendar.id)) {
@@ -167,6 +176,50 @@ function fetchCalendarEvents(opts) {
     token = response && response.nextPageToken;
   } while (token && events.length < MAX_RESULTS_PER_CALENDAR);
   return events;
+}
+
+function fetchFreeBusyBlocks(opts) {
+  const calendar = opts.calendar;
+  if (!calendar || !calendar.id) {
+    return [];
+  }
+  const calendarId = calendar.id;
+  const tz = (calendar && calendar.timeZone) || Session.getScriptTimeZone();
+  let busyBlocks = [];
+  try {
+    const response = Calendar.Freebusy.query({
+      timeMin: opts.timeMin,
+      timeMax: opts.timeMax,
+      items: [{ id: calendarId }],
+    });
+    busyBlocks = (((response || {}).calendars || {})[calendarId] || {}).busy || [];
+  } catch (err) {
+    console.warn('FreeBusy lookup failed for', calendarId, err && err.message);
+    return [];
+  }
+
+  const limit = Math.min(opts.maxResults || MAX_RESULTS_PER_CALENDAR, busyBlocks.length);
+  return busyBlocks.slice(0, limit).map(function (block, index) {
+    const startIso = block.start || '';
+    const endIso = block.end || startIso;
+    const start = startIso
+      ? (startIso.indexOf('T') === -1 ? { date: startIso } : { dateTime: startIso })
+      : { dateTime: opts.timeMin };
+    const end = endIso
+      ? (endIso.indexOf('T') === -1 ? { date: endIso } : { dateTime: endIso })
+      : { dateTime: opts.timeMax };
+    const freeBusyEvent = {
+      id: calendarId + ':' + startIso + ':' + index,
+      summary: '',
+      description: '',
+      location: '',
+      start: start,
+      end: end,
+      transparency: 'opaque',
+      visibility: 'private',
+    };
+    return serializeEvent(freeBusyEvent, calendar, tz);
+  });
 }
 
 function serializeEvent(event, calendar, tz) {
