@@ -9,7 +9,6 @@
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.19.2",
-    "node-ical": "^0.15.1",
     "sonos": "^1.15.2"
   }
 }
