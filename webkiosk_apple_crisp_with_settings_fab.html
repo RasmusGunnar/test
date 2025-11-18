@@ -329,7 +329,16 @@
 
   function applyTheme(){document.documentElement.style.setProperty('--accent',config.theme?.color||'#0f172a');document.documentElement.style.setProperty('--bg',config.theme?.background||'#f6f7f9');}
   function applyForm(){ $('themeColor').value=config.theme?.color||'#0f172a'; $('bgColor').value=config.theme?.background||'#f6f7f9'; $('keepAwake').checked=!!config.keepAwake; $('logoUrlCalendar').value=config.logoUrls?.calendar||''; $('logoUrlHomey').value=config.logoUrls?.homey||''; $('logoUrlSpotify').value=config.logoUrls?.spotify||''; $('calendarUrl').value=config.calendar?.url||DEFAULT_CAL_URL; $('homeyUrl').value=config.homeyUrl||''; $('spotifyUrl').value=config.spotifyUrl||'https://open.spotify.com/'; $('householdId').value=(config.householdId||'').toUpperCase(); const mode=config.calendar?.mode||'url'; [...document.querySelectorAll('input[name="calendarMode"]')].forEach(r=>r.checked=(r.value===mode)); $('calendarUploadRow').style.display=(mode==='upload')?'':'none'; }
-  function applyLogos(){ const ph=t=>"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='64'%3E%3Crect width='160' height='64' fill='%23f0f2f5'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='14' fill='%236b7280' font-family='Inter,Arial' %3E"+encodeURIComponent(t)+"%3C/text%3E%3C/svg%3E"; const spotifyLogo=config.logoUrls.spotify||config.logoUrls.sonos||config.logos.spotify||config.logos.sonos||ph('Spotify'); $('logoCalendar').src=config.logoUrls.calendar||config.logos.calendar||ph('Kalender'); $('logoHomey').src=config.logoUrls.homey||config.logos.homey||ph('Homey'); $('logoSpotify').src=spotifyLogo; }
+  function applyLogos(){
+    const ph=t=>"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='64'%3E%3Crect width='160' height='64' fill='%23f0f2f5'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='14' fill='%236b7280' font-family='Inter,Arial' %3E"+encodeURIComponent(t)+"%3C/text%3E%3C/svg%3E";
+    const builtIn={calendar:'assets/Kalender',homey:'assets/Homey',spotify:'assets/Spotify'};
+    const calendarLogo=config.logoUrls.calendar||config.logos.calendar||builtIn.calendar||ph('Kalender');
+    const homeyLogo=config.logoUrls.homey||config.logos.homey||builtIn.homey||ph('Homey');
+    const spotifyLogo=config.logoUrls.spotify||config.logoUrls.sonos||config.logos.spotify||config.logos.sonos||builtIn.spotify||ph('Spotify');
+    $('logoCalendar').src=calendarLogo;
+    $('logoHomey').src=homeyLogo;
+    $('logoSpotify').src=spotifyLogo;
+  }
   function applySpotifySubtitle(){ const el=$('subSpotify'); if(!el) return; const url=(config.spotifyUrl||'').trim(); el.textContent=url?'Åbner Spotify':'Musik'; }
   function applyAll(){applyTheme();applyForm();applyLogos();applySpotifySubtitle();} applyAll();
 
