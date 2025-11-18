@@ -64,7 +64,7 @@ async function loadDetachedExternalIds(client, hid) {
   return result;
 }
 
-async function fetchExistingAulaUids(client, hid) {
+async function fetchExistingAulaRows(client, hid) {
   const { data, error } = await client
     .from('calendar_items')
     .select('uid,data')
@@ -74,14 +74,21 @@ async function fetchExistingAulaUids(client, hid) {
     throw error;
   }
 
-  const uids = new Set();
+  const rows = [];
   for (const row of data || []) {
     const payload = (row && row.data) || {};
     if (String(payload.source || '').toLowerCase() === 'aula') {
-      uids.add(String(row.uid));
+      rows.push({ uid: String(row.uid), data: payload });
     }
   }
-  return uids;
+  return rows;
+}
+
+function makeEventSignature({ title, date, time, durationMin, location }) {
+  const parts = [title, date, time, durationMin, location]
+    .map((value) => (value == null ? '' : String(value).trim().toLowerCase()))
+    .filter((value) => value.length);
+  return parts.length ? parts.join('|') : null;
 }
 
 async function syncAula() {
@@ -104,6 +111,7 @@ async function syncAula() {
   const detachedExternalIds = await loadDetachedExternalIds(client, householdId);
   const rows = [];
   const seenUids = new Set();
+  const seenSignatures = new Set();
 
   for (const evt of events) {
     if (evt.cancelled) continue;
@@ -145,7 +153,7 @@ async function syncAula() {
       detachedFromFeed: false
     };
 
-    rows.push({
+    const row = {
       hid: householdId,
       uid,
       data,
@@ -157,12 +165,40 @@ async function syncAula() {
       note: data.note,
       done: data.done,
       repeat_weekly: data.repeatWeekly
-    });
+    };
+
+    const signature = makeEventSignature(data);
+    if (signature) {
+      if (seenSignatures.has(signature)) {
+        continue;
+      }
+      seenSignatures.add(signature);
+    }
+
+    rows.push(row);
   }
 
-  const existingUids = await fetchExistingAulaUids(client, householdId);
+  const existingRows = await fetchExistingAulaRows(client, householdId);
+  const existingUidSet = new Set(existingRows.map((row) => row.uid));
   const newUidSet = new Set(rows.map((row) => row.uid));
-  const toDelete = Array.from(existingUids).filter((uid) => !newUidSet.has(uid));
+  const toDelete = Array.from(existingUidSet).filter((uid) => !newUidSet.has(uid));
+
+  const existingBySignature = new Map();
+  for (const { uid, data } of existingRows) {
+    const signature = makeEventSignature(data || {});
+    if (signature) {
+      existingBySignature.set(signature, uid);
+    }
+  }
+
+  for (const row of rows) {
+    const signature = makeEventSignature(row.data || {});
+    if (!signature) continue;
+    const existingUid = existingBySignature.get(signature);
+    if (existingUid && existingUid !== row.uid) {
+      toDelete.push(existingUid);
+    }
+  }
 
   if (rows.length) {
     const { error } = await client.from('calendar_items').upsert(rows, { onConflict: 'hid,uid' });
