@@ -9,7 +9,8 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.45.4",
     "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
     "express": "^4.19.2",
-    "node-ical": "^0.19.1"
+    "node-ical": "^0.22.1"
   }
 }
