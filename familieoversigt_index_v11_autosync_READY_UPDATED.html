@@ -396,6 +396,8 @@
       const date = it.date||"";
       if(it.id && it.id.startsWith("gcal:")) return "g:"+it.id.slice(5)+"|"+date;     // id fra GAS, per forekomst
       if(it.id && it.id.startsWith("gcalr:"))return "gr:"+it.id.slice(6);             // hvis du senere bruger ugentlige ankre
+      if(it.id && it.id.startsWith("aula:")) return "a:"+it.id.slice(5)+"|"+date;     // Aula feed pr. forekomst
+      if(it.externalId && (it.source||"").toLowerCase()==="aula") return "a:"+it.externalId+"|"+date;
       if(it.source==="google") return "g:"+(it.id||djb2(keyOf(it)))+"|"+date;
       return "l:"+djb2(keyOf(it));                                                    // lokale
     }
@@ -695,7 +697,9 @@
 
       const autoMilestones=autoMilestonesForView();
       const materialized=materializeRepeats((items||[]).concat(autoMilestones));
-      const normalized=materialized.map(it=>{const peopleList=normalizePeopleList(it.people&&it.people.length?it.people:(it.person!==undefined?it.person:"Alle"));return {...it,people:peopleList,person:primaryPersonName(peopleList)};});
+      const normalized=materialized
+        .filter(it=>!it.detachedFromFeed)
+        .map(it=>{const peopleList=normalizePeopleList(it.people&&it.people.length?it.people:(it.person!==undefined?it.person:"Alle"));return {...it,people:peopleList,person:primaryPersonName(peopleList)};});
 
       const dayISO=viewMode==="day"?fmtISO(focusDate):null;
       const visible=normalized
@@ -993,6 +997,20 @@
       if(!payload.date) payload.date=fmtISO(new Date());
       if(!payload.repeatWeekly){
         payload.repeatUntil="";
+      }
+      const aulaSource=(existing?.source||base?.source||"").toString().toLowerCase()==="aula";
+      const aulaDetached=!!(existing?.detachedFromFeed||base?.detachedFromFeed);
+      if(aulaSource && !aulaDetached){
+        const feedItem=existing||base;
+        if(feedItem?.id){
+          putItem({...feedItem,detachedFromFeed:true},{commit:false});
+        }
+        const localClone={...payload,id:"",source:"local",overrideOf:"",overrideBaseId:""};
+        upsert(localClone);
+        commitItems();
+        EBD.style.display="none";
+        editContext=null;
+        return;
       }
       if(existing && String(existing.id||"").startsWith("gcal:")){
         const prevAuto=existing.autoRepeatWeekly;

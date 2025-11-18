@@ -7,8 +7,9 @@
     "start": "node sonos-local-server.js"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.45.4",
     "cors": "^2.8.5",
     "express": "^4.19.2",
-    "sonos": "^1.15.2"
+    "node-ical": "^0.19.1"
   }
 }
