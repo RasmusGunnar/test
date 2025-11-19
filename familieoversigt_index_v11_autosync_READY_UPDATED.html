@@ -716,7 +716,8 @@
         if(baseKey&&seenBase.has(baseKey)) continue; if(baseKey) seenBase.add(baseKey);
         const day=document.querySelector(`.day[data-date="${it.date}"]`); if(!day) continue;
         const typeNow=normalizeType(it.type);
-        const isBirthday = typeNow===BIRTHDAY_TYPE;
+        const typeLabel=(it.type||"").toString().toLowerCase();
+        const isBirthday = typeNow===BIRTHDAY_TYPE || typeLabel.includes('fødsel') || typeLabel.includes('foedsel') || !!it.birthYear;
         const isMilestone = typeNow===MILESTONE_TYPE;
         const sectionType=(isBirthday||isMilestone)?"Aktivitet":typeNow;
         const sec=day.querySelector(`.section[data-section="${sectionType}"] .items`); if(!sec) continue;
@@ -1001,13 +1002,18 @@
       const aulaSource=(existing?.source||base?.source||"").toString().toLowerCase()==="aula";
       const aulaDetached=!!(existing?.detachedFromFeed||base?.detachedFromFeed);
       if(aulaSource && !aulaDetached){
-        const feedItem=existing||base;
-        if(feedItem?.id){
-          putItem({...feedItem,detachedFromFeed:true},{commit:false});
-        }
-        const localClone={...payload,id:"",source:"local",overrideOf:"",overrideBaseId:""};
-        upsert(localClone);
-        commitItems();
+        const feedItem=existing||base||{};
+        const detachedPayload={
+          ...feedItem,
+          ...payload,
+          id:feedItem.id||payload.id||"",
+          externalId:feedItem.externalId||payload.externalId||"",
+          source:"aula",
+          detachedFromFeed:true,
+          overrideOf:"",
+          overrideBaseId:""
+        };
+        upsert(detachedPayload);
         EBD.style.display="none";
         editContext=null;
         return;
