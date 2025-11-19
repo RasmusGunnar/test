@@ -38,17 +38,6 @@
   .calframe.panel{position:relative;flex:1;min-height:0;overflow:hidden;display:flex}
   iframe{width:100%;height:100%;border:0;display:block}
 
-  /* Spotify overlay */
-  .spotify-view{position:fixed;inset:0;padding:clamp(12px,2vw,20px);background:rgba(246,247,249,.92);backdrop-filter:blur(8px);z-index:65;display:flex;justify-content:center;align-items:center}
-  .spotify-inner{width:100%;max-width:1080px;max-height:100%;display:flex;flex-direction:column;gap:16px}
-  .spotify-frame{flex:1;min-height:0;overflow:hidden;display:flex;background:#000;position:relative;border-radius:18px;box-shadow:var(--shadow)}
-  .spotify-frame iframe{border:0;width:100%;height:100%;background:#000;border-radius:inherit}
-  .spotify-blocked{background:#fff;border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow);padding:24px;text-align:center;color:var(--fg);display:flex;flex-direction:column;gap:12px}
-  .spotify-blocked[hidden]{display:none !important}
-  .spotify-blocked h3{margin:0;font-size:18px}
-  .spotify-blocked p{margin:0;font-size:14px;color:var(--muted);line-height:1.5}
-  .spotify-blocked .actions{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:6px}
-
   /* FAB */
   .fab{position:fixed;right:20px;bottom:20px;z-index:90}
   .fab button{width:56px;height:56px;border-radius:50%;border:1px solid var(--border);background:#fff;color:#0f172a;display:inline-flex;align-items:center;justify-content:center;box-shadow:var(--shadow);cursor:pointer}
@@ -85,8 +74,6 @@
   .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
   input[type="text"],input[type="url"],select,input[type="color"],input[type="search"],input[type="checkbox"]{padding:10px 12px;border-radius:12px;border:1px solid var(--border);font-size:14px}
   input[type="file"]{font-size:13px}
-  .logoPreview{width:160px;height:64px;display:flex;align-items:center;justify-content:center;border:1px dashed var(--border);border-radius:12px;background:#fafafa}
-  .logoPreview img{max-width:100%;max-height:100%;object-fit:contain;display:block}
   .dlg-foot{padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:space-between;background:#fafafa;position:sticky;bottom:0}
   .left-note{color:#6b7280;font-size:12px;display:flex;align-items:center;gap:8px}
   .actions{display:flex;gap:10px}
@@ -131,9 +118,9 @@
           <div class="logo-box"><img id="logoHomey" alt="Homey"></div>
         </a>
 
-        <a class="panel tile" id="tileSpotify" data-tile="spotify" href="#">
-          <div class="meta"><div class="label" id="labelSpotify">Spotify</div><div class="sub" id="subSpotify">Musik</div></div>
-          <div class="logo-box"><img id="logoSpotify" alt="Spotify"></div>
+        <a class="panel tile" id="tileSonos" data-tile="sonos" href="#">
+          <div class="meta"><div class="label" id="labelSonos">Sonos</div><div class="sub" id="subSonos">Lyd</div></div>
+          <div class="logo-box"><img id="logoSonos" alt="Sonos"></div>
         </a>
       </div>
     </div>
@@ -147,25 +134,6 @@
       </div>
       <div class="calframe panel">
         <iframe id="calendarFrame" title="Kalender"></iframe>
-      </div>
-    </div>
-  </section>
-
-  <!-- Spotify overlay -->
-  <section class="spotify-view" id="spotifyView" aria-hidden="true" hidden>
-    <div class="spotify-inner">
-      <div class="topbar">
-        <button class="back-btn" id="closeSpotify" type="button">⬅ Til forsiden</button>
-      </div>
-        <iframe id="spotifyFrame" title="Spotify" allow="autoplay; fullscreen; picture-in-picture; encrypted-media" sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe>
-      </div>
-      <div class="spotify-blocked panel" id="spotifyBlocked" aria-hidden="true" hidden>
-        <h3>Spotify kan ikke indlæses</h3>
-        <p>Spotify blokerer nogle gange for indlejrede visninger. Du kan prøve igen eller åbne Spotify i en ny fane.</p>
-        <div class="actions">
-          <button class="btn" id="spotifyRetry" type="button">Prøv igen</button>
-          <button class="btn primary" id="spotifyExternal" type="button">Åbn i ny fane</button>
-        </div>
       </div>
     </div>
   </section>
@@ -195,11 +163,7 @@
           <div class="form-grid">
             <div class="field"><label for="themeColor">Primærfarve</label><input type="color" id="themeColor"/></div>
             <div class="field"><label for="bgColor">Baggrundsfarve</label><input type="color" id="bgColor"/></div>
-            <div class="field"><label for="logoUrlCalendar">Kalender – Logo URL (GitHub)</label><input type="url" id="logoUrlCalendar" placeholder="https://raw.githubusercontent.com/.../calendar.png"/></div>
-            <div class="field"><label for="logoUrlHomey">Homey – Logo URL (GitHub)</label><input type="url" id="logoUrlHomey" placeholder="https://raw.githubusercontent.com/.../homey.png"/></div>
-            <div class="field"><label for="logoUrlSpotify">Spotify – Logo URL (GitHub)</label><input type="url" id="logoUrlSpotify" placeholder="https://raw.githubusercontent.com/.../spotify.png"/></div>
           </div>
-          <p class="hint">Tip: Læg filer i dit repo (fx <code>/assets/</code>) og brug GitHub “Raw” URL her.</p>
         </section>
 
         <section id="tab-entries" class="section">
@@ -218,19 +182,7 @@
             </div>
 
             <div class="field"><label for="homeyUrl">Homey dashboard URL</label><input type="url" id="homeyUrl" placeholder="https://my.homey.app/..."/></div>
-            <div class="field"><label for="spotifyUrl">Spotify link</label><input type="url" id="spotifyUrl" placeholder="https://open.spotify.com/"/></div>
-
-            <div class="field full"><label for="tileLinkCalendarDesktop">Kalender – Desktop link</label><input type="text" id="tileLinkCalendarDesktop" placeholder="https://example.com/kalender" inputmode="url"/><span class="hint">Tom = brug den normale kalender-visning.</span></div>
-            <div class="field full"><label for="tileLinkCalendarIos">Kalender – iOS link</label><input type="text" id="tileLinkCalendarIos" placeholder="homey://" inputmode="url"/></div>
-            <div class="field full"><label for="tileLinkCalendarAndroid">Kalender – Android link</label><input type="text" id="tileLinkCalendarAndroid" placeholder="intent://" inputmode="url"/><span class="hint">Understøtter intent-/app-links.</span></div>
-
-            <div class="field full"><label for="tileLinkHomeyDesktop">Homey – Desktop link</label><input type="text" id="tileLinkHomeyDesktop" placeholder="https://my.homey.app/..." inputmode="url"/></div>
-            <div class="field full"><label for="tileLinkHomeyIos">Homey – iOS link</label><input type="text" id="tileLinkHomeyIos" placeholder="homey://" inputmode="url"/></div>
-            <div class="field full"><label for="tileLinkHomeyAndroid">Homey – Android link</label><input type="text" id="tileLinkHomeyAndroid" placeholder="intent://" inputmode="url"/></div>
-
-            <div class="field full"><label for="tileLinkSpotifyDesktop">Spotify – Desktop link</label><input type="text" id="tileLinkSpotifyDesktop" placeholder="https://open.spotify.com/" inputmode="url"/></div>
-            <div class="field full"><label for="tileLinkSpotifyIos">Spotify – iOS link</label><input type="text" id="tileLinkSpotifyIos" placeholder="spotify://" inputmode="url"/></div>
-            <div class="field full"><label for="tileLinkSpotifyAndroid">Spotify – Android link</label><input type="text" id="tileLinkSpotifyAndroid" placeholder="intent://" inputmode="url"/></div>
+            <div class="field"><label for="sonosUrl">Sonos link</label><input type="text" id="sonosUrl" placeholder="sonos://arc.sonos.arc2/..." inputmode="url"/><span class="hint">Indsæt hele Sonos app-linket fra din telefon.</span></div>
           </div>
         </section>
 
@@ -317,81 +269,24 @@
   })();
 
   /* Config */
-  const TILE_KEYS=['calendar','homey','spotify'];
-  const TILE_PLATFORMS=['desktop','ios','android'];
-  const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
-  const tileLinkInputs=TILE_KEYS.flatMap(tile=>TILE_PLATFORMS.map(platform=>({id:`tileLink${cap(tile)}${cap(platform)}`,tile,platform})));
-  const TILE_FALLBACK_MAP={calendar:'openCalendar',homey:'openHomey',spotify:'openSpotify'};
-  function detectPlatform(){
-    const ua=(navigator.userAgent||navigator.vendor||window.opera||'').toLowerCase();
-    const isIOS=/iphone|ipad|ipod/.test(ua) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
-    if(/android/.test(ua)) return 'android';
-    if(isIOS) return 'ios';
-    return 'desktop';
-  }
-  const currentPlatform=detectPlatform();
-
+  const TILE_HANDLERS={calendar:'openCalendar',homey:'openHomey',sonos:'openSonos'};
   const LS_KEY='webkioskConfigV2';
   const DEFAULT_CAL_PATH='familieoversigt_index_v11_autosync_READY_UPDATED.html';
   const DEFAULT_CAL_URL=(()=>{try{return new URL('./'+DEFAULT_CAL_PATH,location.href).toString();}catch{return DEFAULT_CAL_PATH;}})();
-  const defaults={calendar:{mode:'url',url:DEFAULT_CAL_URL,fileName:'',fileData:''},homeyUrl:'',spotifyUrl:'https://open.spotify.com/',logos:{calendar:'',homey:'',spotify:''},logoUrls:{calendar:'',homey:'',spotify:''},tileLinks:{calendar:{desktop:'',ios:'',android:''},homey:{desktop:'',ios:'',android:''},spotify:{desktop:'',ios:'',android:''}},theme:{color:'#0f172a',background:'#f6f7f9'},keepAwake:true,householdId:'',_ts:0};
+  const defaults={calendar:{mode:'url',url:DEFAULT_CAL_URL,fileName:'',fileData:''},homeyUrl:'',sonosUrl:'',theme:{color:'#0f172a',background:'#f6f7f9'},keepAwake:true,householdId:'',_ts:0};
   function load(){try{const o=JSON.parse(localStorage.getItem(LS_KEY)||'{}');const deep=(m,d)=>{const r=Array.isArray(d)?[]:{};for(const k in d){if(d[k]&&typeof d[k]==='object'&&!Array.isArray(d[k]))r[k]=deep((m||{})[k]||{},d[k]);else r[k]=(m||{})[k]!==undefined?(m||{})[k]:d[k];}return r;};return deep(o,defaults);}catch{return JSON.parse(JSON.stringify(defaults));}}
   function save(c){try{localStorage.setItem(LS_KEY,JSON.stringify(c));}catch{}}
   let config=load();
 
-  function ensureTileLinkSlot(tile){
-    if(!config.tileLinks) config.tileLinks={};
-    if(!config.tileLinks[tile]) config.tileLinks[tile]={desktop:'',ios:'',android:''};
-    return config.tileLinks[tile];
-  }
-  function setTileLinkValue(tile,platform,value){
-    const slot=ensureTileLinkSlot(tile);
-    slot[platform]=value;
-  }
-  function getTileLink(tile,platform=currentPlatform){
-    const slot=(config.tileLinks&&config.tileLinks[tile])||{};
-    const direct=(slot[platform]||'').trim();
-    if(direct) return direct;
-    if(platform!=='desktop'){
-      const fallbackDesktop=(slot.desktop||'').trim();
-      if(fallbackDesktop) return fallbackDesktop;
-    }
-    return '';
-  }
-  function applyTileLinks(){
-    document.querySelectorAll('[data-tile]').forEach(el=>{
-      const tile=el.dataset.tile;
-      if(!tile) return;
-      const href=getTileLink(tile);
-      if(href){
-        if(el.tagName==='A') el.setAttribute('href',href);
-        else el.dataset.tileHref=href;
-        el.removeAttribute('data-tile-fallback');
-      }else{
-        if(el.tagName==='A') el.setAttribute('href','#');
-        else el.dataset.tileHref='';
-        el.setAttribute('data-tile-fallback','');
-      }
-    });
-  }
   function setupTileInteractions(){
     document.querySelectorAll('[data-tile]').forEach(el=>{
       if(el._tileBound) return;
       el._tileBound=true;
       el.addEventListener('click',evt=>{
+        evt.preventDefault();
         const tile=el.dataset.tile;
         if(!tile) return;
-        const link=getTileLink(tile);
-        if(link){
-          if(el.tagName!=='A'){
-            evt.preventDefault();
-            try{ window.location.href=link; }
-            catch{ location.assign(link); }
-          }
-          return;
-        }
-        evt.preventDefault();
-        const handlerName=TILE_FALLBACK_MAP[tile];
+        const handlerName=TILE_HANDLERS[tile];
         const fn=handlerName && window.__handlers && window.__handlers[handlerName];
         if(typeof fn==='function') fn();
       });
@@ -413,19 +308,15 @@
   if(!config.householdId){config.householdId=Math.random().toString(36).slice(2,10).toUpperCase();save(config);}
 
   function applyTheme(){document.documentElement.style.setProperty('--accent',config.theme?.color||'#0f172a');document.documentElement.style.setProperty('--bg',config.theme?.background||'#f6f7f9');}
-  function applyForm(){ $('themeColor').value=config.theme?.color||'#0f172a'; $('bgColor').value=config.theme?.background||'#f6f7f9'; $('keepAwake').checked=!!config.keepAwake; $('logoUrlCalendar').value=config.logoUrls?.calendar||''; $('logoUrlHomey').value=config.logoUrls?.homey||''; $('logoUrlSpotify').value=config.logoUrls?.spotify||''; $('calendarUrl').value=config.calendar?.url||DEFAULT_CAL_URL; $('homeyUrl').value=config.homeyUrl||''; $('spotifyUrl').value=config.spotifyUrl||'https://open.spotify.com/'; $('householdId').value=(config.householdId||'').toUpperCase(); tileLinkInputs.forEach(({id,tile,platform})=>{ const input=$(id); if(input) input.value=config.tileLinks?.[tile]?.[platform]||''; }); const mode=config.calendar?.mode||'url'; [...document.querySelectorAll('input[name="calendarMode"]')].forEach(r=>r.checked=(r.value===mode)); $('calendarUploadRow').style.display=(mode==='upload')?'':'none'; }
+  function applyForm(){ $('themeColor').value=config.theme?.color||'#0f172a'; $('bgColor').value=config.theme?.background||'#f6f7f9'; $('keepAwake').checked=!!config.keepAwake; $('calendarUrl').value=config.calendar?.url||DEFAULT_CAL_URL; $('homeyUrl').value=config.homeyUrl||''; $('sonosUrl').value=config.sonosUrl||''; $('householdId').value=(config.householdId||'').toUpperCase(); const mode=config.calendar?.mode||'url'; [...document.querySelectorAll('input[name="calendarMode"]')].forEach(r=>r.checked=(r.value===mode)); $('calendarUploadRow').style.display=(mode==='upload')?'':'none'; }
   function applyLogos(){
-    const ph=t=>"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='64'%3E%3Crect width='160' height='64' fill='%23f0f2f5'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='14' fill='%236b7280' font-family='Inter,Arial' %3E"+encodeURIComponent(t)+"%3C/text%3E%3C/svg%3E";
-    const builtIn={calendar:'assets/Kalender',homey:'assets/Homey',spotify:'assets/Spotify'};
-    const calendarLogo=config.logoUrls.calendar||config.logos.calendar||builtIn.calendar||ph('Kalender');
-    const homeyLogo=config.logoUrls.homey||config.logos.homey||builtIn.homey||ph('Homey');
-    const spotifyLogo=config.logoUrls.spotify||config.logoUrls.sonos||config.logos.spotify||config.logos.sonos||builtIn.spotify||ph('Spotify');
-    $('logoCalendar').src=calendarLogo;
-    $('logoHomey').src=homeyLogo;
-    $('logoSpotify').src=spotifyLogo;
+    const builtIn={calendar:'assets/Kalender',homey:'assets/Homey',sonos:'assets/Sonos'};
+    $('logoCalendar').src=builtIn.calendar;
+    $('logoHomey').src=builtIn.homey;
+    $('logoSonos').src=builtIn.sonos;
   }
-  function applySpotifySubtitle(){ const el=$('subSpotify'); if(!el) return; const url=(config.spotifyUrl||'').trim(); el.textContent=url?'Åbner Spotify':'Musik'; }
-  function applyAll(){applyTheme();applyForm();applyLogos();applySpotifySubtitle();applyTileLinks();} applyAll();
+  function applySonosSubtitle(){ const el=$('subSonos'); if(!el) return; const url=(config.sonosUrl||'').trim(); el.textContent=url?'Åbner Sonos':'Lyd'; }
+  function applyAll(){applyTheme();applyForm();applyLogos();applySonosSubtitle();} applyAll();
 
   /* Tabs */
   function setupTabs(){
@@ -445,20 +336,12 @@
     on($('bgColor'),'input',function(){config.theme.background=this.value;save(config);applyTheme();writeSoon();});
     on($('keepAwake'),'change',function(){config.keepAwake=!!this.checked;save(config);writeSoon();});
 
-    on($('logoUrlCalendar'),'input',function(){config.logoUrls.calendar=this.value.trim();save(config);applyLogos();writeSoon();});
-    on($('logoUrlHomey'),'input',function(){config.logoUrls.homey=this.value.trim();save(config);applyLogos();writeSoon();});
-    on($('logoUrlSpotify'),'input',function(){config.logoUrls.spotify=this.value.trim();save(config);applyLogos();writeSoon();});
-
     ;[...document.querySelectorAll('input[name="calendarMode"]')].forEach(r=>on(r,'change',function(){config.calendar.mode=r.value;save(config);applyForm();writeSoon();}));
     on($('calendarUrl'),'input',function(){config.calendar.url=this.value.trim()||DEFAULT_CAL_URL;save(config);writeSoon();});
     on($('calendarFile'),'change',async function(){if(this.files&&this.files[0]){const f=this.files[0];const txt=await f.text();config.calendar.fileName=f.name;config.calendar.fileData="data:text/html;base64,"+btoa(unescape(encodeURIComponent(txt)));config.calendar.mode='upload';save(config);writeSoon();alert('Kalender gemt lokalt. For deling: brug URL (GitHub Pages).');}});
 
     on($('homeyUrl'),'input',function(){config.homeyUrl=this.value.trim();save(config);writeSoon();});
-    on($('spotifyUrl'),'input',function(){config.spotifyUrl=this.value.trim()||'https://open.spotify.com/';save(config);applySpotifySubtitle();writeSoon();});
-    tileLinkInputs.forEach(({id,tile,platform})=>{
-      const input=$(id);
-      on(input,'input',function(){setTileLinkValue(tile,platform,this.value.trim());save(config);applyTileLinks();writeSoon();});
-    });
+    on($('sonosUrl'),'input',function(){config.sonosUrl=this.value.trim();save(config);applySonosSubtitle();writeSoon();});
 
     on($('householdId'),'input',function(){const v=this.value.trim().toUpperCase();if(v){config.householdId=v;save(config);startRealtime();writeSoon();}});
 
@@ -509,92 +392,7 @@
   window.__handlers={openCalendar};
   on($('closeCalendar'),'click',()=>{ $('calendarFrame').src='about:blank'; const v=$('calendarView'); v.setAttribute('hidden',''); v.setAttribute('aria-hidden','true'); });
 
-  /* Spotify overlay */
-  const SPOTIFY_URL_DEFAULT='https://open.spotify.com/';
-  let spotifyCurrentUrl=SPOTIFY_URL_DEFAULT;
-  let spotifyOriginalUrl=SPOTIFY_URL_DEFAULT;
-  let spotifyWatchTimer=null;
-
-  function resolveSpotifyExternalUrl(url){
-    try{ return new URL(url,location.href).toString(); }catch{}
-    return url;
-  }
-
-  function normalizeSpotifyUrl(url){
-    try{
-      const parsed=new URL(url,location.href);
-      if(!/spotify\.com$/i.test(parsed.hostname)){ return parsed.toString(); }
-      parsed.protocol='https:';
-      parsed.hostname='open.spotify.com';
-      const segments=parsed.pathname.split('/').filter(Boolean);
-      if(segments[0]==='embed'){ return parsed.toString(); }
-      if(segments.length>=2){
-        const newParts=['','embed',segments[0],segments[1],...segments.slice(2)];
-        parsed.pathname=newParts.join('/');
-        if(!parsed.searchParams.has('utm_source')){ parsed.searchParams.set('utm_source','webkiosk'); }
-        return parsed.toString();
-      }
-      parsed.pathname='/';
-      return parsed.toString();
-    }catch{}
-    return url;
-  }
-
-  function stopSpotifyWatch(){ if(spotifyWatchTimer){clearTimeout(spotifyWatchTimer);spotifyWatchTimer=null;} }
-  function openSpotify(opts={}){
-    const base=(config.spotifyUrl||SPOTIFY_URL_DEFAULT).trim()||SPOTIFY_URL_DEFAULT;
-    spotifyOriginalUrl=resolveSpotifyExternalUrl(base);
-    let parsedExternal=null;
-    try{ parsedExternal=new URL(spotifyOriginalUrl); }catch{}
-    if(parsedExternal && !/spotify\.com$/i.test(parsedExternal.hostname)){
-      try{ window.location.href=parsedExternal.toString(); }
-      catch{ try{ window.open(parsedExternal.toString(),'_self'); }catch{} }
-      return;
-    }
-    spotifyCurrentUrl=normalizeSpotifyUrl(spotifyOriginalUrl);
-    if(opts.forceExternal){
-      try{ window.open(spotifyOriginalUrl,'_blank','noopener'); }catch{}
-      closeSpotify();
-      return;
-    }
-    const frame=$('spotifyFrame');
-    const view=$('spotifyView');
-    if(!frame||!view){ alert('Spotify-visning mangler i HTML.'); return; }
-    hideSpotifyBlocked();
-    view.removeAttribute('hidden');
-    view.setAttribute('aria-hidden','false');
-    stopSpotifyWatch();
-    if(frame._loadHandler){ try{frame.removeEventListener('load',frame._loadHandler);}catch{} frame._loadHandler=null; }
-    frame.dataset.loading='1';
-    const onLoad=()=>{ frame.dataset.loading='0'; hideSpotifyBlocked(); stopSpotifyWatch(); };
-    frame._loadHandler=onLoad;
-    frame.addEventListener('load',onLoad,{once:true});
-    try{ frame.src='about:blank'; }catch{}
-    frame.src=spotifyCurrentUrl;
-    spotifyWatchTimer=setTimeout(()=>{
-      const frm=$('spotifyFrame');
-      if(frm&&frm.dataset.loading==='1'){ showSpotifyBlocked(); }
-    },5000);
-  }
-
-  function closeSpotify(){
-    stopSpotifyWatch();
-    const frame=$('spotifyFrame');
-    if(frame){
-      if(frame._loadHandler){ try{frame.removeEventListener('load',frame._loadHandler);}catch{} frame._loadHandler=null; }
-      try{frame.src='about:blank';}catch{}
-      frame.dataset.loading='0';
-    }
-    hideSpotifyBlocked();
-    const view=$('spotifyView');
-    if(view){ view.setAttribute('hidden',''); view.setAttribute('aria-hidden','true'); }
-  }
-  window.__handlers.openSpotify=openSpotify;
-  on($('closeSpotify'),'click',closeSpotify);
-  on($('spotifyRetry'),'click',()=>openSpotify());
-  on($('spotifyExternal'),'click',()=>openSpotify({forceExternal:true}));
-
-    /* Webpanel (Homey) */
+  /* Webpanel (Homey) */
 
   const WK_IFRAME_SANDBOX_DEFAULT='allow-forms allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox';
   const WK_IFRAME_ALLOW_DEFAULT='autoplay; fullscreen; picture-in-picture';
@@ -663,7 +461,25 @@
     if(!u){alert('Ingen Homey URL.');return;}
     if(/^https?:\/\//i.test(u)) showPanel(u,'Homey'); else location.href=u;
   }
-  window.__handlers.openHomey=openHomey; window.__handlers.openSpotify=openSpotify;
+  function openSonos(){
+    const link=(config.sonosUrl||'').trim();
+    if(!link){alert('Ingen Sonos link.');return;}
+    try{
+      if(/^https?:\/\//i.test(link)){
+        const opened=window.open(link,'_blank','noopener');
+        if(!opened){location.href=link;}
+      }else{
+        location.href=link;
+      }
+    }catch{
+      try{location.href=link;}
+      catch{
+        try{location.assign(link);}catch{}
+      }
+    }
+  }
+  window.__handlers.openHomey=openHomey;
+  window.__handlers.openSonos=openSonos;
 
 
   /* NoSleep */
@@ -690,7 +506,7 @@
   async function writeFirestore(){
     try{
       const toSave=JSON.parse(JSON.stringify(config));
-      toSave.logos={}; if(toSave.calendar) toSave.calendar.fileData='';
+      if(toSave.calendar) toSave.calendar.fileData='';
       toSave._ts=Date.now(); save(Object.assign(config,{_ts:toSave._ts}));
       await docRef().set(toSave,{merge:true}); badge('online',nowStr());
     }catch(e){console.error('[write]',e);badge('error',e.code||e.message||'write');}
