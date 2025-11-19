@@ -972,6 +972,7 @@
       const typeNormalized=normalizeType(Ftype.value);
       const payload={
         id:existing?.id||"",
+        externalId:existing?.externalId||base?.externalId||"",
         title:(Ftitle.value||"(uden titel)").trim()||"(uden titel)",
         type:typeNormalized,
         people:selectedPeople,
@@ -984,6 +985,7 @@
         repeatWeekly:newRepeat,
         done:!!Fdone.checked,
         source:existing?.source||base?.source||'local',
+        detachedFromFeed:!!(existing?.detachedFromFeed||base?.detachedFromFeed),
         seriesId:seriesId
       };
       if(typeNormalized===BIRTHDAY_TYPE){
