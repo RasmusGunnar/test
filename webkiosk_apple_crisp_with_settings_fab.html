@@ -456,17 +456,24 @@
     }
   }
 
-  function buildSonosLink(raw){
-    const input=(raw||'').trim();
-    if(!input) return '';
-    const componentMatch=input.match(/^([A-Za-z0-9_.]+)\/([A-Za-z0-9_.]+)$/);
-    if(componentMatch){
-      const pkg=componentMatch[1];
-      let activity=componentMatch[2];
-      if(activity.startsWith('.')) activity=pkg+activity;
-      return `intent://#Intent;component=${pkg}/${activity};package=${pkg};end`;
-    }
-    return input;
+  // Bygger et robust intent-link ud fra enten "pkg/Activity" eller et allerede formateret intent/http(s)
+  function buildSonosLink(raw) {
+    const input = (raw || '').trim();
+    if (!input) return '';
+
+    // Hvis det allerede er et intent- eller http(s)-link, brug det som er
+    if (/^(intent:|https?:)/i.test(input)) return input;
+
+    // Tillad format "com.sonos.acr2/com.sonos.passport.ui.launcheractivity.LauncherActivity"
+    const m = input.match(/^([A-Za-z0-9_.]+)\/([A-Za-z0-9_.]+)$/);
+    if (!m) return input;
+
+    const pkg = m[1];
+    let activity = m[2];
+    if (activity.startsWith('.')) activity = pkg + activity;
+
+    // Mest kompatibel syntaks i WebView/Chrome: "intent:#Intent;...;end" (uden "//")
+    return `intent:#Intent;component=${pkg}/${activity};package=${pkg};end`;
   }
 
   function openHomey(){
@@ -474,23 +481,55 @@
     if(!u){alert('Ingen Homey URL.');return;}
     if(/^https?:\/\//i.test(u)) showPanel(u,'Homey'); else location.href=u;
   }
-  function openSonos(){
-    const raw=(config.sonosUrl||'').trim();
-    const link=buildSonosLink(raw);
-    if(!link){alert('Ingen Sonos link.');return;}
-    try{
-      if(/^https?:\/\//i.test(link)){
-        const opened=window.open(link,'_blank','noopener');
-        if(!opened){location.href=link;}
-      }else{
-        location.href=link;
+  // Åbner Sonos via "rigtigt" <a href="intent:..."> klik, som WebView typisk respekterer
+  function openSonos() {
+    const raw = (config.sonosUrl || '').trim();
+    const link = buildSonosLink(raw);
+    if (!link) { alert('Ingen Sonos link.'); return; }
+
+    // 1) Hvis http(s), vis i panel eller ny fane
+    if (/^https?:\/\//i.test(link)) {
+      try {
+        const opened = window.open(link, '_blank', 'noopener');
+        if (!opened) location.href = link;
+      } catch {
+        try { location.href = link; } catch { try { location.assign(link); } catch {} }
       }
-    }catch{
-      try{location.href=link;}
-      catch{
-        try{location.assign(link);}catch{}
-      }
+      return;
     }
+
+    // 2) intent: via anker-klik (kræves ofte i Android WebView/Fully Kiosk)
+    try {
+      const a = document.createElement('a');
+      a.href = link;
+      a.rel = 'noopener';
+      a.target = '_self';            // vigtig for Fully WebView
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch {
+      // 3) Fallback: JS navigation
+      try { location.href = link; }
+      catch { try { location.assign(link); } catch {} }
+    }
+
+    // 4) Ekstra fallback: start kun på package, hvis component skulle fejle
+    //    Fully/Chrome vælger ofte default LAUNCHER activity for pakken
+    setTimeout(() => {
+      try {
+        const pkgOnly = link.includes(';package=') ? link.match(/;package=([^;]+)/)?.[1] : null;
+        if (!pkgOnly) return;
+        const pkgIntent = `intent:#Intent;package=${pkgOnly};end`;
+        const a2 = document.createElement('a');
+        a2.href = pkgIntent;
+        a2.target = '_self';
+        a2.style.display = 'none';
+        document.body.appendChild(a2);
+        a2.click();
+        document.body.removeChild(a2);
+      } catch {}
+    }, 150);
   }
   window.__handlers.openHomey=openHomey;
   window.__handlers.openSonos=openSonos;
