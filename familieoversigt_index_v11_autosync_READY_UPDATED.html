@@ -1505,19 +1505,25 @@
       }
 
       async function fetchRemoteItems(){
-        const {data,error}=await client.from("calendar_items").select("uid,data,title,date,time,person,type,note,done,repeat_weekly").eq("hid",HID);
-        if(error){console.error("[Supabase fetch]",error);return new Map();}
-        const map=new Map();
-        for(const row of data){
-          const it=canon(row,row.uid);
-          const uid=uidFor(it);
-          if(!map.has(uid)) map.set(uid,it);
+        try{
+          const {data,error}=await client.from("calendar_items").select("uid,data,title,date,time,person,type,note,done,repeat_weekly").eq("hid",HID);
+          if(error) throw error;
+          const map=new Map();
+          for(const row of data){
+            const it=canon(row,row.uid);
+            const uid=uidFor(it);
+            if(!map.has(uid)) map.set(uid,it);
+          }
+          return {map,ok:true};
+        }catch(err){
+          console.error("[Supabase fetch]",err);
+          return {map:null,ok:false};
         }
-        return map;
       }
 
       async function syncFromRemote(){
-        const map=await fetchRemoteItems();
+        const {map}=await fetchRemoteItems();
+        if(!map)return; // bevar lokale data ved netværksfejl
         writeAndRender([...map.values()]);
       }
 
@@ -1592,8 +1598,11 @@
       await ensurePrefs();
 
       const local=loadLS(LS_ITEMS,[]);
-      const remoteMap=await fetchRemoteItems();
-      if(local.length && remoteMap.size===0){
+      const {map:remoteMap}=await fetchRemoteItems();
+      if(!remoteMap){
+        // Hvis vi ikke kan hente fra Supabase, så behold lokale data
+        writeAndRender(local);
+      } else if(local.length && remoteMap.size===0){
         await pushAll(local);
         await syncFromRemote();
       } else {
