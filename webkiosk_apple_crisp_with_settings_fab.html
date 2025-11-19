@@ -182,7 +182,7 @@
             </div>
 
             <div class="field"><label for="homeyUrl">Homey dashboard URL</label><input type="url" id="homeyUrl" placeholder="https://my.homey.app/..."/></div>
-            <div class="field"><label for="sonosUrl">Sonos link</label><input type="text" id="sonosUrl" placeholder="sonos://arc.sonos.arc2/..." inputmode="url"/><span class="hint">Indsæt hele Sonos app-linket fra din telefon.</span></div>
+            <div class="field"><label for="sonosUrl">Sonos link</label><input type="text" id="sonosUrl" placeholder="com.sonos.acr2/com.sonos.passport.ui.launcheractivity.LauncherActivity" inputmode="url"/><span class="hint">Indsæt Sonos app-link eller pakke/aktivitet (f.eks. com.sonos.acr2/com.sonos.passport.ui.launcheractivity.LauncherActivity).</span></div>
           </div>
         </section>
 
@@ -456,13 +456,27 @@
     }
   }
 
+  function buildSonosLink(raw){
+    const input=(raw||'').trim();
+    if(!input) return '';
+    const componentMatch=input.match(/^([A-Za-z0-9_.]+)\/([A-Za-z0-9_.]+)$/);
+    if(componentMatch){
+      const pkg=componentMatch[1];
+      let activity=componentMatch[2];
+      if(activity.startsWith('.')) activity=pkg+activity;
+      return `intent://#Intent;component=${pkg}/${activity};package=${pkg};end`;
+    }
+    return input;
+  }
+
   function openHomey(){
     const u=(config.homeyUrl||'').trim();
     if(!u){alert('Ingen Homey URL.');return;}
     if(/^https?:\/\//i.test(u)) showPanel(u,'Homey'); else location.href=u;
   }
   function openSonos(){
-    const link=(config.sonosUrl||'').trim();
+    const raw=(config.sonosUrl||'').trim();
+    const link=buildSonosLink(raw);
     if(!link){alert('Ingen Sonos link.');return;}
     try{
       if(/^https?:\/\//i.test(link)){
