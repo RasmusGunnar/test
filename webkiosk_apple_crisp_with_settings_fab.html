@@ -19,7 +19,7 @@
   .weather-main{display:flex;align-items:center;gap:14px} .weather-temp{font-size:clamp(40px,6vw,56px);font-weight:750} .weather-line{font-size:clamp(14px,1.8vw,18px);color:var(--muted)}
   .widget .icon{width:clamp(34px,4.5vw,48px);height:clamp(34px,4.5vw,48px);color:var(--accent)}
   .tiles{grid-column:1/-1;display:grid;gap:clamp(12px,2vw,18px);grid-template-columns:repeat(3,1fr)}
-  .tile{min-height:140px;padding:clamp(16px,2.4vw,24px);display:grid;grid-template-columns:minmax(0,1fr) minmax(var(--logoBoxMin),var(--logoBoxMax));align-items:center;gap:clamp(12px,2vw,20px);cursor:pointer;user-select:none;transition:transform .12s,box-shadow .12s}
+  .tile{min-height:140px;padding:clamp(16px,2.4vw,24px);display:grid;grid-template-columns:minmax(0,1fr) minmax(var(--logoBoxMin),var(--logoBoxMax));align-items:center;gap:clamp(12px,2vw,20px);cursor:pointer;user-select:none;transition:transform .12s,box-shadow .12s;text-decoration:none;color:inherit}
   .tile:hover{transform:translateY(-1px);box-shadow:0 14px 30px rgba(2,6,23,.10)}
   .meta .label{font-size:clamp(18px,2.2vw,22px);font-weight:750} .meta .sub{color:var(--muted);font-size:clamp(12px,1.8vw,15px);margin-top:6px}
   .logo-box{height:var(--logoH);display:flex;align-items:center;justify-content:flex-end;width:100%;max-width:var(--logoBoxMax)}
@@ -121,20 +121,20 @@
       </section>
 
       <div class="tiles">
-        <button class="panel tile" id="tileCalendar" type="button" onclick="window.__handlers && window.__handlers.openCalendar()">
+        <a class="panel tile" id="tileCalendar" data-tile="calendar" href="#">
           <div class="meta"><div class="label" id="labelCalendar">Kalender</div><div class="sub" id="subCalendar">Familieoversigt</div></div>
           <div class="logo-box"><img id="logoCalendar" alt="Kalender"></div>
-        </button>
+        </a>
 
-        <button class="panel tile" id="tileHomey" type="button" onclick="window.__handlers && window.__handlers.openHomey()">
+        <a class="panel tile" id="tileHomey" data-tile="homey" href="#">
           <div class="meta"><div class="label" id="labelHomey">Homey</div><div class="sub" id="subHomey">Dashboard</div></div>
           <div class="logo-box"><img id="logoHomey" alt="Homey"></div>
-        </button>
+        </a>
 
-        <button class="panel tile" id="tileSpotify" type="button" onclick="window.__handlers && window.__handlers.openSpotify()">
+        <a class="panel tile" id="tileSpotify" data-tile="spotify" href="#">
           <div class="meta"><div class="label" id="labelSpotify">Spotify</div><div class="sub" id="subSpotify">Musik</div></div>
           <div class="logo-box"><img id="logoSpotify" alt="Spotify"></div>
-        </button>
+        </a>
       </div>
     </div>
   </div>
@@ -219,6 +219,18 @@
 
             <div class="field"><label for="homeyUrl">Homey dashboard URL</label><input type="url" id="homeyUrl" placeholder="https://my.homey.app/..."/></div>
             <div class="field"><label for="spotifyUrl">Spotify link</label><input type="url" id="spotifyUrl" placeholder="https://open.spotify.com/"/></div>
+
+            <div class="field full"><label for="tileLinkCalendarDesktop">Kalender – Desktop link</label><input type="text" id="tileLinkCalendarDesktop" placeholder="https://example.com/kalender" inputmode="url"/><span class="hint">Tom = brug den normale kalender-visning.</span></div>
+            <div class="field full"><label for="tileLinkCalendarIos">Kalender – iOS link</label><input type="text" id="tileLinkCalendarIos" placeholder="homey://" inputmode="url"/></div>
+            <div class="field full"><label for="tileLinkCalendarAndroid">Kalender – Android link</label><input type="text" id="tileLinkCalendarAndroid" placeholder="intent://" inputmode="url"/><span class="hint">Understøtter intent-/app-links.</span></div>
+
+            <div class="field full"><label for="tileLinkHomeyDesktop">Homey – Desktop link</label><input type="text" id="tileLinkHomeyDesktop" placeholder="https://my.homey.app/..." inputmode="url"/></div>
+            <div class="field full"><label for="tileLinkHomeyIos">Homey – iOS link</label><input type="text" id="tileLinkHomeyIos" placeholder="homey://" inputmode="url"/></div>
+            <div class="field full"><label for="tileLinkHomeyAndroid">Homey – Android link</label><input type="text" id="tileLinkHomeyAndroid" placeholder="intent://" inputmode="url"/></div>
+
+            <div class="field full"><label for="tileLinkSpotifyDesktop">Spotify – Desktop link</label><input type="text" id="tileLinkSpotifyDesktop" placeholder="https://open.spotify.com/" inputmode="url"/></div>
+            <div class="field full"><label for="tileLinkSpotifyIos">Spotify – iOS link</label><input type="text" id="tileLinkSpotifyIos" placeholder="spotify://" inputmode="url"/></div>
+            <div class="field full"><label for="tileLinkSpotifyAndroid">Spotify – Android link</label><input type="text" id="tileLinkSpotifyAndroid" placeholder="intent://" inputmode="url"/></div>
           </div>
         </section>
 
@@ -305,13 +317,86 @@
   })();
 
   /* Config */
+  const TILE_KEYS=['calendar','homey','spotify'];
+  const TILE_PLATFORMS=['desktop','ios','android'];
+  const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
+  const tileLinkInputs=TILE_KEYS.flatMap(tile=>TILE_PLATFORMS.map(platform=>({id:`tileLink${cap(tile)}${cap(platform)}`,tile,platform})));
+  const TILE_FALLBACK_MAP={calendar:'openCalendar',homey:'openHomey',spotify:'openSpotify'};
+  function detectPlatform(){
+    const ua=(navigator.userAgent||navigator.vendor||window.opera||'').toLowerCase();
+    const isIOS=/iphone|ipad|ipod/.test(ua) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+    if(/android/.test(ua)) return 'android';
+    if(isIOS) return 'ios';
+    return 'desktop';
+  }
+  const currentPlatform=detectPlatform();
+
   const LS_KEY='webkioskConfigV2';
   const DEFAULT_CAL_PATH='familieoversigt_index_v11_autosync_READY_UPDATED.html';
   const DEFAULT_CAL_URL=(()=>{try{return new URL('./'+DEFAULT_CAL_PATH,location.href).toString();}catch{return DEFAULT_CAL_PATH;}})();
-  const defaults={calendar:{mode:'url',url:DEFAULT_CAL_URL,fileName:'',fileData:''},homeyUrl:'',spotifyUrl:'https://open.spotify.com/',logos:{calendar:'',homey:'',spotify:''},logoUrls:{calendar:'',homey:'',spotify:''},theme:{color:'#0f172a',background:'#f6f7f9'},keepAwake:true,householdId:'',_ts:0};
+  const defaults={calendar:{mode:'url',url:DEFAULT_CAL_URL,fileName:'',fileData:''},homeyUrl:'',spotifyUrl:'https://open.spotify.com/',logos:{calendar:'',homey:'',spotify:''},logoUrls:{calendar:'',homey:'',spotify:''},tileLinks:{calendar:{desktop:'',ios:'',android:''},homey:{desktop:'',ios:'',android:''},spotify:{desktop:'',ios:'',android:''}},theme:{color:'#0f172a',background:'#f6f7f9'},keepAwake:true,householdId:'',_ts:0};
   function load(){try{const o=JSON.parse(localStorage.getItem(LS_KEY)||'{}');const deep=(m,d)=>{const r=Array.isArray(d)?[]:{};for(const k in d){if(d[k]&&typeof d[k]==='object'&&!Array.isArray(d[k]))r[k]=deep((m||{})[k]||{},d[k]);else r[k]=(m||{})[k]!==undefined?(m||{})[k]:d[k];}return r;};return deep(o,defaults);}catch{return JSON.parse(JSON.stringify(defaults));}}
   function save(c){try{localStorage.setItem(LS_KEY,JSON.stringify(c));}catch{}}
   let config=load();
+
+  function ensureTileLinkSlot(tile){
+    if(!config.tileLinks) config.tileLinks={};
+    if(!config.tileLinks[tile]) config.tileLinks[tile]={desktop:'',ios:'',android:''};
+    return config.tileLinks[tile];
+  }
+  function setTileLinkValue(tile,platform,value){
+    const slot=ensureTileLinkSlot(tile);
+    slot[platform]=value;
+  }
+  function getTileLink(tile,platform=currentPlatform){
+    const slot=(config.tileLinks&&config.tileLinks[tile])||{};
+    const direct=(slot[platform]||'').trim();
+    if(direct) return direct;
+    if(platform!=='desktop'){
+      const fallbackDesktop=(slot.desktop||'').trim();
+      if(fallbackDesktop) return fallbackDesktop;
+    }
+    return '';
+  }
+  function applyTileLinks(){
+    document.querySelectorAll('[data-tile]').forEach(el=>{
+      const tile=el.dataset.tile;
+      if(!tile) return;
+      const href=getTileLink(tile);
+      if(href){
+        if(el.tagName==='A') el.setAttribute('href',href);
+        else el.dataset.tileHref=href;
+        el.removeAttribute('data-tile-fallback');
+      }else{
+        if(el.tagName==='A') el.setAttribute('href','#');
+        else el.dataset.tileHref='';
+        el.setAttribute('data-tile-fallback','');
+      }
+    });
+  }
+  function setupTileInteractions(){
+    document.querySelectorAll('[data-tile]').forEach(el=>{
+      if(el._tileBound) return;
+      el._tileBound=true;
+      el.addEventListener('click',evt=>{
+        const tile=el.dataset.tile;
+        if(!tile) return;
+        const link=getTileLink(tile);
+        if(link){
+          if(el.tagName!=='A'){
+            evt.preventDefault();
+            try{ window.location.href=link; }
+            catch{ location.assign(link); }
+          }
+          return;
+        }
+        evt.preventDefault();
+        const handlerName=TILE_FALLBACK_MAP[tile];
+        const fn=handlerName && window.__handlers && window.__handlers[handlerName];
+        if(typeof fn==='function') fn();
+      });
+    });
+  }
 
   /* HID lås fra ?hid=... (stabil efter cache-rydning) */
   (function lockHIDFromQuery(){
@@ -328,7 +413,7 @@
   if(!config.householdId){config.householdId=Math.random().toString(36).slice(2,10).toUpperCase();save(config);}
 
   function applyTheme(){document.documentElement.style.setProperty('--accent',config.theme?.color||'#0f172a');document.documentElement.style.setProperty('--bg',config.theme?.background||'#f6f7f9');}
-  function applyForm(){ $('themeColor').value=config.theme?.color||'#0f172a'; $('bgColor').value=config.theme?.background||'#f6f7f9'; $('keepAwake').checked=!!config.keepAwake; $('logoUrlCalendar').value=config.logoUrls?.calendar||''; $('logoUrlHomey').value=config.logoUrls?.homey||''; $('logoUrlSpotify').value=config.logoUrls?.spotify||''; $('calendarUrl').value=config.calendar?.url||DEFAULT_CAL_URL; $('homeyUrl').value=config.homeyUrl||''; $('spotifyUrl').value=config.spotifyUrl||'https://open.spotify.com/'; $('householdId').value=(config.householdId||'').toUpperCase(); const mode=config.calendar?.mode||'url'; [...document.querySelectorAll('input[name="calendarMode"]')].forEach(r=>r.checked=(r.value===mode)); $('calendarUploadRow').style.display=(mode==='upload')?'':'none'; }
+  function applyForm(){ $('themeColor').value=config.theme?.color||'#0f172a'; $('bgColor').value=config.theme?.background||'#f6f7f9'; $('keepAwake').checked=!!config.keepAwake; $('logoUrlCalendar').value=config.logoUrls?.calendar||''; $('logoUrlHomey').value=config.logoUrls?.homey||''; $('logoUrlSpotify').value=config.logoUrls?.spotify||''; $('calendarUrl').value=config.calendar?.url||DEFAULT_CAL_URL; $('homeyUrl').value=config.homeyUrl||''; $('spotifyUrl').value=config.spotifyUrl||'https://open.spotify.com/'; $('householdId').value=(config.householdId||'').toUpperCase(); tileLinkInputs.forEach(({id,tile,platform})=>{ const input=$(id); if(input) input.value=config.tileLinks?.[tile]?.[platform]||''; }); const mode=config.calendar?.mode||'url'; [...document.querySelectorAll('input[name="calendarMode"]')].forEach(r=>r.checked=(r.value===mode)); $('calendarUploadRow').style.display=(mode==='upload')?'':'none'; }
   function applyLogos(){
     const ph=t=>"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='64'%3E%3Crect width='160' height='64' fill='%23f0f2f5'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='14' fill='%236b7280' font-family='Inter,Arial' %3E"+encodeURIComponent(t)+"%3C/text%3E%3C/svg%3E";
     const builtIn={calendar:'assets/Kalender',homey:'assets/Homey',spotify:'assets/Spotify'};
@@ -340,7 +425,7 @@
     $('logoSpotify').src=spotifyLogo;
   }
   function applySpotifySubtitle(){ const el=$('subSpotify'); if(!el) return; const url=(config.spotifyUrl||'').trim(); el.textContent=url?'Åbner Spotify':'Musik'; }
-  function applyAll(){applyTheme();applyForm();applyLogos();applySpotifySubtitle();} applyAll();
+  function applyAll(){applyTheme();applyForm();applyLogos();applySpotifySubtitle();applyTileLinks();} applyAll();
 
   /* Tabs */
   function setupTabs(){
@@ -370,6 +455,10 @@
 
     on($('homeyUrl'),'input',function(){config.homeyUrl=this.value.trim();save(config);writeSoon();});
     on($('spotifyUrl'),'input',function(){config.spotifyUrl=this.value.trim()||'https://open.spotify.com/';save(config);applySpotifySubtitle();writeSoon();});
+    tileLinkInputs.forEach(({id,tile,platform})=>{
+      const input=$(id);
+      on(input,'input',function(){setTileLinkValue(tile,platform,this.value.trim());save(config);applyTileLinks();writeSoon();});
+    });
 
     on($('householdId'),'input',function(){const v=this.value.trim().toUpperCase();if(v){config.householdId=v;save(config);startRealtime();writeSoon();}});
 
@@ -379,6 +468,7 @@
     on($('openSettings'),'click',showSettings);
   }
   bind();
+  setupTileInteractions();
 
   /* Overlays */
   function showSettings(){const m=$('settingsModal');m.removeAttribute('hidden');m.setAttribute('aria-hidden','false');setupTabs();}
