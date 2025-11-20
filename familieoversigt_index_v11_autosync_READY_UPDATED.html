@@ -726,8 +726,6 @@
         let leftContent='';
         if(isTask){leftContent=`<input type="checkbox" ${it.done?'checked':''} data-opg="${it.id}">`;} else if(isBirthday){leftContent=`<span class="birthday-flag" aria-hidden="true">${BIRTHDAY_FLAG}</span>`;} else if(isMilestone){leftContent=MILESTONE_ICON;}
         const escapeHtml=s=>s.replace(/[&<>]/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[ch]||ch));
-        const shouldShowAllDayLabel = !it.time && !isTask && !isBirthday && !isMilestone;
-        const timeDetail = it.time ? `<span class="time">${escapeHtml(String(it.time))}</span>` : (shouldShowAllDayLabel ? `<span class="time muted">Heldag</span>` : '');
         const div=document.createElement("div");
         div.className="item"+(it.done?" done":"");
         div.style.borderLeftColor=personColor(it.people||it.person);
