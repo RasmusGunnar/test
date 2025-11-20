@@ -39,7 +39,7 @@
     .flag--dannebrog::before{top:0;bottom:0;left:32%;width:16%}
     .flag--dannebrog::after{left:0;right:0;top:44%;height:18%}
     .meta{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1}
-    .title-row{display:flex;align-items:baseline;gap:clamp(6px,1vw,10px);min-width:0}
+    .title-row{display:flex;align-items:baseline;gap:clamp(6px,1vw,10px);min-width:0;flex-wrap:wrap}
     .titlex{font-weight:800;font-size:clamp(12px,1.5vw,15px);line-height:1.2;min-width:0;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;line-clamp:2;word-break:break-word}
     .time{margin-left:auto;font-weight:650;font-size:clamp(12px,1.3vw,14px);line-height:1.2;color:var(--muted);flex-shrink:0;white-space:nowrap}
     .muted{color:var(--muted)}
@@ -90,6 +90,8 @@
     .row-s{display:grid;grid-template-columns:44px 1fr 1fr 64px 32px;gap:12px;align-items:center;padding:8px;border:1px solid #e5e7eb;border-radius:12px;margin-bottom:8px}
     .initial{width:36px;height:36px;border-radius:999px;display:grid;place-items:center;background:#eef2ff;font-weight:800;overflow:hidden}.initial img{width:100%;height:100%;object-fit:cover;border-radius:inherit}.swatch{width:14px;height:14px;border-radius:999px;border:1px solid #e5e7eb;justify-self:end}
     @media (max-width:980px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media (max-width:640px){.grid{grid-template-columns:1fr}}
+    @media (max-width:900px){.item{flex-direction:column;align-items:flex-start;gap:10px}.item .left{min-width:0}.titlex{-webkit-line-clamp:3;line-clamp:3;font-size:clamp(13px,3.8vw,16px)}.note{-webkit-line-clamp:3;line-clamp:3;font-size:clamp(12px,3.6vw,14px)}.time{margin-left:0;width:100%;order:2}.title-row{align-items:flex-start}}
+    @media (max-width:560px){.item{padding:12px}.titlex{-webkit-line-clamp:4;line-clamp:4}.note{-webkit-line-clamp:4;line-clamp:4}}
 
     /* Celebration popup */
     .celebration-overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(3,6,20,.75);backdrop-filter:blur(6px);z-index:4000}
