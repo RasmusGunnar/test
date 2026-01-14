@@ -359,8 +359,15 @@
   function hideSettings(){const m=$('settingsModal');m.setAttribute('hidden','');m.setAttribute('aria-hidden','true');}
 
   /* Kalender – self-iframe guard */
+  function getCalendarViewParam(){
+    try{
+      const view=(new URLSearchParams(location.search).get('view')||'').trim();
+      return view || '';
+    }catch{return '';}
+  }
   function openCalendar(){
     const hid=(config.householdId||'DEFAULT').toUpperCase();
+    const viewParam=getCalendarViewParam();
     // Luk evt. tidligere overlay for at undgå stacking
     const v0=$('calendarView'), f0=$('calendarFrame');
     if(v0 && !v0.hasAttribute('hidden')){ try{f0.src='about:blank';}catch{} v0.setAttribute('hidden',''); v0.setAttribute('aria-hidden','true'); }
@@ -384,6 +391,15 @@
     if(!/^data:/i.test(base)){
       try{ const u=new URL(base,location.href); u.searchParams.set('hid',hid); src=u.toString(); }
       catch{ src=base+(base.includes('?')?'&':'?')+'hid='+encodeURIComponent(hid); }
+    }
+    if(viewParam && !/^data:/i.test(src)){
+      try{
+        const u=new URL(src,location.href);
+        u.searchParams.set('view',viewParam);
+        src=u.toString();
+      }catch{
+        src=src+(src.includes('?')?'&':'?')+'view='+encodeURIComponent(viewParam);
+      }
     }
 
     const frame=$('calendarFrame'), view=$('calendarView');
